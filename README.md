@@ -14,7 +14,7 @@ Tujuan pembagian ini agar proses development lebih rapi, terstruktur, mudah dipa
 
 - **Frontend:** Flutter (Mobile UI)
 - **Backend:** Node.js, Express.js
-- **Database:** MySQL dengan Prisma ORM
+- **Database:** PostgreSQL dengan Prisma ORM
 
 ---
 
@@ -80,7 +80,6 @@ App_PADi/
     └── lib/                     # 🎨 Path Frontend utama (tampilan, koneksi API)
         ├── screens/             # -> Tempat membuat halaman (UI)
         └── services/            # -> Tempat memanggil API backend
-
 ```
 
 ---
@@ -93,11 +92,11 @@ App_PADi/
 
 ---
 
-## 🗄️ 1. Alur Pengerjaan Database (Prisma ORM)
+## 🗄️ 1. Alur Pengerjaan Database (Prisma ORM & PostgreSQL)
 
 **Path pengerjaan:** `backend/prisma/schema.prisma`
 
-Bagian ini digunakan ketika ada penambahan fitur yang membutuhkan penyimpanan data baru (contoh: menambah tabel Presensi).
+Bagian ini digunakan ketika ada penambahan fitur yang membutuhkan penyimpanan data baru (contoh: menambah tabel Presensi). Pastikan koneksi ke database PostgreSQL sudah diatur di file `.env` kamu.
 
 **Langkah Pengerjaan:**
 
@@ -107,7 +106,6 @@ Bagian ini digunakan ketika ada penambahan fitur yang membutuhkan penyimpanan da
 
 ```bash
 npx prisma migrate dev --name <nama_perubahan>
-
 ```
 
 4. Pastikan menjalankan `npx prisma generate` agar Prisma Client di dalam kode Node.js mengenali struktur tabel terbaru.
@@ -116,6 +114,12 @@ npx prisma migrate dev --name <nama_perubahan>
 **Contoh Kode (`schema.prisma`):**
 
 ```prisma
+// Konfigurasi koneksi PostgreSQL
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 // Menambahkan tabel Presensi
 model Presensi {
   id        Int      @id @default(autoincrement())
@@ -125,7 +129,6 @@ model Presensi {
   status    String   // "Hadir", "Izin", "Sakit"
   lokasi    String?  // Koordinat GPS
 }
-
 ```
 
 ---
@@ -139,7 +142,7 @@ Bagian ini bertugas menyediakan REST API yang akan dikonsumsi oleh aplikasi Flut
 **Langkah Pengerjaan:**
 
 1. Masuk ke folder `backend/` dan jalankan `npm install` untuk mengunduh semua dependensi.
-2. Buat file `.env` di dalam folder `backend/` untuk menyimpan konfigurasi rahasia (URL Database & Secret Key JWT).
+2. Buat file `.env` di dalam folder `backend/` untuk menyimpan konfigurasi rahasia (URL Database PostgreSQL & Secret Key JWT).
 3. Buat file rute baru di `backend/src/routes/` (misal: `presensi.js`). Tulis logika endpoint menggunakan Express dan panggil data menggunakan Prisma Client.
 4. Daftarkan file rute tersebut di `backend/src/app.js`.
 5. Pastikan endpoint privat menggunakan middleware di `backend/src/middleware/auth.js`.
@@ -197,7 +200,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class ApiService {
-  static const String baseUrl = '[http://10.0.2.2:3000/api](http://10.0.2.2:3000/api)';
+  static const String baseUrl = 'http://10.0.2.2:3000/api';
 
   static Future<bool> catatPresensi(int userId, String status, String lokasi) async {
     final response = await http.post(
@@ -208,7 +211,6 @@ class ApiService {
     return response.statusCode == 201;
   }
 }
-
 ```
 
 **B. Tampilan Tombol Absen (`lib/screens/presensi_screen.dart`):**
@@ -238,7 +240,6 @@ class PresensiScreen extends StatelessWidget {
     );
   }
 }
-
 ```
 
 ---
@@ -283,9 +284,8 @@ Agar pengerjaan tidak saling bentrok, ikuti panduan dan aturan branch berikut:
 1. **Clone Repository (Hanya pertama kali):**
 
 ```bash
-git clone [https://github.com/cnaresr/App_PADi.git](https://github.com/cnaresr/App_PADi.git)
+git clone https://github.com/cnaresr/App_PADi.git
 cd App_PADi
-
 ```
 
 2. **Pindah ke Branch Divisimu & Pull Dulu:** Sebelum ngoding, pastikan mendapat update terbaru.
@@ -293,7 +293,6 @@ cd App_PADi
 ```bash
 git checkout frontend-dev  # ganti sesuai devisimu
 git pull origin frontend-dev
-
 ```
 
 3. **Kerjakan Per Bagian:** Fokus pada path tugas masing-masing agar tidak terjadi konflik file.
@@ -302,14 +301,12 @@ git pull origin frontend-dev
 ```bash
 git add .
 git commit -m "feat(frontend): menambahkan halaman dashboard"
-
 ```
 
 5. **Push ke GitHub:**
 
 ```bash
 git push origin frontend-dev
-
 ```
 
 ### Standarisasi Commit
