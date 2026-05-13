@@ -1,3 +1,82 @@
+# App_PADi - Platform Absensi Digital
+
+Selamat datang di repositori **App_PADi (Platform Absensi Digital)**. Dokumen ini disusun untuk membantu rekan-rekan kelompok memahami alur kerja (workflow) pengerjaan proyek kita, mulai dari perancangan database, pengembangan API di sisi server, hingga pembuatan antarmuka pengguna di aplikasi mobile.
+
+Repositori ini menggunakan arsitektur pemisahan antara **Backend (Node.js + Express + Prisma)** dan **Frontend (Flutter)**. Berikut adalah panduan alur pengerjaan yang dibagi menjadi tiga bagian utama agar lebih terstruktur dan mudah dikolaborasikan.
+
+---
+
+## 🗄️ 1. Alur Pengerjaan Database
+
+Kita menggunakan **Prisma ORM** untuk berinteraksi dengan database. Semua konfigurasi database terpusat di folder `backend/prisma/`.
+
+**Langkah Pengerjaan:**
+1. **Definisi Skema:** Setiap ada penambahan atau perubahan tabel (seperti tabel pengguna, data presensi, atau lokasi), lakukan perubahan pada file `backend/prisma/schema.prisma`.
+2. **Migrasi Database:** Setelah skema diubah, jalankan perintah migrasi Prisma untuk memperbarui struktur tabel di database lokal masing-masing.
+   ```bash
+   npx prisma migrate dev --name <nama_perubahan>
+   ```
+3. **Generate Client:** Pastikan menjalankan `npx prisma generate` agar Prisma Client di dalam kode Node.js mengenali struktur tabel terbaru.
+4. **Inisialisasi Data:** Jika ada data awal yang perlu dimasukkan (seperti akun admin default), gunakan skrip `backend/init-db.js`.
+
+---
+
+## ⚙️ 2. Alur Pengerjaan Backend
+
+Backend dibangun menggunakan **Node.js** dengan framework **Express**. Kodenya berada di dalam direktori `backend/`. Backend bertugas menyediakan REST API yang akan dikonsumsi oleh aplikasi Flutter.
+
+**Langkah Pengerjaan:**
+
+1. **Instalasi:** Masuk ke folder `backend/` dan jalankan `npm install` untuk mengunduh semua dependensi (seperti Express, Prisma, dll).
+2. **Konfigurasi Environment:** Buat file `.env` di dalam folder `backend/` untuk menyimpan konfigurasi rahasia (seperti URL Database dan Secret Key JWT).
+3. **Pengembangan Rute (Routes) & Kontroler:**
+   - Tambahkan logika endpoint baru di dalam folder `backend/src/routes/`.
+   - Saat ini sudah ada `auth.js` (untuk login/register) dan `presensi.js` (untuk mencatat absensi).
+4. **Keamanan & Middleware:** Pastikan endpoint yang bersifat privat (hanya bisa diakses setelah login) menggunakan middleware yang ada di `backend/src/middleware/auth.js`.
+5. **Menjalankan Server:**
+   Jalankan server untuk testing menggunakan perintah:
+   ```bash
+   node index.js
+   ```
+   *(Atau gunakan nodemon jika sudah dikonfigurasi di package.json)*.
+
+---
+
+## 📱 3. Alur Pengerjaan Frontend
+
+Frontend aplikasi dibangun menggunakan **Flutter** dan berada di dalam direktori `platform_absensi_digital/`. Aplikasi ini akan berjalan di perangkat mobile dan berkomunikasi dengan Backend melalui API. Disarankan menggunakan Visual Studio Code untuk pengembangan yang lebih ringan dan terintegrasi.
+
+**Langkah Pengerjaan:**
+
+1. **Instalasi Dependensi:** Masuk ke folder `platform_absensi_digital/` dan jalankan:
+   ```bash
+   flutter pub get
+   ```
+2. **Menghubungkan ke API:**
+   - Semua komunikasi ke Backend HTTP dikelola di dalam `lib/services/api_service.dart`.
+   - Pastikan URL API yang dituju di file tersebut sesuai dengan URL server backend lokal (misal: `http://10.0.2.2:3000` untuk emulator Android atau alamat IP lokal).
+3. **Pengembangan UI & Logika Aplikasi:**
+   - Buat atau edit tampilan halaman di dalam folder `lib/`.
+   - Gunakan `main.dart` sebagai titik awal (entry point) aplikasi.
+4. **Testing Aplikasi:**
+   - Jalankan aplikasi di emulator atau perangkat fisik menggunakan:
+   ```bash
+   flutter run
+   ```
+
+---
+
+## 🔄 Alur Kolaborasi Tim (Git Workflow)
+
+Agar pengerjaan tidak saling bentrok, ikuti panduan berikut saat bekerja dalam kelompok:
+
+1. **Pull Dulu:** Sebelum mulai ngoding, biasakan melakukan `git pull origin main` untuk mendapatkan pembaruan kode terbaru dari rekan yang lain.
+2. **Kerjakan Per Bagian:** Fokus pada tugas masing-masing. Jika mendapat tugas API Presensi, edit file backend yang bersangkutan. Jika tugas UI, fokus di folder Flutter.
+3. **Commit Pesan yang Jelas:** Gunakan pesan commit yang deskriptif. Contoh: `feat: menambahkan endpoint untuk riwayat presensi` atau `fix: perbaikan error login di flutter`.
+4. **Push:** Setelah selesai, lakukan `git push` agar kodenya bisa digabungkan.
+
+Semangat mengerjakan proyek PBL ini, Kelompok 2!
+
 # App PADi
 
 ## Deskripsi Project
