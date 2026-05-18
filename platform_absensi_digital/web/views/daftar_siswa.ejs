@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Daftar Siswa - App_PADi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#F8F9FA] flex">
+    <aside class="w-64 h-screen bg-white border-r p-6 flex flex-col fixed">
+        <div class="text-2xl font-bold text-[#006652] mb-10 flex items-center gap-2">
+            <div class="bg-[#006652] w-8 h-8 rounded-lg"></div> Portal
+        </div>
+        <nav class="flex-1 space-y-2">
+            <a href="/dashboard" class="flex items-center gap-3 p-3 text-gray-500 hover:bg-gray-100 rounded-lg">Dashboard</a>
+            <a href="/daftar-siswa" class="flex items-center gap-3 p-3 bg-[#006652] text-white rounded-lg shadow-md">Daftar Siswa</a>
+            <a href="/daftar-guru" class="flex items-center gap-3 p-3 text-gray-500 hover:bg-gray-100 rounded-lg">Daftar Guru</a>
+            <a href="/jadwal" class="flex items-center gap-3 p-3 text-gray-500 hover:bg-gray-100 rounded-lg">Jadwal</a>
+        </nav>
+        <div class="mt-auto border-t pt-4 space-y-2">
+            <a href="#" class="flex items-center gap-3 p-3 text-gray-500 hover:bg-gray-100 rounded-lg">Settings</a>
+            <a href="/" class="flex items-center gap-3 p-3 text-red-500 font-medium">Log Out</a>
+        </div>
+    </aside>
+
+    <main class="flex-1 ml-64 p-10">
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-800">Manajemen Akun Siswa</h2>
+                <p class="text-gray-500 text-sm">Kelola data, status, dan akses siswa</p>
+            </div>
+            <button class="bg-[#006652] text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2">
+                <span>+ Tambah Siswa</span>
+            </button>
+        </header>
+
+        <div class="grid grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border flex justify-between items-center">
+                <div>
+                    <p class="text-gray-400 text-xs font-semibold uppercase">Total Siswa</p>
+                    <h3 class="text-3xl font-bold mt-1">1,248</h3>
+                </div>
+                <div class="bg-blue-50 p-3 rounded-full text-blue-600">👤👤</div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border flex justify-between items-center">
+                <div>
+                    <p class="text-gray-400 text-xs font-semibold uppercase">Siswa Aktif</p>
+                    <h3 class="text-3xl font-bold mt-1">1,190</h3>
+                </div>
+                <div class="bg-green-50 p-3 rounded-full text-green-600">✅</div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border flex justify-between items-center">
+                <div>
+                    <p class="text-gray-400 text-xs font-semibold uppercase">Izin</p>
+                    <h3 class="text-3xl font-bold mt-1">58</h3>
+                </div>
+                <div class="bg-orange-50 p-3 rounded-full text-orange-600">🌙</div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
+            <div class="p-6 border-b flex justify-between items-center bg-white">
+                <div class="relative w-72">
+                    <input type="text" placeholder="Cari berdasarkan..." class="w-full pl-10 pr-4 py-2 border rounded-xl text-sm focus:ring-[#006652] outline-none">
+                    <span class="absolute left-3 top-2.5 opacity-30">🔍</span>
+                </div>
+                <div class="flex gap-3">
+                    <select class="border rounded-xl px-3 py-2 text-sm text-gray-500 outline-none"><option>Tahun</option></select>
+                    <select class="border rounded-xl px-3 py-2 text-sm text-gray-500 outline-none"><option>Kelas</option></select>
+                </div>
+            </div>
+
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 text-[10px] text-gray-400 uppercase tracking-wider font-bold">
+                    <tr>
+                        <th class="px-8 py-4">Siswa</th>
+                        <th class="px-6 py-4">NIS</th>
+                        <th class="px-6 py-4">Kelas</th>
+                        <th class="px-6 py-4">Kehadiran</th>
+                        <th class="px-6 py-4">Status</th>
+                        <th class="px-6 py-4">Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y text-sm">
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-8 py-4 flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gray-200 rounded-full"></div>
+                            <div>
+                                <p class="font-bold text-gray-800">Budi Santoso</p>
+                                <p class="text-xs text-gray-400">budisantoso@sekolah.edu</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-gray-600">21221001</td>
+                        <td class="px-6 py-4"><span class="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-md text-[10px] font-bold">XII RPL 1</span></td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-green-600">98%</span>
+                                <div class="w-16 h-1 bg-gray-100 rounded-full overflow-hidden"><div class="bg-green-600 h-full w-[98%]"></div></div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4"><span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold">Aktif</span></td>
+                        <td class="px-6 py-4"></td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-8 py-4 flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gray-200 rounded-full"></div>
+                            <div>
+                                <p class="font-bold text-gray-800">Siti Rahmawati</p>
+                                <p class="text-xs text-gray-400">sitirahma@sekolah.edu</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-gray-600">21221045</td>
+                        <td class="px-6 py-4"><span class="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-md text-[10px] font-bold">X TKJ 2</span></td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-orange-600">85%</span>
+                                <div class="w-16 h-1 bg-gray-100 rounded-full overflow-hidden"><div class="bg-orange-600 h-full w-[85%]"></div></div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4"><span class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-[10px] font-bold">Peringatan</span></td>
+                        <td class="px-6 py-4"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="p-6 bg-white border-t flex justify-between items-center text-xs text-gray-400">
+                <p>Menampilkan 10 dari 1,248 siswa</p>
+                <div class="flex gap-2">
+                    <button class="px-3 py-1.5 rounded-lg border bg-[#006652] text-white font-bold">1</button>
+                    <button class="px-3 py-1.5 rounded-lg border hover:bg-gray-50">2</button>
+                    <button class="px-3 py-1.5 rounded-lg border hover:bg-gray-50">3</button>
+                    <span>...</span>
+                    <button class="px-3 py-1.5 rounded-lg border hover:bg-gray-50">125</button>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
