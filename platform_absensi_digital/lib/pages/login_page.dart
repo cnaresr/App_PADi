@@ -1,129 +1,115 @@
 import 'package:flutter/material.dart';
-import 'package:platform_absensi_digital/pages/contact_admin_page.dart'; // Sesuaikan jika namanya berbeda
-// PERBAIKAN: Import main_page.dart agar tombol 'Masuk' berfungsi
-import 'package:platform_absensi_digital/pages/main_page.dart'; 
-// Tambahkan import halaman lupa password di sini
+import 'package:platform_absensi_digital/pages/contact_admin_page.dart';
+import 'package:platform_absensi_digital/pages/main_page.dart';
 import 'package:platform_absensi_digital/pages/forgot_password_page.dart';
+import 'package:platform_absensi_digital/pages/login_guru_page.dart';
+import 'package:platform_absensi_digital/services/api_service.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30),
+      backgroundColor: const Color(0xFFFAFAFA),
+      body: SingleChildScrollView(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Selamat Datang",
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF0D1B2A)),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              "Silahkan masuk ke akun anda untuk melanjutkan.",
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 40),
-            
-            // Input Email
-            const Text("Alamat Email", style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            TextField(
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: const Color(0xFFF1F4FF),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Input Password
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Kata Sandi", style: TextStyle(fontWeight: FontWeight.w600)),
-                // PERBAIKAN: Navigasi ke Halaman Lupa Password
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const ForgotPasswordPage()), 
-                    );
-                  }, 
-                  child: const Text("Lupa Password?", style: TextStyle(color: Colors.brown, fontSize: 12)),
-                ),
-              ],
-            ),
-            TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.lock_outline),
-                suffixIcon: const Icon(Icons.visibility_outlined),
-                filled: true,
-                fillColor: const Color(0xFFF1F4FF),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                hintText: ".........",
-              ),
-            ),
-            const SizedBox(height: 30),
-
-            // Tombol Masuk
             SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF006D5B),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 5,
-                ),
-                onPressed: () {
-                  // PERBAIKAN: Navigasi ke MainPage saat tombol Masuk ditekan
-                  Navigator.pushReplacement(
-                    context, 
-                    MaterialPageRoute(builder: (context) => const MainPage())
-                  );
-                },
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text("Masuk", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                    SizedBox(width: 10),
-                    Icon(Icons.arrow_forward, color: Colors.white),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 40),
-            
-            // Footer
-            Center(
-              child: Column(
+              height: 250,
+              child: Stack(
                 children: [
-                  // Membungkus Text dengan GestureDetector agar bisa di-klik
-                  GestureDetector(
-                    onTap: () {
-                      // Kode untuk berpindah ke halaman ContactAdminPage
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const ContactAdminPage()),
-                      );
-                    },
-                    child: const Text(
-                      "Belum punya akun? Hubungi Admin Sekolah", 
-                      style: TextStyle(color: Color(0xFF006D5B), fontSize: 13),
+                  Positioned(top: -50, right: -50, child: Container(width: 200, height: 200, decoration: const BoxDecoration(color: Color(0xFFE8F3F1), shape: BoxShape.circle))),
+                  Positioned(top: 100, left: -30, child: Container(width: 100, height: 100, decoration: const BoxDecoration(color: Color(0xFFFFF3E0), shape: BoxShape.circle))),
+                  const Positioned(
+                    bottom: 20, left: 30,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Selamat Datang", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E), letterSpacing: -1)),
+                        SizedBox(height: 5),
+                        Text("Silakan masuk untuk melanjutkan", style: TextStyle(color: Colors.grey, fontSize: 14)),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 5),
-                  
-                  // Opsional: Anda juga bisa melakukan hal yang sama untuk teks ini nanti
-                  const Text(
-                    "Login Sebagai Guru?", 
-                    style: TextStyle(color: Color(0xFF006D5B), fontWeight: FontWeight.bold),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(30.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Alamat Email", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E))),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _emailController,
+                    decoration: InputDecoration(filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none), hintText: "Masukkan email", prefixIcon: const Icon(Icons.email_outlined, color: Colors.grey)),
+                  ),
+                  const SizedBox(height: 25),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Kata Sandi", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E))),
+                      TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ForgotPasswordPage())), child: const Text("Lupa Sandi?", style: TextStyle(color: Color(0xFFEBC15B), fontWeight: FontWeight.bold))),
+                    ],
+                  ),
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    decoration: InputDecoration(filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none), hintText: "••••••••", prefixIcon: const Icon(Icons.lock_outline_rounded, color: Colors.grey)),
+                  ),
+                  const SizedBox(height: 40),
+                  SizedBox(
+                    width: double.infinity, height: 60,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF151B2B), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), elevation: 10),
+                      onPressed: () async {
+                        var response = await ApiService().login(_emailController.text, _passwordController.text);
+                        if (response['status'] == 'success') {
+                          // CASTING MAP AGAR TIDAK ERROR
+                          var userData = response['data'] as Map<String, dynamic>;
+                          
+                          if (userData['role'] == 'siswa' || userData['role'] == 'Siswa') {
+                            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainPage()));
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Gunakan portal login pengajar!")));
+                          }
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response['message'] ?? "Login gagal")));
+                        }
+                      },
+                      child: const Text("Masuk", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  Center(
+                    child: Column(
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ContactAdminPage())),
+                          child: Container(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), decoration: BoxDecoration(color: const Color(0xFFF1F4FF), borderRadius: BorderRadius.circular(15)), child: const Text("Belum punya akun? Hubungi Admin", style: TextStyle(color: Color(0xFF006D5B), fontWeight: FontWeight.bold, fontSize: 13))),
+                        ),
+                        const SizedBox(height: 15),
+                        TextButton(onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginGuruPage())), child: const Text("Login Sebagai Pengajar", style: TextStyle(color: Color(0xFF151B2B), fontWeight: FontWeight.bold, decoration: TextDecoration.underline))),
+                      ],
+                    ),
                   ),
                 ],
               ),

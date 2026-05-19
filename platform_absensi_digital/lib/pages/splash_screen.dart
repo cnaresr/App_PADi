@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
-import 'package:platform_absensi_digital/pages/login_page.dart'; // Pastikan import ini benar
+import 'package:platform_absensi_digital/pages/login_page.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -9,83 +8,119 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
-  // State untuk mengontrol tahapan animasi
-  bool _logoJatuh = false;
-  bool _logoMembesar = false;
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  
+  late Animation<double> _logoScale;
+  late Animation<double> _bgScale;
+  late Animation<double> _logoOpacity;
 
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800), 
+    );
 
-    // 1. Logo mulai jatuh setelah 500ms
-    Timer(const Duration(milliseconds: 500), () {
-      if (mounted) setState(() => _logoJatuh = true);
-    });
+    _logoScale = TweenSequence([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 0.0, end: 1.1).chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 30, 
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.1, end: 0.9).chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 15, 
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 0.9, end: 15.0).chain(CurveTween(curve: Curves.easeInExpo)),
+        weight: 55, 
+      ),
+    ]).animate(_controller);
 
-    // 2. Logo membesar setelah selesai memantul (detik ke 2.2)
-    Timer(const Duration(milliseconds: 2200), () {
-      if (mounted) setState(() => _logoMembesar = true);
-    });
+    _bgScale = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.45, 1.0, curve: Curves.easeInOutQuart),
+    );
 
-    // 3. Pindah ke halaman Login saat logo sudah memenuhi layar
-    Timer(const Duration(milliseconds: 2900), () {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, anim, secondaryAnim) => const LoginPage(),
-            transitionsBuilder: (context, anim, secondaryAnim, child) {
-              // Fade halus saat perpindahan agar menyatu dengan background putih Login
-              return FadeTransition(opacity: anim, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 500),
-          ),
-        );
-      }
-    });
+    _logoOpacity = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.8, 1.0, curve: Curves.easeOut),
+    );
+
+    _runAnimation();
+  }
+
+  void _runAnimation() async {
+    // 1. Tahan logo agar diam dulu selama 1 detik
+    await Future.delayed(const Duration(milliseconds: 1000));
+    
+    // 2. Jalankan animasi Pop & Zoom
+    await _controller.forward();
+    
+    // 3. Tahan layar gelap sebentar (0.2 detik) sebelum pindah
+    await Future.delayed(const Duration(milliseconds: 200));
+    
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, a, b) => const LoginPage(),
+          transitionsBuilder: (context, a, b, child) => FadeTransition(opacity: a, child: child),
+          transitionDuration: const Duration(milliseconds: 800),
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Mengambil ukuran layar untuk kalkulasi posisi tengah
-    final double screenHeight = MediaQuery.of(context).size.height;
-    
-    // UKURAN AWAL LOGO BARU (Lebih Kecil)
-    const double initialLogoWidth = 90.0;
-
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1B2A), // Warna gelap khas Padi
-      body: Stack(
-        children: [
-          // Widget Animasi Posisi (Untuk efek Jatuh)
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 1200),
-            curve: Curves.bounceOut, // Efek memantul yang natural
-            
-            // Perhitungan Posisi Tengah: (Setengah Layar) - (Setengah Tinggi Logo)
-            // Asumsi logo proporsional, kita gunakan setengah lebar sebagai offset.
-            top: _logoJatuh ? (screenHeight / 2) - (initialLogoWidth / 2) : -200,
-            left: 0,
-            right: 0,
-            child: Center(
-              // Widget Animasi Skala (Untuk efek Membesar)
-              child: AnimatedScale(
-                duration: const Duration(milliseconds: 800),
-                curve: Curves.easeInQuart, // Semakin lama semakin cepat membesarnya
-                
-                // Ketika membesar, kita perlu skala yang lebih besar (50x)
-                // karena ukuran awalnya sekarang lebih kecil.
-                scale: _logoMembesar ? 50.0 : 1.0, 
-                
-                child: Image.asset(
-                  'assets/logo_padi.png',
-                  width: initialLogoWidth, // Menggunakan ukuran awal yang baru
+      backgroundColor: const Color(0xFFFAFAFA), 
+      body: Center( // Memastikan Stack beserta seluruh isinya ditarik ke pusat layar
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            bool showWhiteLogo = _controller.value > 0.55;
+
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                Transform.scale(
+                  scale: _bgScale.value * 100, 
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF151B2B), 
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ),
-        ],
+                
+                Opacity(
+                  opacity: 1.0 - _logoOpacity.value, 
+                  child: Transform.scale(
+                    scale: _logoScale.value,
+                    child: Image.asset(
+                      'assets/logo_padi.png',
+                      width: 130,
+                      height: 130,
+                      color: showWhiteLogo ? Colors.white : const Color(0xFF006D5B),
+                      colorBlendMode: BlendMode.srcIn,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
