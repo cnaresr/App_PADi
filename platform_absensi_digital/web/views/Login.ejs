@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Vocational Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-gray-50 font-sans">
     <div class="flex h-screen">
@@ -59,5 +60,18 @@
             </div>
         </div>
     </div>
-</body>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+        <script>
+            // Menjalankan SweetAlert2 ketika ada variabel 'error' yang dikirim dari app.js
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Masuk',
+                text: '<%= error %>', // Teks ini otomatis menyesuaikan (salah sandi atau bukan admin)
+                confirmButtonColor: '#006652',
+                confirmButtonText: 'Coba Lagi'
+            });
+        </script>
+    <% } %>
+    </body>
 </html>
