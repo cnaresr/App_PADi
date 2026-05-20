@@ -11,6 +11,23 @@ class ApiService {
     return 'http://localhost:3000';
   }
 
+  // --- FUNGSI LOGIN YANG DIBUTUHKAN HALAMAN LOGIN ---
+  Future<Map<String, dynamic>> login(String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/auth/login'), // <--- TAMBAHKAN /auth DI SINI
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': email, 'password': password}),
+      );
+
+      return json.decode(response.body);
+    } catch (e) {
+      print("ERROR API: $e");
+      return {'status': 'error', 'message': 'Terjadi kesalahan koneksi ke server'};
+    }
+  }
+
+  // --- FUNGSI BAWAAN ANDA ---
   Future<List<dynamic>> getItems() async {
     final response = await http.get(Uri.parse('$baseUrl/items'));
     if (response.statusCode == 200) {

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Vocational Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="flex h-screen">
+        <div class="hidden lg:flex w-1/2 bg-[#006652] p-12 flex-col justify-center text-white relative">
+            <h1 class="text-5xl font-bold mb-4">Ignite Your <span class="text-green-300">Professional</span> Journey.</h1>
+            <p class="text-lg opacity-80 mb-8">Access the centralized system for vocational excellence, attendance management, and apprentice growth tracking.</p>
+            
+            <div class="flex gap-4">
+                <div class="bg-white/20 p-6 rounded-xl backdrop-blur-md w-40">
+                    <p class="text-2xl font-bold">12K+</p>
+                    <p class="text-xs">ACTIVE APPRENTICES</p>
+                </div>
+                <div class="bg-white/20 p-6 rounded-xl backdrop-blur-md w-40">
+                    <p class="text-2xl font-bold">450+</p>
+                    <p class="text-xs">PARTNER INDUSTRIES</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full lg:w-1/2 flex flex-col justify-center px-12 md:px-24">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800">Welcome Back</h2>
+                <p class="text-gray-500">Masuk ke akun Vocational Portal Anda.</p>
+            </div>
+
+            <form action="/login" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" name="email" placeholder="nama@sekolah.sch.id" class="w-full px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-[#006652] focus:bg-white focus:ring-0 text-sm" required>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center">
+                        <label class="block text-sm font-medium text-gray-700">Password</label>
+                        <a href="#" class="text-xs text-orange-500">Lupa Password?</a>
+                    </div>
+                    <input type="password" name="password" placeholder="Masukkan password" class="w-full px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-[#006652] focus:bg-white focus:ring-0 text-sm" required>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" class="rounded text-[#006652]">
+                    <span class="ml-2 text-xs text-gray-600">Tetap masuk di perangkat ini</span>
+                </div>
+                <button type="submit" class="w-full bg-[#006652] text-white font-bold py-3 rounded-lg hover:bg-[#004d3e] transition flex justify-center items-center gap-2">
+                    Masuk 
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                    </svg>
+                </button>
+            </form>
+
+            <div class="mt-8 text-center text-xs text-gray-500">
+                Belum memiliki akun? <a href="#" class="text-[#006652] font-bold">Daftar sekarang</a>
+            </div>
+        </div>
+    </div>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+        <script>
+            // Menjalankan SweetAlert2 ketika ada variabel 'error' yang dikirim dari app.js
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Masuk',
+                text: '<%= error %>', // Teks ini otomatis menyesuaikan (salah sandi atau bukan admin)
+                confirmButtonColor: '#006652',
+                confirmButtonText: 'Coba Lagi'
+            });
+        </script>
+    <% } %>
+    </body>
+</html>
