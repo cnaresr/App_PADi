@@ -31,29 +31,33 @@
                 <p class="text-gray-500">Masuk ke akun Vocational Portal Anda.</p>
             </div>
 
-            <form action="/login" method="POST" class="space-y-4">
+            <form id="loginForm" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Email</label>
-                    <input type="email" name="email" placeholder="nama@sekolah.sch.id" class="w-full px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-[#006652] focus:bg-white focus:ring-0 text-sm" required>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Email</label>
+                    <input type="email" id="email" placeholder="nama@sekolah.sch.id" required
+                        class="w-full px-4 py-2.5 border rounded-xl text-sm bg-gray-50 outline-none focus:border-[#006652]">
                 </div>
+
                 <div>
-                    <div class="flex justify-between items-center">
-                        <label class="block text-sm font-medium text-gray-700">Password</label>
-                        <a href="#" class="text-xs text-orange-500">Lupa Password?</a>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-semibold text-gray-600">Password</label>
+                        <a href="#" class="text-xs text-orange-600 hover:underline">Lupa Password?</a>
                     </div>
-                    <input type="password" name="password" placeholder="Masukkan password" class="w-full px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-[#006652] focus:bg-white focus:ring-0 text-sm" required>
+                    <input type="password" id="password" placeholder="Masukkan password" required
+                        class="w-full px-4 py-2.5 border rounded-xl text-sm bg-gray-50 outline-none focus:border-[#006652]">
                 </div>
-                <div class="flex items-center">
-                    <input type="checkbox" class="rounded text-[#006652]">
-                    <span class="ml-2 text-xs text-gray-600">Tetap masuk di perangkat ini</span>
+
+                <div class="flex items-center gap-2 py-1">
+                    <input type="checkbox" id="remember" class="rounded text-[#006652]">
+                    <label for="remember" class="text-xs text-gray-500">Tetap masuk di perangkat ini</label>
                 </div>
-                <button type="submit" class="w-full bg-[#006652] text-white font-bold py-3 rounded-lg hover:bg-[#004d3e] transition flex justify-center items-center gap-2">
-                    Masuk 
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                    </svg>
+
+                <button type="submit" class="w-full bg-[#006652] text-white py-3 rounded-xl font-bold text-sm hover:bg-[#005241] transition flex justify-center items-center gap-2">
+                    Masuk ➔
                 </button>
             </form>
+
+            <div id="errorMessage" class="text-xs text-red-500 font-semibold mt-3 hidden text-center"></div>
 
             <div class="mt-8 text-center text-xs text-gray-500">
                 Belum memiliki akun? <a href="#" class="text-[#006652] font-bold">Daftar sekarang</a>
@@ -74,4 +78,49 @@
         </script>
     <% } %>
     </body>
+    <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault(); // Mencegah form melakukan reload halaman otomatis
+
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Reset status error message
+        errorMessage.classList.add('hidden');
+        errorMessage.innerText = "";
+
+        try {
+            // Tembak endpoint API login backend ke port 3000
+            const response = await fetch('http://localhost:3000/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // 1. Simpan Token JWT dan data user ke LocalStorage browser
+                localStorage.setItem('admin_token', result.token);
+                localStorage.setItem('admin_user', JSON.stringify(result.user));
+
+                // 2. Alihkan halaman langsung ke Dashboard Admin jika login sukses
+                window.location.href = '/dashboard';
+            } else {
+                // Tampilkan pesan gagal spesifik yang dikirim dari backend
+                errorMessage.innerText = result.message || "Login gagal, silakan coba lagi.";
+                errorMessage.classList.remove('hidden');
+            }
+
+        } catch (error) {
+            console.error("Error saat login:", error);
+            errorMessage.innerText = "Tidak dapat terhubung ke server backend.";
+            errorMessage.classList.remove('hidden');
+        }
+    });
+</script>
+</body>
 </html>
