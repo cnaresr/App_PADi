@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-// Pastikan import halaman login Anda sesuai dengan path file di project Anda
+import 'package:provider/provider.dart';
+import 'package:platform_absensi_digital/providers/user_provider.dart';
 import 'package:platform_absensi_digital/pages/login_page.dart'; 
 
 class ProfilPage extends StatelessWidget {
@@ -36,9 +37,17 @@ class ProfilPage extends StatelessWidget {
                     child: const Icon(Icons.person_outline_rounded, color: Colors.white, size: 50),
                   ),
                   const SizedBox(height: 15),
-                  const Text("Cezsar N.", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
+                  // KODE DINAMIS: Menampilkan nama lengkap dari provider
+                  Text(
+                    context.watch<UserProvider>().namaLengkap, 
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E), letterSpacing: -0.5)
+                  ),
                   const SizedBox(height: 5),
-                  const Text("XII RPL 1 • SMK Negeri 1 Jakarta", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  // KODE DINAMIS: Menampilkan detail kelas/NIP dari provider
+                  Text(
+                    context.watch<UserProvider>().kelasAtauNip, 
+                    style: const TextStyle(color: Colors.grey, fontSize: 13)
+                  ),
                 ],
               ),
             ),
@@ -73,14 +82,14 @@ class ProfilPage extends StatelessWidget {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
                 onPressed: () {
-                  // Jika nanti Anda menggunakan SharedPreferences atau Provider untuk token, 
-                  // Anda bisa menambahkan fungsi penghapusan token di baris ini.
+                  // Hapus data pengguna yang sedang login dari memori Provider
+                  context.read<UserProvider>().clearData();
                   
                   // Navigasi ke LoginPage dan hancurkan semua rute sebelumnya
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => const LoginPage()),
-                    (Route<dynamic> route) => false, // Nilai false berarti semua halaman sebelumnya ditutup
+                    (Route<dynamic> route) => false,
                   );
                 },
                 child: const Text("Keluar Akun", style: TextStyle(color: Colors.redAccent, fontSize: 16, fontWeight: FontWeight.bold)),

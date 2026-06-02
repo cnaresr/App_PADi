@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // Tambahan Import Provider
+import 'package:platform_absensi_digital/providers/user_provider.dart'; // Tambahan Import UserProvider
 import 'package:platform_absensi_digital/pages/contact_admin_page.dart';
 import 'package:platform_absensi_digital/pages/main_page.dart';
 import 'package:platform_absensi_digital/pages/forgot_password_page.dart';
@@ -82,10 +84,23 @@ class _LoginPageState extends State<LoginPage> {
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF151B2B), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), elevation: 10),
                       onPressed: () async {
                         var response = await ApiService().login(_emailController.text, _passwordController.text);
+                        
                         if (response['status'] == 'success') {
-                          // CASTING MAP AGAR TIDAK ERROR
                           var userData = response['data'] as Map<String, dynamic>;
                           
+                          // --- KODE BARU: MENYIMPAN DATA KE PROVIDER ---
+                          // Kita cek nama variabelnya (bisa 'username', 'nama', atau 'name' tergantung dari backend Prisma Anda)
+                          String namaLengkap = userData['username'] ?? userData['nama'] ?? "Pengguna";
+                          String roleUser = userData['role'] ?? "Siswa";
+                          
+                          // Jika dari database belum ada info kelas, kita pasang default/cadangan dulu
+                          String infoKelas = userData['kelas'] ?? "XII RPL 1 • SMK Negeri 1 Jakarta";
+
+                          // Simpan ke memori global!
+                          Provider.of<UserProvider>(context, listen: false)
+                              .setUserData(namaLengkap, infoKelas, roleUser);
+                          // ----------------------------------------------
+
                           if (userData['role'] == 'siswa' || userData['role'] == 'Siswa') {
                             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainPage()));
                           } else {

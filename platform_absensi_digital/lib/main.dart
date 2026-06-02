@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:platform_absensi_digital/pages/splash_screen.dart'; // Import splash screen
+import 'package:provider/provider.dart'; // Pastikan package provider ter-install
+import 'package:platform_absensi_digital/pages/splash_screen.dart';
+import 'package:platform_absensi_digital/providers/user_provider.dart'; // Import provider
 
 void main() async {
-  // BARIS INI HUKUMNYA WAJIB KARENA ADA PENGGUNAAN KAMERA/HARDWARE NATIVE
   WidgetsFlutterBinding.ensureInitialized(); 
-
-  runApp(const MyApp());
+  
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

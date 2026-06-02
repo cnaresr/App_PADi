@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:platform_absensi_digital/providers/user_provider.dart';
 import 'package:platform_absensi_digital/pages/absensi_page.dart';
 import 'package:platform_absensi_digital/pages/riwayat_page.dart';
 import 'package:platform_absensi_digital/pages/profil_page.dart';
@@ -53,16 +55,17 @@ class HomePage extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // KODE DINAMIS: Mengambil kata pertama dari nama lengkap
                         Text(
-                          "Hai Cezsar",
-                          style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E), letterSpacing: -0.5),
+                          "Hai ${context.watch<UserProvider>().namaLengkap.split(' ').first}",
+                          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E), letterSpacing: -0.5),
                         ),
-                        SizedBox(height: 10),
-                        Text(
+                        const SizedBox(height: 10),
+                        const Text(
                           "Kamu telah hadir\n22 hari bulan ini.",
                           style: TextStyle(fontSize: 15, color: Colors.grey, height: 1.4),
                         ),
@@ -73,7 +76,6 @@ class HomePage extends StatelessWidget {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(color: const Color(0xFFE8F3F1), borderRadius: BorderRadius.circular(20)),
-                    // IKON DIUBAH MENJADI IKON SISWA
                     child: const Icon(Icons.school_rounded, size: 50, color: Color(0xFF006D5B)),
                   ),
                 ],
@@ -90,7 +92,7 @@ class HomePage extends StatelessWidget {
                   // Hiasan Banner Keren
                   Expanded(
                     child: Container(
-                      height: 90, // Menyesuaikan tinggi ikon menu
+                      height: 90, 
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFF006D5B), Color(0xFF004D3E)],
@@ -246,7 +248,6 @@ class HomePage extends StatelessWidget {
                         elevation: 0,
                       ),
                       onPressed: () {
-                        // Mengarahkan tombol detail ke tab riwayat di IzinPage
                         Navigator.push(context, MaterialPageRoute(builder: (context) => const IzinPage(openRiwayatTab: true)));
                       },
                       child: const Text("Detail", style: TextStyle(fontWeight: FontWeight.bold)),
