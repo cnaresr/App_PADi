@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+// Pastikan import halaman login Anda sesuai dengan path file di project Anda
+import 'package:platform_absensi_digital/pages/login_page.dart'; 
 
 class ProfilPage extends StatelessWidget {
   const ProfilPage({super.key});
@@ -70,7 +72,17 @@ class ProfilPage extends StatelessWidget {
                   backgroundColor: const Color(0xFFFFF0F0),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
-                onPressed: () {},
+                onPressed: () {
+                  // Jika nanti Anda menggunakan SharedPreferences atau Provider untuk token, 
+                  // Anda bisa menambahkan fungsi penghapusan token di baris ini.
+                  
+                  // Navigasi ke LoginPage dan hancurkan semua rute sebelumnya
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                    (Route<dynamic> route) => false, // Nilai false berarti semua halaman sebelumnya ditutup
+                  );
+                },
                 child: const Text("Keluar Akun", style: TextStyle(color: Colors.redAccent, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),

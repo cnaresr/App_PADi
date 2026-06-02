@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:platform_absensi_digital/pages/splash_screen.dart'; // Import splash screen
 
-void main() {
+void main() async {
+  // BARIS INI HUKUMNYA WAJIB KARENA ADA PENGGUNAAN KAMERA/HARDWARE NATIVE
+  WidgetsFlutterBinding.ensureInitialized(); 
+
   runApp(const MyApp());
 }
 

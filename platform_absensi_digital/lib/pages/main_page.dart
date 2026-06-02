@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:platform_absensi_digital/pages/home_page.dart';
 import 'package:platform_absensi_digital/pages/absensi_page.dart';
-import 'package:platform_absensi_digital/pages/riwayat_page.dart';
+import 'package:platform_absensi_digital/pages/izin_page.dart';
 import 'package:platform_absensi_digital/pages/profil_page.dart';
 
 class MainPage extends StatefulWidget {
@@ -19,7 +19,7 @@ class _MainPageState extends State<MainPage> {
   final List<Widget> _pages = [
     const HomePage(),
     const AbsensiPage(),
-    const RiwayatPage(),
+    const IzinPage(openRiwayatTab: true),
     const ProfilPage(),
   ];
 

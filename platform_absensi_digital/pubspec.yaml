@@ -18,6 +18,22 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.0
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo_padi.png"
+  min_sdk_android: 21 # Sesuai dengan flutter default
+
+flutter_native_splash:
+  color: "#FAFAFA" # Mencocokkan dengan background di splash_screen.dart Anda
+  image: assets/logo_padi.png
+  android_12:
+    color: "#FAFAFA"
+    image: assets/logo_padi.png
+  fullscreen: true
 
 flutter:
   # Cukup tulis satu kali saja di sini

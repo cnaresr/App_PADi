@@ -73,39 +73,135 @@ class HomePage extends StatelessWidget {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(color: const Color(0xFFE8F3F1), borderRadius: BorderRadius.circular(20)),
-                    child: const Icon(Icons.directions_run_rounded, size: 50, color: Color(0xFF006D5B)),
+                    // IKON DIUBAH MENJADI IKON SISWA
+                    child: const Icon(Icons.school_rounded, size: 50, color: Color(0xFF006D5B)),
                   ),
                 ],
               ),
               const SizedBox(height: 40),
 
-              // 3. Empat Menu Utama dengan Fungsi Navigasi Aktif
+              // 3. Menu Utama & Hiasan Dekoratif (Baru)
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildCategoryIcon(context, Icons.fingerprint, "Absensi", const AbsensiPage()),
-                  _buildCategoryIcon(context, Icons.receipt_long_rounded, "Riwayat", const RiwayatPage()),
-                  _buildCategoryIcon(context, Icons.edit_document, "Izin", const IzinPage()),
+                  _buildCategoryIcon(context, Icons.edit_document, "Izin", const IzinPage(openRiwayatTab: false)),
+                  const SizedBox(width: 25),
                   _buildCategoryIcon(context, Icons.schedule_rounded, "Jadwal", const JadwalPage()),
+                  const SizedBox(width: 25),
+                  // Hiasan Banner Keren
+                  Expanded(
+                    child: Container(
+                      height: 90, // Menyesuaikan tinggi ikon menu
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF006D5B), Color(0xFF004D3E)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(color: const Color(0xFF006D5B).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5))
+                        ],
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                            child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 24),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text("Tetap", style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+                                Text("Semangat!", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: -0.5)),
+                              ],
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 40),
 
-              // 4. Aktivitas Hari Ini
+              // 4. Tombol Absen Sekarang
               const Text(
                 "Aktivitas hari ini",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E)),
               ),
               const SizedBox(height: 15),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                clipBehavior: Clip.none,
-                child: Row(
-                  children: [
-                    _buildTodayCard(title: "Presensi\nMasuk", bgColor: const Color(0xFFD3EADD), textColor: const Color(0xFF1E1E1E), isDark: false),
-                    const SizedBox(width: 15),
-                    _buildTodayCard(title: "Presensi\nPulang", bgColor: const Color(0xFF151B2B), textColor: Colors.white, isDark: true),
-                  ],
+              GestureDetector(
+                onTap: () {
+                   Navigator.push(context, MaterialPageRoute(builder: (context) => const AbsensiPage()));
+                },
+                child: Container(
+                  width: double.infinity,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD3EADD), 
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        top: 20, 
+                        left: -20, 
+                        child: Container(
+                          width: 100, 
+                          height: 120, 
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFB9DBC8), 
+                            borderRadius: BorderRadius.circular(50)
+                          )
+                        )
+                      ),
+                      Positioned(
+                        bottom: -30, 
+                        right: -10, 
+                        child: Container(
+                          width: 120, 
+                          height: 120, 
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF151B2B).withOpacity(0.05),
+                            shape: BoxShape.circle
+                          )
+                        )
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Absen\nSekarang", 
+                                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E), height: 1.1, letterSpacing: -0.5)
+                                ),
+                              ],
+                            ),
+                            Container(
+                               padding: const EdgeInsets.all(12),
+                               decoration: const BoxDecoration(
+                                 color: Colors.white,
+                                 shape: BoxShape.circle
+                               ),
+                               child: const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF006D5B), size: 24),
+                            )
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 40),
@@ -150,7 +246,8 @@ class HomePage extends StatelessWidget {
                         elevation: 0,
                       ),
                       onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const RiwayatPage()));
+                        // Mengarahkan tombol detail ke tab riwayat di IzinPage
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const IzinPage(openRiwayatTab: true)));
                       },
                       child: const Text("Detail", style: TextStyle(fontWeight: FontWeight.bold)),
                     )
@@ -185,35 +282,6 @@ class HomePage extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E1E1E)))
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTodayCard({required String title, required Color bgColor, required Color textColor, required bool isDark}) {
-    return Container(
-      width: 160,
-      height: 210,
-      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(28)),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          if (isDark) ...[
-            Positioned(top: -20, right: -30, child: Container(width: 110, height: 110, decoration: const BoxDecoration(color: Color(0xFFEBC15B), shape: BoxShape.circle))),
-            Positioned(bottom: 40, right: -40, child: Container(width: 140, height: 140, decoration: const BoxDecoration(color: Color(0xFF8F306A), shape: BoxShape.circle))),
-          ] else ...[
-            Positioned(top: 30, left: -30, child: Container(width: 120, height: 140, decoration: BoxDecoration(color: const Color(0xFFB9DBC8), borderRadius: BorderRadius.circular(60)))),
-          ],
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text(title, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textColor, height: 1.2, letterSpacing: -0.5)),
-              ],
-            ),
-          ),
         ],
       ),
     );

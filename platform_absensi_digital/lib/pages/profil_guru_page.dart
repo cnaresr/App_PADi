@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+// Pastikan import halaman login ini sesuai dengan struktur folder Anda
+import 'package:platform_absensi_digital/pages/login_page.dart'; 
 
 class ProfilGuruPage extends StatelessWidget {
   const ProfilGuruPage({super.key});
@@ -50,7 +52,15 @@ class ProfilGuruPage extends StatelessWidget {
               width: double.infinity, height: 65,
               child: TextButton(
                 style: TextButton.styleFrom(backgroundColor: const Color(0xFFFFF0F0), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
-                onPressed: () {}, child: const Text("Keluar Akun", style: TextStyle(color: Colors.redAccent, fontSize: 16, fontWeight: FontWeight.bold)),
+                onPressed: () {
+                  // Fungsi untuk logout dan kembali ke halaman login tanpa menyisakan riwayat halaman
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                    (Route<dynamic> route) => false,
+                  );
+                }, 
+                child: const Text("Keluar Akun", style: TextStyle(color: Colors.redAccent, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
