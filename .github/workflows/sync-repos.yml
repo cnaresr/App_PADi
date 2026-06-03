@@ -20,7 +20,7 @@ jobs:
           API_TOKEN_GITHUB: ${{ secrets.GH_PAT }}
         with:
           source-directory: "platform_absensi_digital" # Folder di Repo A yang mau di-push
-          destination-github-username: "cnaresr" # Ganti dengan username GitHub-mu
+          destination-github-username: "PADi-bang" # Ganti dengan username GitHub-mu
           destination-repository-name: "Frontend_PADi" # Nama Repo B (Frontend)
           user-email: "cezar.nares@gmail.com" # Ganti dengan email GitHub-mu
           target-branch: "dev"
@@ -39,7 +39,7 @@ jobs:
           API_TOKEN_GITHUB: ${{ secrets.GH_PAT }}
         with:
           source-directory: "backend" # Folder di Repo A yang mau di-push
-          destination-github-username: "cnaresr" # Ganti dengan username GitHub-mu
+          destination-github-username: "PADi-bang" # Ganti dengan username GitHub-mu
           destination-repository-name: "Backend_PADi" # Nama Repo C (Backend)
           user-email: "cezar.nares@gmail.com" # Ganti dengan email GitHub-mu
           target-branch: "dev"
