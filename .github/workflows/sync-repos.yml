@@ -1,0 +1,45 @@
+name: Sync Subfolders to Separate Repos
+
+on:
+  push:
+    branches:
+      - dev # Jalankan otomatis setiap kali push ke branch main
+
+jobs:
+  sync-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout APP_PADi
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Mengambil seluruh riwayat commit agar sinkronisasi lancar
+
+      - name: Push Frontend to Frontend_PADi
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.GH_PAT }}
+        with:
+          source-directory: "platform_absensi_digital" # Folder di Repo A yang mau di-push
+          destination-github-username: "cnaresr" # Ganti dengan username GitHub-mu
+          destination-repository-name: "Frontend_PADi" # Nama Repo B (Frontend)
+          user-email: "cezar.nares@gmail.com" # Ganti dengan email GitHub-mu
+          target-branch: "dev"
+
+  sync-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout APP_PADi
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push Backend to Backend_PADi
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.GH_PAT }}
+        with:
+          source-directory: "backend" # Folder di Repo A yang mau di-push
+          destination-github-username: "cnaresr" # Ganti dengan username GitHub-mu
+          destination-repository-name: "Backend_PADi" # Nama Repo C (Backend)
+          user-email: "cezar.nares@gmail.com" # Ganti dengan email GitHub-mu
+          target-branch: "dev"
