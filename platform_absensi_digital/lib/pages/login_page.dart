@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Tambahan Import Provider
-import 'package:platform_absensi_digital/providers/user_provider.dart'; // Tambahan Import UserProvider
+import 'package:provider/provider.dart';
+import 'package:platform_absensi_digital/providers/user_provider.dart';
 import 'package:platform_absensi_digital/pages/contact_admin_page.dart';
 import 'package:platform_absensi_digital/pages/main_page.dart';
 import 'package:platform_absensi_digital/pages/forgot_password_page.dart';
@@ -88,19 +88,30 @@ class _LoginPageState extends State<LoginPage> {
                         if (response['status'] == 'success') {
                           var userData = response['data'] as Map<String, dynamic>;
                           
-                          // --- KODE BARU: MENYIMPAN DATA KE PROVIDER ---
-                          // Kita cek nama variabelnya (bisa 'username', 'nama', atau 'name' tergantung dari backend Prisma Anda)
                           String namaLengkap = userData['username'] ?? userData['nama'] ?? "Pengguna";
                           String roleUser = userData['role'] ?? "Siswa";
-                          
-                          // Jika dari database belum ada info kelas, kita pasang default/cadangan dulu
                           String infoKelas = userData['kelas'] ?? "XII RPL 1 • SMK Negeri 1 Jakarta";
+                          
+                          // AMBIL ID USER DARI DATABASE
+                          int idUser = userData['id'] ?? 0;
 
-                          // Simpan ke memori global!
-                          Provider.of<UserProvider>(context, listen: false)
-                              .setUserData(namaLengkap, infoKelas, roleUser);
-                          // ----------------------------------------------
+                          // 1. SIMPAN DATA KE PROVIDER (DENGAN 4 PARAMETER)
+                          final userProvider = Provider.of<UserProvider>(context, listen: false);
+                          userProvider.setUserData(idUser, namaLengkap, infoKelas, roleUser);
 
+                          // 2. TEMBAK API DASHBOARD
+                          var dashResponse = await ApiService().getDashboardData(idUser);
+                          if (dashResponse['status'] == 'success') {
+                            var dashData = dashResponse['data'];
+                            userProvider.setDashboardData(
+                              dashData['hadirBulanIni'],
+                              dashData['persentaseKehadiran'],
+                              dashData['riwayatAbsensi'],
+                              dashData['riwayatPerizinan'],
+                            );
+                          }
+
+                          // 3. BERPINDAH HALAMAN
                           if (userData['role'] == 'siswa' || userData['role'] == 'Siswa') {
                             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainPage()));
                           } else {

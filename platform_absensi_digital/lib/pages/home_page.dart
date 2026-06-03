@@ -59,15 +59,15 @@ class HomePage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // KODE DINAMIS: Mengambil kata pertama dari nama lengkap
                         Text(
                           "Hai ${context.watch<UserProvider>().namaLengkap.split(' ').first}",
                           style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E), letterSpacing: -0.5),
                         ),
                         const SizedBox(height: 10),
-                        const Text(
-                          "Kamu telah hadir\n22 hari bulan ini.",
-                          style: TextStyle(fontSize: 15, color: Colors.grey, height: 1.4),
+                        // MENGAMBIL DATA HADIR BULAN INI DARI PROVIDER
+                        Text(
+                          "Kamu telah hadir\n${context.watch<UserProvider>().hadirBulanIni} hari bulan ini.",
+                          style: const TextStyle(fontSize: 15, color: Colors.grey, height: 1.4),
                         ),
                       ],
                     ),
@@ -89,7 +89,6 @@ class HomePage extends StatelessWidget {
                   const SizedBox(width: 25),
                   _buildCategoryIcon(context, Icons.schedule_rounded, "Jadwal", const JadwalPage()),
                   const SizedBox(width: 25),
-                  // Hiasan Banner Keren
                   Expanded(
                     child: Container(
                       height: 90, 
@@ -152,27 +151,17 @@ class HomePage extends StatelessWidget {
                   child: Stack(
                     children: [
                       Positioned(
-                        top: 20, 
-                        left: -20, 
+                        top: 20, left: -20, 
                         child: Container(
-                          width: 100, 
-                          height: 120, 
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFB9DBC8), 
-                            borderRadius: BorderRadius.circular(50)
-                          )
+                          width: 100, height: 120, 
+                          decoration: BoxDecoration(color: const Color(0xFFB9DBC8), borderRadius: BorderRadius.circular(50))
                         )
                       ),
                       Positioned(
-                        bottom: -30, 
-                        right: -10, 
+                        bottom: -30, right: -10, 
                         child: Container(
-                          width: 120, 
-                          height: 120, 
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF151B2B).withOpacity(0.05),
-                            shape: BoxShape.circle
-                          )
+                          width: 120, height: 120, 
+                          decoration: BoxDecoration(color: const Color(0xFF151B2B).withOpacity(0.05), shape: BoxShape.circle)
                         )
                       ),
                       Padding(
@@ -193,10 +182,7 @@ class HomePage extends StatelessWidget {
                             ),
                             Container(
                                padding: const EdgeInsets.all(12),
-                               decoration: const BoxDecoration(
-                                 color: Colors.white,
-                                 shape: BoxShape.circle
-                               ),
+                               decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                                child: const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF006D5B), size: 24),
                             )
                           ],
@@ -229,13 +215,14 @@ class HomePage extends StatelessWidget {
                       child: const Icon(Icons.bar_chart_rounded, color: Color(0xFF006D5B), size: 30),
                     ),
                     const SizedBox(width: 15),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Kehadiran 98%", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          SizedBox(height: 5),
-                          Text("Sangat baik bulan ini", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                          // MENGAMBIL PERSENTASE DARI PROVIDER
+                          Text("Kehadiran ${context.watch<UserProvider>().persentaseKehadiran}%", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          const SizedBox(height: 5),
+                          const Text("Bulan ini", style: TextStyle(color: Colors.grey, fontSize: 13)),
                         ],
                       ),
                     ),

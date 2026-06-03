@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:platform_absensi_digital/providers/user_provider.dart';
 
 class IzinPage extends StatefulWidget {
-  // Parameter ini memungkinkan halaman dibuka langsung di tab Riwayat atau Izin dari Homepage
   final bool openRiwayatTab; 
   const IzinPage({super.key, this.openRiwayatTab = false});
 
@@ -11,12 +12,9 @@ class IzinPage extends StatefulWidget {
 
 class _IzinPageState extends State<IzinPage> {
   late bool isRiwayat;
-  
-  // State untuk Revisi 3: Tanggal Perizinan
   DateTime? startDate;
   DateTime? endDate;
 
-  // State untuk Revisi 5: Filter Riwayat
   List<String> activeFilters = ['Semua'];
   final List<String> filterOptions = ['Semua', 'Hadir', 'Izin', 'Sakit', 'Terlambat'];
 
@@ -26,7 +24,6 @@ class _IzinPageState extends State<IzinPage> {
     isRiwayat = widget.openRiwayatTab;
   }
 
-  // Fungsi memunculkan kalender
   Future<void> _selectDate(BuildContext context, bool isStart) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -37,7 +34,7 @@ class _IzinPageState extends State<IzinPage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF006D5B), // Warna header kalender
+              primary: Color(0xFF006D5B),
               onPrimary: Colors.white,
               onSurface: Color(0xFF1E1E1E),
             ),
@@ -57,10 +54,32 @@ class _IzinPageState extends State<IzinPage> {
     }
   }
 
+  // --- Fungsi Bantuan Pengubah Format Tanggal & Jam ---
   String _formatDate(DateTime? date) {
     if (date == null) return "Pilih Tanggal";
     return "${date.day}/${date.month}/${date.year}";
   }
+
+  String _formatIsoDateToID(String isoDate) {
+    try {
+      DateTime dt = DateTime.parse(isoDate).toLocal();
+      List<String> bulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+      return "${dt.day} ${bulan[dt.month - 1]} ${dt.year}";
+    } catch (e) {
+      return "-";
+    }
+  }
+
+  String _formatIsoTime(String? isoDate) {
+    if (isoDate == null || isoDate.isEmpty) return "-";
+    try {
+      DateTime dt = DateTime.parse(isoDate).toLocal();
+      return "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+    } catch (e) {
+      return "-";
+    }
+  }
+  // ----------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -79,9 +98,6 @@ class _IzinPageState extends State<IzinPage> {
       ),
       body: Column(
         children: [
-          // ==========================================
-          // REVISI 4: TAB TOGGLE RIWAYAT & IZIN
-          // ==========================================
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
             padding: const EdgeInsets.all(5),
@@ -129,11 +145,10 @@ class _IzinPageState extends State<IzinPage> {
             ),
           ),
 
-          // AREA KONTEN (Berubah sesuai Tab yang dipilih)
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
-              child: isRiwayat ? _buildRiwayatContent() : _buildIzinContent(),
+              child: isRiwayat ? _buildRiwayatContent(context) : _buildIzinContent(context),
             ),
           ),
         ],
@@ -142,16 +157,18 @@ class _IzinPageState extends State<IzinPage> {
   }
 
   // ==========================================
-  // KONTEN TAB: PERIZINAN
+  // KONTEN TAB: PERIZINAN (DINAMIS)
   // ==========================================
-  Widget _buildIzinContent() {
+  Widget _buildIzinContent(BuildContext context) {
+    // Tarik daftar izin dari Provider
+    final List<dynamic> daftarIzin = context.watch<UserProvider>().riwayatPerizinan;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text("Ajukan Izin Baru", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E))),
         const SizedBox(height: 15),
 
-        // REVISI 3: PEMILIH TANGGAL
         Row(
           children: [
             Expanded(
@@ -165,7 +182,6 @@ class _IzinPageState extends State<IzinPage> {
         ),
         const SizedBox(height: 15),
 
-        // Kontainer Unggah Berkas Formal
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
@@ -190,24 +206,61 @@ class _IzinPageState extends State<IzinPage> {
         ),
         const SizedBox(height: 35),
 
-        // Daftar Riwayat dan Status Pengajuan
-        // (REVISI 6 Diterapkan: Tidak ada tombol unduh di item ini)
         const Text("Status Pengajuan", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E))),
         const SizedBox(height: 15),
-        _buildIzinStatusItem("Izin Sakit", "Surat_Dokter_Cezsar.pdf", "Ditinjau", const Color(0xFFFFF3E0), const Color(0xFFEBC15B)),
-        _buildIzinStatusItem("Izin Dinas Sekolah", "Surat_Undangan.pdf", "Disetujui", const Color(0xFFD3EADD), const Color(0xFF006D5B)),
+
+        // Pencetak Kartu Izin Otomatis
+        daftarIzin.isEmpty 
+          ? const Center(child: Text("Belum ada riwayat pengajuan izin", style: TextStyle(color: Colors.grey)))
+          : ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(), // Scroll mengikuti halaman utama
+              itemCount: daftarIzin.length,
+              itemBuilder: (context, index) {
+                var izin = daftarIzin[index];
+                
+                // Menentukan warna berdasarkan status di database
+                Color bgWarna;
+                Color textWarna;
+                if (izin['status'] == 'Disetujui') {
+                  bgWarna = const Color(0xFFD3EADD); textWarna = const Color(0xFF006D5B);
+                } else if (izin['status'] == 'Ditolak') {
+                  bgWarna = const Color(0xFFFFEBEE); textWarna = Colors.redAccent;
+                } else {
+                  bgWarna = const Color(0xFFFFF3E0); textWarna = const Color(0xFFEBC15B); // Pending
+                }
+
+                return _buildIzinStatusItem(
+                  "Izin ${izin['jenisIzin']}",
+                  "Dibuat: ${_formatIsoDateToID(izin['createdAt'])}",
+                  izin['status'],
+                  bgWarna,
+                  textWarna,
+                );
+              },
+            ),
       ],
     );
   }
 
   // ==========================================
-  // KONTEN TAB: RIWAYAT
+  // KONTEN TAB: RIWAYAT (DINAMIS & TERFILTER)
   // ==========================================
-  Widget _buildRiwayatContent() {
+  Widget _buildRiwayatContent(BuildContext context) {
+    // Tarik daftar riwayat mentah dari Provider
+    final List<dynamic> daftarRiwayat = context.watch<UserProvider>().riwayatAbsensi;
+
+    // Proses Filtering Array Data
+    final List<dynamic> riwayatTerfilter = daftarRiwayat.where((item) {
+      if (activeFilters.contains('Semua')) return true;
+      // Menyamakan kata 'Telat' dari database ke 'Terlambat' di filter UI
+      String statusDb = item['status'] == 'Telat' ? 'Terlambat' : item['status'];
+      return activeFilters.contains(statusDb);
+    }).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // REVISI 5: FILTER CHIP MULTI-PILIH
         const Text("Filter Bulan Ini", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E))),
         const SizedBox(height: 10),
         SingleChildScrollView(
@@ -246,15 +299,43 @@ class _IzinPageState extends State<IzinPage> {
         ),
         const SizedBox(height: 25),
 
-        // Daftar Dummy Riwayat
-        _buildRiwayatCard("24 Mei 2026", "06:45 AM", "Hadir", const Color(0xFFD3EADD), const Color(0xFF006D5B)),
-        _buildRiwayatCard("23 Mei 2026", "07:15 AM", "Terlambat", const Color(0xFFFFF3E0), const Color(0xFFEBC15B)),
-        _buildRiwayatCard("22 Mei 2026", "-", "Sakit", const Color(0xFFFFEBEE), Colors.redAccent),
+        // Pencetak Kartu Riwayat Absensi Otomatis
+        riwayatTerfilter.isEmpty 
+          ? const Center(child: Text("Tidak ada data untuk filter ini", style: TextStyle(color: Colors.grey)))
+          : ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: riwayatTerfilter.length,
+              itemBuilder: (context, index) {
+                var absen = riwayatTerfilter[index];
+
+                // Menentukan warna dan teks berdasarkan status
+                Color bgWarna;
+                Color textWarna;
+                String statusLabel = absen['status'];
+
+                if (statusLabel == 'Hadir') {
+                  bgWarna = const Color(0xFFD3EADD); textWarna = const Color(0xFF006D5B);
+                } else if (statusLabel == 'Telat') {
+                  statusLabel = 'Terlambat';
+                  bgWarna = const Color(0xFFFFF3E0); textWarna = const Color(0xFFEBC15B);
+                } else {
+                  bgWarna = const Color(0xFFFFEBEE); textWarna = Colors.redAccent;
+                }
+
+                return _buildRiwayatCard(
+                  _formatIsoDateToID(absen['tanggal']),
+                  _formatIsoTime(absen['jamMasuk']),
+                  statusLabel,
+                  bgWarna,
+                  textWarna,
+                );
+              },
+            ),
       ],
     );
   }
 
-  // Komponen Box Tanggal
   Widget _buildDatePickerBox(String label, DateTime? date, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
@@ -283,7 +364,6 @@ class _IzinPageState extends State<IzinPage> {
     );
   }
 
-  // Komponen Item Izin
   Widget _buildIzinStatusItem(String title, String fileName, String statusText, Color bgStatus, Color textStatus) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
@@ -324,7 +404,6 @@ class _IzinPageState extends State<IzinPage> {
     );
   }
 
-  // Komponen Item Riwayat
   Widget _buildRiwayatCard(String date, String time, String status, Color bgStatus, Color textStatus) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
