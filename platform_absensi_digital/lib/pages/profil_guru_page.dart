@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-// Pastikan import halaman login ini sesuai dengan struktur folder Anda
+import 'package:provider/provider.dart'; // Tambahan Import
+import 'package:platform_absensi_digital/providers/user_provider.dart'; // Tambahan Import
 import 'package:platform_absensi_digital/pages/login_page.dart'; 
 
 class ProfilGuruPage extends StatelessWidget {
@@ -7,6 +8,9 @@ class ProfilGuruPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Membaca data dari memori global
+    final userProvider = context.watch<UserProvider>();
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
@@ -26,9 +30,11 @@ class ProfilGuruPage extends StatelessWidget {
                     child: const Icon(Icons.person_outline_rounded, color: Colors.white, size: 55),
                   ),
                   const SizedBox(height: 20),
-                  const Text("Budi Santoso, M.Kom", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
+                  // MENGGUNAKAN DATA DINAMIS
+                  Text(userProvider.namaLengkap, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
                   const SizedBox(height: 5),
-                  const Text("NIP: 19800512 201001 1 015", style: TextStyle(color: Colors.grey, fontSize: 14)),
+                  // MENGGUNAKAN NIP DINAMIS
+                  Text("NIP: ${userProvider.kelasAtauNip}", style: const TextStyle(color: Colors.grey, fontSize: 14)),
                 ],
               ),
             ),
@@ -38,9 +44,9 @@ class ProfilGuruPage extends StatelessWidget {
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(32), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20, offset: const Offset(0, 5))]),
               child: Column(
                 children: [
-                  _buildMenuRow(Icons.email_outlined, "Email Resmi", "budi.s@smk1jkt.sch.id"),
+                  _buildMenuRow(Icons.email_outlined, "Email Resmi", "Terkoneksi"),
                   Divider(height: 1, color: Colors.grey.shade100, indent: 20, endIndent: 20),
-                  _buildMenuRow(Icons.phone_outlined, "Nomor Telepon", "+62 812 3456"),
+                  _buildMenuRow(Icons.phone_outlined, "Nomor Telepon", "Diatur oleh Admin"),
                   Divider(height: 1, color: Colors.grey.shade100, indent: 20, endIndent: 20),
                   _buildMenuRow(Icons.security_rounded, "Ubah Kata Sandi", ""),
                 ],
@@ -53,7 +59,9 @@ class ProfilGuruPage extends StatelessWidget {
               child: TextButton(
                 style: TextButton.styleFrom(backgroundColor: const Color(0xFFFFF0F0), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
                 onPressed: () {
-                  // Fungsi untuk logout dan kembali ke halaman login tanpa menyisakan riwayat halaman
+                  // Hapus memori data saat logout
+                  context.read<UserProvider>().clearData();
+                  
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => const LoginPage()),

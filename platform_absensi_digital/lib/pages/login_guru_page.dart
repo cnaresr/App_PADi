@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // Wajib ada untuk Provider
+import 'package:platform_absensi_digital/providers/user_provider.dart'; // Wajib ada untuk memanggil set data
 import 'package:platform_absensi_digital/pages/main_guru_page.dart';
 import 'package:platform_absensi_digital/pages/login_page.dart';
 import 'package:platform_absensi_digital/services/api_service.dart';
@@ -78,14 +80,35 @@ class _LoginGuruPageState extends State<LoginGuruPage> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF151B2B), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), elevation: 10, shadowColor: const Color(0xFF151B2B).withOpacity(0.2)),
                       onPressed: () async {
-                        var response = await ApiService().login(_emailController.text, _passwordController.text);
+                        // MENGGUNAKAN .trim() AGAR KEBAL TERHADAP SPASI GAIB
+                        var response = await ApiService().login(_emailController.text.trim(), _passwordController.text);
                         
                         if (response['status'] == 'success') {
-                          // CASTING MAP AGAR TIDAK ERROR
                           var userData = response['data'] as Map<String, dynamic>;
                           
                           // Memastikan yang login adalah guru
                           if (userData['role'] == 'guru' || userData['role'] == 'Guru') {
+                            
+                            // 1. MENYIMPAN IDENTITAS KE MEMORI PROVIDER
+                            String namaLengkap = userData['username'] ?? userData['nama'] ?? "Pengajar";
+                            String nip = userData['nip'] ?? "NIP Belum Diatur";
+                            int idUser = userData['id'] ?? 0;
+
+                            Provider.of<UserProvider>(context, listen: false)
+                                .setUserData(idUser, namaLengkap, nip, userData['role']);
+
+                            // 2. AMBIL DATA DASHBOARD KHUSUS GURU
+                            var dashResponse = await ApiService().getDashboardGuru(idUser);
+                            if (dashResponse['status'] == 'success') {
+                              var dashData = dashResponse['data'];
+                              Provider.of<UserProvider>(context, listen: false).setDashboardGuruData(
+                                dashData['jumlahIzinPending'],
+                                dashData['persentaseKehadiranKelas'],
+                                dashData['rekapAbsensiKelas'],
+                                dashData['jadwalMengajar']
+                              );
+                            }
+
                             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainGuruPage()));
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Anda bukan pengajar!")));

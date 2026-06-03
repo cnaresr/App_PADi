@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:platform_absensi_digital/providers/user_provider.dart';
 
 class DashboardGuruPage extends StatelessWidget {
   const DashboardGuruPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // 1. Ambil data dari Provider
+    final userProvider = context.watch<UserProvider>();
+    
+    // 2. Ambil nama depan saja (misal: "Budi Santoso" jadi "Budi")
+    String namaDepan = userProvider.namaLengkap;
+    if (namaDepan.contains(' ')) {
+      namaDepan = namaDepan.split(' ').first;
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       body: SafeArea(
@@ -32,17 +43,17 @@ class DashboardGuruPage extends StatelessWidget {
               ),
               const SizedBox(height: 35),
 
-              // 2. Greeting & Ilustrasi
+              // 2. Greeting & Ilustrasi (DINAMIS)
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Selamat Pagi,\nPak Budi", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E), letterSpacing: -0.5, height: 1.2)),
-                        SizedBox(height: 10),
-                        Text("Ada 2 pengajuan izin\nyang menunggu konfirmasi.", style: TextStyle(fontSize: 15, color: Colors.grey, height: 1.4)),
+                        Text("Selamat Pagi,\nPak/Bu $namaDepan", style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E), letterSpacing: -0.5, height: 1.2)),
+                        const SizedBox(height: 10),
+                        Text("Ada ${userProvider.jumlahIzinPending} pengajuan izin\nyang menunggu konfirmasi.", style: const TextStyle(fontSize: 15, color: Colors.grey, height: 1.4)),
                       ],
                     ),
                   ),
@@ -67,22 +78,29 @@ class DashboardGuruPage extends StatelessWidget {
               ),
               const SizedBox(height: 40),
 
-              // 4. Jadwal Mengajar Hari Ini (Horizontal Scroll Cards)
+              // 4. Jadwal Mengajar (DINAMIS)
               const Text("Jadwal Mengajar", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E))),
               const SizedBox(height: 15),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal, clipBehavior: Clip.none,
                 child: Row(
-                  children: [
-                    _buildClassCard(title: "XII RPL 1\n07:00 WIB", subtitle: "Pemrograman Web", bgColor: const Color(0xFF151B2B), textColor: Colors.white, isDark: true),
-                    const SizedBox(width: 15),
-                    _buildClassCard(title: "XII RPL 2\n10:00 WIB", subtitle: "Basis Data", bgColor: const Color(0xFFD3EADD), textColor: const Color(0xFF1E1E1E), isDark: false),
-                  ],
+                  children: userProvider.jadwalMengajar.map((jadwal) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 15),
+                      child: _buildClassCard(
+                        title: "${jadwal['kelas']}\n${jadwal['waktu']}", 
+                        subtitle: jadwal['mapel'], 
+                        bgColor: jadwal['isDark'] ? const Color(0xFF151B2B) : const Color(0xFFD3EADD), 
+                        textColor: jadwal['isDark'] ? Colors.white : const Color(0xFF1E1E1E), 
+                        isDark: jadwal['isDark']
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
               const SizedBox(height: 40),
 
-              // 5. Statistik Kelas
+              // 5. Statistik Kelas (DINAMIS)
               const Text("Kehadiran Kelas", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E))),
               const SizedBox(height: 15),
               Container(
@@ -92,13 +110,13 @@ class DashboardGuruPage extends StatelessWidget {
                   children: [
                     Container(padding: const EdgeInsets.all(15), decoration: BoxDecoration(color: const Color(0xFFE8F3F1), borderRadius: BorderRadius.circular(16)), child: const Icon(Icons.bar_chart_rounded, color: Color(0xFF006D5B), size: 30)),
                     const SizedBox(width: 15),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Hadir 95%", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          SizedBox(height: 5),
-                          Text("Rata-rata minggu ini", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                          Text("Hadir ${userProvider.persentaseKehadiranKelas}%", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          const SizedBox(height: 5),
+                          const Text("Kehadiran siswa hari ini", style: TextStyle(color: Colors.grey, fontSize: 13)),
                         ],
                       ),
                     ),

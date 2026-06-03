@@ -51,4 +51,24 @@ class UserProvider with ChangeNotifier {
     _riwayatPerizinan = [];
     notifyListeners();
   }
+  // --- VARIABEL KHUSUS GURU ---
+  int _jumlahIzinPending = 0;
+  int _persentaseKehadiranKelas = 0;
+  List<dynamic> _rekapAbsensiKelas = [];
+  List<dynamic> _jadwalMengajar = [];
+
+  // Getters Guru
+  int get jumlahIzinPending => _jumlahIzinPending;
+  int get persentaseKehadiranKelas => _persentaseKehadiranKelas;
+  List<dynamic> get rekapAbsensiKelas => _rekapAbsensiKelas;
+  List<dynamic> get jadwalMengajar => _jadwalMengajar;
+
+  // Setter untuk menyimpan data Guru
+  void setDashboardGuruData(int izinPending, int persentase, List<dynamic> rekap, List<dynamic> jadwal) {
+    _jumlahIzinPending = izinPending;
+    _persentaseKehadiranKelas = persentase;
+    _rekapAbsensiKelas = rekap;
+    _jadwalMengajar = jadwal;
+    notifyListeners();
+  }
 }
