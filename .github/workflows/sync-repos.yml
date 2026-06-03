@@ -59,6 +59,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Wajib 0 agar seluruh riwayat terbawa
+          token: ${{ secrets.GH_PAT }}
 
       - name: Push Frontend with History
         run: |
@@ -75,6 +76,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
 
       - name: Push Backend with History
         run: |
