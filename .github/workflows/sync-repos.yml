@@ -3,7 +3,7 @@ name: Sync Subfolders to Separate Repos
 on:
   push:
     branches:
-      - dev # Jalankan otomatis setiap kali push ke branch main
+      - dev # Jalankan otomatis setiap kali push ke branch
 
 jobs:
   sync-frontend:
