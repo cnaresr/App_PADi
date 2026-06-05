@@ -1,71 +1,157 @@
+// backend/src/routes/auth.js
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const pool = require('../config/db'); // Menggunakan koneksi pg pool bawaan
-require('dotenv').config();
+const prisma = require('../db');
+const bcrypt = require('bcryptjs');
 
-// ==========================================
-// POST /api/auth/login (Dinamis dari Database)
-// ==========================================
-router.post('/login', async (req, res) => {
-  // Menerima input identifier (bisa berupa email atau username) dan password
-  const { identifier, password } = req.body; 
+// POST /api/auth/register
+// Sesuai dengan skema baru di database.md
+router.post('/register', async (req, res) => {
+  const { username, email, password, roleName } = req.body; // roleName: 'Siswa', 'Guru', atau 'Admin'
 
-  if (!identifier || !password) {
-    return res.status(400).json({ message: 'Email/Username dan password wajib diisi' });
+  if (!username || !email || !password || !roleName) {
+    return res.status(400).json({ message: 'Username, email, password, dan roleName wajib diisi' });
   }
 
   try {
-    // Query dinamis: Mencari ke database apakah identifier cocok dengan email ATAU username
-    const result = await pool.query(
-      'SELECT * FROM "user" WHERE email = $1 OR username = $2', 
-      [identifier, identifier]
-    );
+    // Cek apakah username atau email sudah terdaftar menggunakan Prisma
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [{ username: username }, { email: email }],
+      },
+    });
 
-    // Jika tidak ditemukan di database
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Akun tidak terdaftar di sistem' });
+    if (existingUser) {
+      return res.status(409).json({ message: 'Username atau email sudah terdaftar' });
     }
 
-    const user = result.rows[0];
+    // Cari ID role berdasarkan nama role
+    const role = await prisma.role.findFirst({
+      where: { namaRole: roleName },
+    });
 
-    // Membandingkan password yang diketik dengan hash asli hasil tarikan database
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Password yang Anda masukkan salah' });
+    if (!role) {
+      return res.status(400).json({ message: 'Role tidak valid. Gunakan: Siswa, Guru, Admin' });
     }
 
-    // Ambil role secara dinamis berdasarkan id_role dari database (misal: 1 = admin, 2 = siswa)
-    const userRole = user.id_role === 1 ? 'admin' : 'siswa';
+    // Hash password sebelum disimpan
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Buat JWT token dinamis menggunakan data asli dari baris database
-    const token = jwt.sign(
-      { 
-        id: user.id_user, 
-        email: user.email, 
-        username: user.username,
-        role: userRole 
+    // Buat user baru menggunakan Prisma
+    const newUser = await prisma.user.create({
+      data: {
+        username,
+        email,
+        password: hashedPassword,
+        roleId: role.id, // Hubungkan dengan ID role yang ditemukan
       },
-      process.env.JWT_SECRET,
-      { expiresIn: '8h' }
-    );
+      select: { // Hanya kembalikan data yang aman
+        id: true,
+        username: true,
+        email: true,
+        role: {
+          select: {
+            namaRole: true,
+          },
+        },
+      },
+    });
 
-    // Kembalikan respon sukses beserta token
-    res.status(200).json({
-      message: 'Login berhasil!',
-      token,
-      user: {
-        id: user.id_user,
-        username: user.username,
-        email: user.email,
-        role: userRole
-      },
+    res.status(201).json({
+      message: 'Registrasi berhasil',
+      user: newUser,
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Terjadi kesalahan pada server', details: err.message });
+    res.status(500).json({ message: 'Terjadi kesalahan server' });
   }
 });
 
+// POST /api/auth/login
+// Sesuai dengan skema baru di database.md dan terhubung dengan Flutter
+router.post('/login', async (req, res) => {
+  // 1. Terima 'email' dari Flutter, atau 'username' (opsional)
+  const { username, email, password } = req.body;
+  const loginIdentifier = email || username;
+
+  if (!loginIdentifier || !password) {
+    return res.status(400).json({ status: 'error', message: 'Email/Username dan password wajib diisi' });
+  }
+
+  try {
+    // 2. Cari user berdasarkan username ATAU email
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: loginIdentifier },
+          { email: loginIdentifier }
+        ]
+      },
+      include: { role: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ status: 'error', message: 'Email atau password salah' });
+    }
+
+   // 3. Bandingkan password yang diinput dengan hash di database MENGGUNAKAN BCRYPT
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    
+    if (!isPasswordValid) {
+      return res.status(401).json({ status: 'error', message: 'Email atau password salah' });
+    }
+
+    // 4. Buat JWT token (Standar keamanan teman Anda tetap berjalan!)
+    const token = jwt.sign(
+      { id: user.id, username: user.username, role: user.role.namaRole },
+      process.env.JWT_SECRET, // Pastikan ada JWT_SECRET di file .env Anda!
+      { expiresIn: '8h' }
+    );
+
+    // 5. Kembalikan respons yang dimengerti oleh Flutter (status & data.role)
+    res.status(200).json({
+      status: 'success',
+      message: 'Login berhasil',
+      token: token,
+      data: {
+        id: user.id,
+        role: user.role.namaRole,
+        username: user.username
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server' });
+  }
+});
+// GET /api/auth/users
+// Mengambil semua data pengguna beserta rolenya (Cocok untuk halaman Daftar Siswa/Guru)
+router.get('/users', async (req, res) => {
+  try {
+    // Gunakan findMany() untuk mengambil BANYAK data (bukan cuma satu)
+    const allUsers = await prisma.user.findMany({
+      // Kita gunakan 'select' agar password tidak ikut terkirim ke public!
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: {
+          select: {
+            namaRole: true
+          }
+        }
+      }
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Berhasil mengambil data pengguna',
+      data: allUsers
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server' });
+  }
+});
 module.exports = router;
