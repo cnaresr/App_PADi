@@ -13,23 +13,37 @@ async function initDB() {
     try {
         console.log("Mencoba terhubung ke PostgreSQL...");
         
+        // 1. Menyiapkan Tabel Users (Menggunakan EMAIL & USERNAME, Bukan NIM)
         const createUsersTable = `
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
+            CREATE TABLE IF NOT EXISTS "user" (
+                id_user SERIAL PRIMARY KEY,
                 nama VARCHAR(255) NOT NULL,
-                nim VARCHAR(100) UNIQUE NOT NULL,
+                username VARCHAR(100) UNIQUE NOT NULL,
+                email VARCHAR(255) UNIQUE NOT NULL,
                 password TEXT NOT NULL,
-                role VARCHAR(50) DEFAULT 'mahasiswa'
+                role VARCHAR(50) DEFAULT 'siswa',
+                fcm_token TEXT
             );
         `;
         await pool.query(createUsersTable);
-        console.log("✅ Tabel 'users' berhasil disiapkan.");
+        console.log("✅ Tabel 'user' sekolah berhasil disiapkan.");
 
+        // 2. MENYISIPKAN DATA ADMIN DEFAULT (Menggunakan Email & Username)
+        // Menggunakan ON CONFLICT (email) DO NOTHING agar tidak duplikat saat di-run ulang
+        const insertAdminSeed = `
+            INSERT INTO "user" (nama, username, email, password, role)
+            VALUES ('Admin App PADi', 'naresz', 'admin@gmail.com', '123', 'admin')
+            ON CONFLICT (email) DO NOTHING;
+        `;
+        await pool.query(insertAdminSeed);
+        console.log("✅ Data seed Admin Sekolah default berhasil dipastikan aman.");
+
+        // 3. Menyiapkan Tabel Presensi (Menggunakan MATA_PELAJARAN, Bukan Mata Kuliah)
         const createPresensiTable = `
             CREATE TABLE IF NOT EXISTS presensi (
                 id SERIAL PRIMARY KEY,
-                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-                mata_kuliah VARCHAR(255) NOT NULL,
+                user_id INTEGER REFERENCES "user"(id_user) ON DELETE CASCADE,
+                mata_pelajaran VARCHAR(255) NOT NULL,
                 latitude VARCHAR(100),
                 longitude VARCHAR(100),
                 tanggal DATE DEFAULT CURRENT_DATE,
@@ -38,13 +52,12 @@ async function initDB() {
             );
         `;
         await pool.query(createPresensiTable);
-        console.log("✅ Tabel 'presensi' berhasil disiapkan.");
+        console.log("✅ Tabel 'presensi' sekolah berhasil disiapkan.");
 
-        console.log("Konfigurasi database selesai! Anda bisa menjalankan 'npm start' sekarang.");
+        console.log("\nKonfigurasi database SEKOlAH selesai! Anda bisa menjalankan 'npm start' sekarang.");
     } catch (err) {
         console.error("❌ Terjadi kesalahan saat konfigurasi database:");
         console.error(err.message);
-        console.log("\nPastikan PostgreSQL sudah berjalan dan kredensial di .env sudah benar.");
     } finally {
         await pool.end();
     }

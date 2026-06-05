@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
+const adminRoutes = require('./routes/admin');
 
 // Middleware global
 app.use(cors());
@@ -11,6 +12,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth',     require('./routes/auth'));
 app.use('/api/presensi', require('./routes/presensi'));
+app.use('/api/admin', adminRoutes);
 
 // Route fallback jika endpoint tidak ditemukan
 app.use((req, res) => {

@@ -1,23 +1,18 @@
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
 
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
-  // Header harus berformat: "Bearer <token>"
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Token tidak ditemukan' });
-  }
+  if (!token) return res.status(401).json({ message: 'Token tidak tersedia' });
 
-  const token = authHeader.split(' ')[1];
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // { id, nim, role } tersedia di route selanjutnya
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) return res.status(403).json({ message: 'Token tidak valid' });
+    
+    // Simpan data decoded (id, email, role) ke req.user agar bisa dibaca oleh adminAuth
+    req.user = decoded; 
     next();
-  } catch (err) {
-    return res.status(403).json({ message: 'Token tidak valid atau sudah kadaluarsa' });
-  }
+  });
 };
 
 module.exports = verifyToken;
