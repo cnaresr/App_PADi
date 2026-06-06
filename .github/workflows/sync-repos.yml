@@ -64,7 +64,7 @@ jobs:
       - name: Push Frontend with History
         run: |
           # 1. Memisahkan riwayat khusus folder frontend ke branch sementara
-          git subtree split --prefix=platform_absensi_digital -b split-frontend
+          git subtree split --prefix=frontend -b split-frontend
 
           # 2. Push riwayat asli ke repo Frontend_PADi
           git push https://${{ secrets.GH_PAT }}@github.com/PADi-bang/Frontend_PADi.git split-frontend:dev --force

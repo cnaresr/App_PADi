@@ -11,3 +11,7 @@ frontend/.dart_tool/
 frontend/.pub-cache/
 frontend/.pub/
 frontend/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+
+# Direktori konfigurasi yang dibuat oleh IDE Android Studio
+.idea/
+*.iml
