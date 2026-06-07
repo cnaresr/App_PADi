@@ -82,8 +82,8 @@ class _LoginPageState extends State<LoginPage> {
                     width: double.infinity, height: 60,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF151B2B), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), elevation: 10),
-                      onPressed: () async {
-                        var response = await ApiService().login(_emailController.text, _passwordController.text);
+                      onPressed: () async { 
+                        var response = await ApiService.login(_emailController.text, _passwordController.text);
                         
                         if (response['status'] == 'success') {
                           var userData = response['data'] as Map<String, dynamic>;
@@ -100,7 +100,7 @@ class _LoginPageState extends State<LoginPage> {
                           userProvider.setUserData(idUser, namaLengkap, infoKelas, roleUser);
 
                           // 2. TEMBAK API DASHBOARD
-                          var dashResponse = await ApiService().getDashboardData(idUser);
+                          var dashResponse = await ApiService.getDashboardData(idUser);
                           if (dashResponse['status'] == 'success') {
                             var dashData = dashResponse['data'];
                             userProvider.setDashboardData(

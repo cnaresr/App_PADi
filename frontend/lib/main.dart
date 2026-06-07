@@ -1,11 +1,17 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // Pastikan package provider ter-install
 import 'package:platform_absensi_digital/pages/splash_screen.dart';
 import 'package:platform_absensi_digital/providers/user_provider.dart'; // Import provider
 
+// Variabel global untuk menyimpan daftar kamera yang tersedia
+late List<CameraDescription> cameras;
+
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); 
-  
+  // Pastikan semua plugin terinisialisasi sebelum menjalankan aplikasi
+  WidgetsFlutterBinding.ensureInitialized();
+  // Ambil daftar kamera yang tersedia di perangkat
+  cameras = await availableCameras();
   runApp(
     MultiProvider(
       providers: [
