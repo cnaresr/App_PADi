@@ -7,10 +7,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:tflite_flutter/tflite_flutter.dart' as tfl;
 import 'package:image/image.dart' as img;
+import 'package:provider/provider.dart'; // [BARU] Import provider
 
 // Asumsi path, sesuaikan jika berbeda
 import '../main.dart'; 
 import '../services/api_service.dart';
+import '../providers/user_provider.dart'; // [BARU] Import UserProvider
 
 class AbsensiPage extends StatefulWidget {
   final int siswaId; // ID siswa yang sedang login
@@ -35,14 +37,23 @@ class _AbsensiPageState extends State<AbsensiPage> {
   bool _isProcessing = false;
   String? _cameraError;
 
-  // Data Sekolah (Contoh, idealnya didapat dari API)
-  final double _schoolLat = -6.9834; // Contoh: Latitude sekolah
-  final double _schoolLon = 110.4095; // Contoh: Longitude sekolah
-  final double _schoolRadius = 100; // Contoh: Radius dalam meter
+  // [UPDATE] Data Sekolah sekarang menggunakan 'late' agar bisa diisi dari API
+  late double _schoolLat;
+  late double _schoolLon;
+  late double _schoolRadius;
 
   @override
   void initState() {
     super.initState();
+    
+    // [BARU] Menarik data koordinat dari UserProvider secara dinamis
+    final userProvider = context.read<UserProvider>();
+    
+    // Fallback ke koordinat Polines jika API gagal mengirim data (untuk keamanan)
+    _schoolLat = userProvider.schoolLat ?? -7.0524271;
+    _schoolLon = userProvider.schoolLon ?? 110.4327263;
+    _schoolRadius = userProvider.schoolRadius ?? 400.0;
+
     _initializeCamera();
     _loadModel();
     _startLocationCheck();
@@ -88,31 +99,86 @@ class _AbsensiPageState extends State<AbsensiPage> {
 
   // --- TAHAP 1: GEOLOCATION & GEOFENCING ---
   Future<void> _startLocationCheck() async {
+    // 1. Cek dan minta izin lokasi terlebih dahulu
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        if (!mounted) return;
-        setState(() => _locationMessage = "Izin lokasi ditolak.");
-        return;
-      }
     }
 
-    _locationSubscription = Geolocator.getPositionStream().listen((Position position) {
+    // Handle berbagai status penolakan izin
+    if (permission == LocationPermission.denied) {
       if (!mounted) return;
-      final distance = Geolocator.distanceBetween(
-          position.latitude, position.longitude, _schoolLat, _schoolLon);
+      setState(() => _locationMessage = "Izin lokasi ditolak.");
+      return;
+    }
 
-      setState(() {
-        _currentPosition = position;
-        if (distance <= _schoolRadius) {
-          _isWithinRadius = true;
-          _locationMessage = "Dalam Jangkauan (${distance.toStringAsFixed(0)}m)";
-        } else {
-          _isWithinRadius = false;
-          _locationMessage = "Di Luar Jangkauan (${distance.toStringAsFixed(0)}m)";
-        }
-      });
+    if (permission == LocationPermission.deniedForever) {
+      if (!mounted) return;
+      setState(() => _locationMessage = "Izin lokasi ditolak permanen.");
+      _showPermissionDeniedDialog();
+      return;
+    }
+
+    // 2. Dapatkan lokasi awal dengan cepat untuk feedback instan
+    try {
+      Position initialPosition = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10), // Batas waktu agar tidak menunggu selamanya
+      );
+      if (mounted) _updateLocationStatus(initialPosition);
+    } catch (e) {
+      debugPrint("Error mendapatkan lokasi awal: $e");
+      if (mounted) setState(() => _locationMessage = "Gagal mendapat lokasi awal. Pastikan GPS aktif.");
+    }
+
+    // 3. Lanjutkan dengan stream untuk update real-time
+    _locationSubscription = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10) // Update tiap 10 meter
+    ).listen((Position position) {
+      if (mounted) _updateLocationStatus(position);
+    });
+  }
+
+  // Fungsi baru untuk menampilkan dialog notifikasi
+  void _showPermissionDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text("Izin Lokasi Diperlukan"),
+        content: const Text("Aplikasi ini membutuhkan izin lokasi untuk fitur absensi. Silakan aktifkan izin lokasi di pengaturan aplikasi."),
+        actions: <Widget>[
+          TextButton(
+            child: const Text("Batal"),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          TextButton(
+            child: const Text("Buka Pengaturan"),
+            onPressed: () {
+              // Buka pengaturan aplikasi untuk perangkat ini
+              Geolocator.openAppSettings();
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Fungsi baru untuk memproses update lokasi & UI (menghindari duplikasi)
+  void _updateLocationStatus(Position position) {
+    final distance = Geolocator.distanceBetween(
+        position.latitude, position.longitude, _schoolLat, _schoolLon);
+
+    if (!mounted) return;
+    setState(() {
+      _currentPosition = position;
+      if (distance <= _schoolRadius) {
+        _isWithinRadius = true;
+        _locationMessage = "Dalam Jangkauan (${distance.toStringAsFixed(0)}m)";
+      } else {
+        _isWithinRadius = false;
+        _locationMessage = "Di Luar Jangkauan (${distance.toStringAsFixed(0)}m)";
+      }
     });
   }
 
@@ -204,6 +270,11 @@ class _AbsensiPageState extends State<AbsensiPage> {
 
   @override
   Widget build(BuildContext context) {
+    // [BARU] Ambil nama sekolah dari provider jika ada untuk ditampilkan di UI
+    final String infoKelas = context.read<UserProvider>().kelasAtauNip;
+    final List<String> infoParts = infoKelas.split(' • ');
+    final String namaSekolah = infoParts.length > 1 ? infoParts[1] : "Area Presensi Sekolah";
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
@@ -335,7 +406,8 @@ class _AbsensiPageState extends State<AbsensiPage> {
                           ],
                         ),
                         const SizedBox(height: 4),
-                        const Text("SMK Negeri 1 Jakarta • Akurasi 5m", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        // [UPDATE] Teks Hardcode dihapus, diganti menggunakan nama Sekolah dari provider
+                        Text("$namaSekolah • Toleransi ${_schoolRadius.toStringAsFixed(0)}m", style: const TextStyle(color: Colors.grey, fontSize: 12)),
                       ],
                     ),
                   ),

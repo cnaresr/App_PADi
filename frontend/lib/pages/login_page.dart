@@ -1,3 +1,4 @@
+// lib/pages/login_page.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:platform_absensi_digital/providers/user_provider.dart';
@@ -15,12 +16,14 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController _emailController = TextEditingController();
+  // Labelnya disesuaikan karena kita bisa menerima email atau username
+  final TextEditingController _identifierController = TextEditingController(); 
   final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false; // [BARU] Tambahan untuk UX Loading
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _identifierController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -58,11 +61,11 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Alamat Email", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E))),
+                  const Text("Username atau Email", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E))),
                   const SizedBox(height: 10),
                   TextField(
-                    controller: _emailController,
-                    decoration: InputDecoration(filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none), hintText: "Masukkan email", prefixIcon: const Icon(Icons.email_outlined, color: Colors.grey)),
+                    controller: _identifierController,
+                    decoration: InputDecoration(filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none), hintText: "Masukkan username / email", prefixIcon: const Icon(Icons.person_outline, color: Colors.grey)),
                   ),
                   const SizedBox(height: 25),
                   Row(
@@ -82,32 +85,49 @@ class _LoginPageState extends State<LoginPage> {
                     width: double.infinity, height: 60,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF151B2B), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), elevation: 10),
-                      onPressed: () async { 
-                        var response = await ApiService.login(_emailController.text, _passwordController.text);
+                      onPressed: _isLoading ? null : () async { 
+                        setState(() => _isLoading = true);
                         
+                        // [UPDATE] Menggunakan identifierController
+                        var response = await ApiService.login(_identifierController.text, _passwordController.text);
+                        
+                        if (!mounted) return; // Keamanan konteks
+
                         if (response['status'] == 'success') {
                           var userData = response['data'] as Map<String, dynamic>;
                           
                           String namaLengkap = userData['username'] ?? userData['nama'] ?? "Pengguna";
                           String roleUser = userData['role'] ?? "Siswa";
-                          String infoKelas = userData['kelas'] ?? "XII RPL 1 • SMK Negeri 1 Jakarta";
-                          
-                          // AMBIL ID USER DARI DATABASE
+                          String infoKelas = userData['kelas'] ?? "Siswa SMK"; 
                           int idUser = userData['id'] ?? 0;
 
-                          // 1. SIMPAN DATA KE PROVIDER (DENGAN 4 PARAMETER)
+                          // 1. SIMPAN DATA PROFIL KE PROVIDER
                           final userProvider = Provider.of<UserProvider>(context, listen: false);
                           userProvider.setUserData(idUser, namaLengkap, infoKelas, roleUser);
+
+                          // [BARU] 1.5 SIMPAN DATA GEOFENCE KE PROVIDER
+                          if (userData['geofence'] != null) {
+                            var geo = userData['geofence'];
+                            // Mengubah ke tipe int dan double agar sesuai
+                            userProvider.setSchoolGeofence(
+                              (geo['latitude'] as num).toDouble(),
+                              (geo['longitude'] as num).toDouble(),
+                              (geo['radius'] as num).toDouble()
+                            );
+                            debugPrint("Lokasi tersimpan: Lat ${geo['latitude']}, Lon ${geo['longitude']}, Radius ${geo['radius']}");
+                          } else {
+                            debugPrint("Warning: Data geofence dari server kosong.");
+                          }
 
                           // 2. TEMBAK API DASHBOARD
                           var dashResponse = await ApiService.getDashboardData(idUser);
                           if (dashResponse['status'] == 'success') {
                             var dashData = dashResponse['data'];
                             userProvider.setDashboardData(
-                              dashData['hadirBulanIni'],
-                              dashData['persentaseKehadiran'],
-                              dashData['riwayatAbsensi'],
-                              dashData['riwayatPerizinan'],
+                              dashData['hadirBulanIni'] ?? 0,
+                              dashData['persentaseKehadiran'] ?? 0,
+                              dashData['riwayatAbsensi'] ?? [],
+                              dashData['riwayatPerizinan'] ?? [],
                             );
                           }
 
@@ -116,12 +136,16 @@ class _LoginPageState extends State<LoginPage> {
                             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainPage()));
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Gunakan portal login pengajar!")));
+                            setState(() => _isLoading = false);
                           }
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response['message'] ?? "Login gagal")));
+                          setState(() => _isLoading = false);
                         }
                       },
-                      child: const Text("Masuk", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      child: _isLoading 
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text("Masuk", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                     ),
                   ),
                   const SizedBox(height: 40),

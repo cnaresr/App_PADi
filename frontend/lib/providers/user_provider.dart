@@ -12,6 +12,11 @@ class UserProvider with ChangeNotifier {
   List<dynamic> _riwayatAbsensi = [];
   List<dynamic> _riwayatPerizinan = [];
 
+  // --- [BARU] VARIABEL GEOFENCING SEKOLAH ---
+  double? _schoolLat;
+  double? _schoolLon;
+  double? _schoolRadius;
+
   // Getters
   int get userId => _userId;
   String get namaLengkap => _namaLengkap;
@@ -22,12 +27,25 @@ class UserProvider with ChangeNotifier {
   List<dynamic> get riwayatAbsensi => _riwayatAbsensi;
   List<dynamic> get riwayatPerizinan => _riwayatPerizinan;
 
+  // --- [BARU] GETTERS GEOFENCING ---
+  double? get schoolLat => _schoolLat;
+  double? get schoolLon => _schoolLon;
+  double? get schoolRadius => _schoolRadius;
+
   // Menyimpan data Akun saat login
   void setUserData(int id, String nama, String detail, String roleUser) {
     _userId = id;
     _namaLengkap = nama;
     _kelasAtauNip = detail;
     _role = roleUser;
+    notifyListeners();
+  }
+
+  // --- [BARU] SETTER UNTUK GEOFENCE SEKOLAH ---
+  void setSchoolGeofence(double lat, double lon, double radius) {
+    _schoolLat = lat;
+    _schoolLon = lon;
+    _schoolRadius = radius;
     notifyListeners();
   }
 
@@ -49,8 +67,15 @@ class UserProvider with ChangeNotifier {
     _persentaseKehadiran = 0;
     _riwayatAbsensi = [];
     _riwayatPerizinan = [];
+    
+    // --- [BARU] BERSIHKAN DATA GEOFENCE SAAT LOGOUT ---
+    _schoolLat = null;
+    _schoolLon = null;
+    _schoolRadius = null;
+    
     notifyListeners();
   }
+
   // --- VARIABEL KHUSUS GURU ---
   int _jumlahIzinPending = 0;
   int _persentaseKehadiranKelas = 0;
