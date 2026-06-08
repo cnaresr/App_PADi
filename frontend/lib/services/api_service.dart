@@ -34,7 +34,7 @@ class ApiService {
 
   // --- FUNGSI ABSENSI ---
   static Future<Map<String, dynamic>> kirimAbsensiMasuk({
-    required int siswaId,
+    required int userId, // [DIUBAH] Menggunakan userId
     required List<double> faceEmbedding,
     required double latitude,
     required double longitude,
@@ -44,19 +44,25 @@ class ApiService {
         Uri.parse('$baseUrl/absensi/masuk'), 
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'siswaId': siswaId,
+          'userId': userId, // [DIUBAH] Mengirim userId ke backend
           'faceEmbedding': faceEmbedding,
           'latitude': latitude,
           'longitude': longitude,
         }),
       );
 
-      final responseBody = jsonDecode(response.body);
-
-      if (response.statusCode == 201) {
-        return {'success': true, 'message': responseBody['message']};
+      // [PERBAIKAN] Cek status code SEBELUM mencoba decode JSON
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final responseBody = jsonDecode(response.body);
+        return {'success': true, 'message': responseBody['message'] ?? 'Absensi berhasil.'};
       } else {
-        return {'success': false, 'message': responseBody['message'] ?? 'Gagal melakukan absensi.'};
+        // Jika response dari server bukan JSON (misal: halaman error HTML)
+        try {
+          final errorBody = jsonDecode(response.body);
+          return {'success': false, 'message': errorBody['message'] ?? 'Gagal: Terjadi kesalahan di server.'};
+        } catch(e) {
+          return {'success': false, 'message': 'Server Error (Kode: ${response.statusCode}). Response tidak valid.'};
+        }
       }
     } catch (e) {
       debugPrint('Error di ApiService (kirimAbsensiMasuk): $e');

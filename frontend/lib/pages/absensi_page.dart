@@ -185,7 +185,7 @@ class _AbsensiPageState extends State<AbsensiPage> {
   // --- TAHAP 2: FACE EMBEDDING ---
   Future<void> _loadModel() async {
     try {
-      _interpreter = await tfl.Interpreter.fromAsset('mobilefacenet.tflite');
+      _interpreter = await tfl.Interpreter.fromAsset('assets/mobilefacenet.tflite');
     } catch (e) {
       debugPrint("Gagal memuat model TFLite: $e");
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -215,7 +215,7 @@ class _AbsensiPageState extends State<AbsensiPage> {
     var reshapedInput = [input];
 
     // Output model biasanya [1, 128] atau [1, 512]
-    var output = List.filled(1 * 128, 0.0).reshape([1, 128]);
+    var output = List.filled(1 * 192, 0.0).reshape([1, 192]);
 
     _interpreter.run(reshapedInput, output);
     return List<double>.from(output[0]);
@@ -237,7 +237,7 @@ class _AbsensiPageState extends State<AbsensiPage> {
 
       // Menggunakan ApiService yang sudah ada
       final result = await ApiService.kirimAbsensiMasuk(
-        siswaId: widget.siswaId,
+        userId: widget.siswaId,
         faceEmbedding: faceEmbedding,
         latitude: _currentPosition!.latitude,
         longitude: _currentPosition!.longitude,

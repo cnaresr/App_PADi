@@ -48,3 +48,4 @@ flutter:
   # Bagian aset untuk logo splash screen Anda
   assets:
     - assets/logo_padi.png
+    - assets/mobilefacenet.tflite
