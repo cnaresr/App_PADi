@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <title>Pengaturan Waktu - App_PADi</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .drag-over { border: 2px dashed #006652; background-color: #f0fdf4; }
+    </style>
 </head>
 <body class="bg-[#F8F9FA] flex">
-    <aside class="w-64 h-screen bg-white border-r p-6 flex flex-col fixed">
+    <aside class="w-64 h-screen bg-white border-r p-6 flex flex-col fixed z-10">
         <div class="text-2xl font-bold text-[#006652] mb-10 flex items-center gap-2">
             <div class="bg-[#006652] w-8 h-8 rounded-lg"></div> Portal
         </div>
@@ -17,11 +20,11 @@
             <a href="/jadwal" class="flex items-center gap-3 p-3 bg-[#006652] text-white rounded-lg shadow-md">Jadwal</a>
         </nav>
         <div class="mt-auto border-t pt-4 space-y-2">
-            <a href="/" class="flex items-center gap-3 p-3 text-red-500 font-medium">Log Out</a>
+            <a href="/logout" class="flex items-center gap-3 p-3 text-red-500 font-medium">Log Out</a>
         </div>
     </aside>
 
-    <main class="flex-1 ml-64 p-10 flex gap-6">
+    <main class="flex-1 ml-64 p-10 flex gap-6 relative">
         <div class="flex-1 space-y-6">
             <div class="flex justify-between items-center bg-white p-4 rounded-xl border shadow-sm mb-2">
                 <span class="text-gray-800 font-bold text-lg">Admin</span>
@@ -34,7 +37,7 @@
             <div class="bg-gradient-to-r from-[#005c49] to-[#007a61] text-white p-8 rounded-3xl shadow-sm relative overflow-hidden">
                 <h2 class="text-3xl font-bold mb-2">Pengaturan Waktu</h2>
                 <p class="text-green-100 text-sm max-w-xl mb-6">Rancang shift yang selaras dengan jam pelajaran siswa dan jadwal standar. Ketepatan waktu membangun disiplin profesional.</p>
-                <button class="bg-orange-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md hover:bg-orange-600 transition">
+                <button onclick="openModal()" class="bg-orange-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md hover:bg-orange-600 transition cursor-pointer">
                     + Buat Jadwal
                 </button>
             </div>
@@ -44,46 +47,47 @@
                     <span>🕒</span> <h3>Jadwal Aktif</h3>
                 </div>
 
-                <div class="bg-white p-5 rounded-2xl border shadow-sm flex justify-between items-center hover:shadow-md transition">
-                    <div class="flex items-center gap-4">
-                        <div class="bg-teal-50 p-3 rounded-full text-teal-600 font-bold text-sm">AM</div>
-                        <div>
-                            <h4 class="font-bold text-gray-800 text-sm">Waktu Pembelajaran Pagi</h4>
-                            <p class="text-xs text-gray-400 mt-0.5">📅 07:30 - 12:00 &nbsp;•&nbsp; 👥 8 Kelas</p>
+                <% if (typeof jadwalList !== 'undefined' && jadwalList && jadwalList.length > 0) { %>
+                    <% jadwalList.forEach(jadwal => { 
+                        const formatTime = (isoString) => {
+                            if(!isoString) return '';
+                            const d = new Date(isoString);
+                            return d.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit', timeZone: 'UTC'});
+                        };
+                    %>
+                    <div class="bg-white p-5 rounded-2xl border shadow-sm flex justify-between items-center hover:shadow-md transition drop-zone cursor-pointer" data-jadwal-id="<%= jadwal.id %>" onclick="showParams('<%= formatTime(jadwal.jamMasukStart) %>', '<%= formatTime(jadwal.jamMasukFinish) %>', '<%= formatTime(jadwal.jamPulang) %>')">
+                        <div class="flex items-center gap-4">
+                            <div class="bg-teal-50 p-3 rounded-full text-teal-600 font-bold text-sm">JS</div>
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-sm"><%= jadwal.namaJadwal %></h4>
+                                <p class="text-xs text-gray-400 mt-0.5">
+                                    <% if(jadwal.tanggal) { %>📅 <%= jadwal.tanggal.split('T')[0] %> | <% } %>
+                                    🕒 <%= formatTime(jadwal.jamMasukStart) %> - <%= formatTime(jadwal.jamPulang) %> &nbsp;•&nbsp; 👥 <%= jadwal.kelas ? jadwal.kelas.length : 0 %> Kelas
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex flex-wrap max-w-[150px] gap-1 justify-end">
+                                <% if (jadwal.kelas && jadwal.kelas.length > 0) { %>
+                                    <% jadwal.kelas.forEach(k => { %>
+                                        <div class="bg-gray-100 border rounded-md px-2 py-1 text-[10px] font-bold text-gray-600"><%= k.namaKelas %></div>
+                                    <% }) %>
+                                <% } %>
+                            </div>
+                            <button onclick="editJadwal('<%= jadwal.id %>', '<%= jadwal.namaJadwal %>', '<%= jadwal.hari %>', '<%= jadwal.tanggal ? jadwal.tanggal.split('T')[0] : '' %>', '<%= jadwal.jamMasukStart ? jadwal.jamMasukStart.substring(11, 16) : '' %>', '<%= jadwal.jamMasukFinish ? jadwal.jamMasukFinish.substring(11, 16) : '' %>', '<%= jadwal.jamPulang ? jadwal.jamPulang.substring(11, 16) : '' %>')" class="text-blue-500 hover:text-blue-700 ml-2" title="Edit">✏️</button>
+                            <button onclick="hapusJadwal('<%= jadwal.id %>')" class="text-red-500 hover:text-red-700" title="Hapus">🗑️</button>
                         </div>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <div class="flex -space-x-2">
-                            <div class="w-6 h-6 bg-gray-200 border border-white rounded-full text-[9px] flex items-center justify-center font-bold text-gray-500">X-A</div>
-                            <div class="w-6 h-6 bg-gray-300 border border-white rounded-full text-[9px] flex items-center justify-center font-bold text-gray-500">XI-R1</div>
-                            <div class="w-6 h-6 bg-gray-400 border border-white rounded-full text-[9px] flex items-center justify-center font-bold text-gray-500">XII-A</div>
-                        </div>
-                        <button class="text-gray-400 hover:text-gray-600">✏️</button>
-                    </div>
-                </div>
-
-                <div class="bg-white p-5 rounded-2xl border shadow-sm flex justify-between items-center hover:shadow-md transition">
-                    <div class="flex items-center gap-4">
-                        <div class="bg-orange-50 p-3 rounded-full text-orange-600 font-bold text-sm">PM</div>
-                        <div>
-                            <h4 class="font-bold text-gray-800 text-sm">Waktu Pembelajaran Siang</h4>
-                            <p class="text-xs text-gray-400 mt-0.5">📅 13:00 - 17:30 &nbsp;•&nbsp; 👥 5 Kelas</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="flex -space-x-2">
-                            <div class="w-6 h-6 bg-gray-200 border border-white rounded-full text-[9px] flex items-center justify-center font-bold text-gray-500">XI-B</div>
-                            <div class="w-6 h-6 bg-gray-300 border border-white rounded-full text-[9px] flex items-center justify-center font-bold text-gray-500">XII-B</div>
-                        </div>
-                        <button class="text-gray-400 hover:text-gray-600">✏️</button>
-                    </div>
-                </div>
+                    <% }) %>
+                <% } else { %>
+                    <p class="text-sm text-gray-500 bg-white p-4 rounded-xl border">Belum ada jadwal. Silakan buat jadwal baru.</p>
+                <% } %>
             </div>
 
             <div class="bg-white p-6 rounded-2xl border shadow-sm space-y-4">
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-gray-800 text-sm">Parameter Waktu</h3>
-                    <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold">● Jadwal Aktif</span>
+                    <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold">● Klik Jadwal Aktif</span>
                 </div>
 
                 <div class="grid grid-cols-3 gap-4">
@@ -91,97 +95,244 @@
                         <p class="text-[10px] text-gray-400 font-semibold uppercase">Check-In</p>
                         <div class="flex items-center gap-2 mt-2">
                             <span class="text-gray-400 text-sm">📥</span>
-                            <input type="text" value="07:00 AM" class="font-bold text-gray-700 text-sm bg-transparent outline-none w-full">
+                            <input type="text" id="param-checkin" value="--" readonly class="font-bold text-gray-700 text-sm bg-transparent outline-none w-full">
                         </div>
-                        <p class="text-[9px] text-gray-400 mt-1">Earliest scan time allowed</p>
                     </div>
 
                     <div class="border rounded-xl p-4 bg-gray-50/50">
-                        <p class="text-[10px] text-gray-400 font-semibold uppercase">Maks Terlambat</p>
+                        <p class="text-[10px] text-gray-400 font-semibold uppercase">Batas Terlambat</p>
                         <div class="flex items-center gap-2 mt-2">
                             <span class="text-orange-500 text-sm">⚠️</span>
                             <div class="flex items-baseline gap-1">
-                                <input type="text" value="15" class="font-bold text-gray-700 text-sm bg-transparent outline-none w-8 text-center">
-                                <span class="text-xs text-gray-500">Menit</span>
+                                <input type="text" id="param-late" value="--" readonly class="font-bold text-gray-700 text-sm bg-transparent outline-none w-16">
                             </div>
                         </div>
-                        <p class="text-[9px] text-gray-400 mt-1">Grace period before 'Late'</p>
                     </div>
 
                     <div class="border rounded-xl p-4 bg-gray-50/50">
                         <p class="text-[10px] text-gray-400 font-semibold uppercase">Checkout</p>
                         <div class="flex items-center gap-2 mt-2">
                             <span class="text-gray-400 text-sm">📤</span>
-                            <input type="text" value="12:00 PM" class="font-bold text-gray-700 text-sm bg-transparent outline-none w-full">
+                            <input type="text" id="param-checkout" value="--" readonly class="font-bold text-gray-700 text-sm bg-transparent outline-none w-full">
                         </div>
-                        <p class="text-[9px] text-gray-400 mt-1">Scan enabled for departure</p>
                     </div>
-                </div>
-
-                <div class="flex justify-end gap-3 pt-2">
-                    <button class="px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700">Batalkan</button>
-                    <button class="bg-[#006652] text-white px-5 py-2 rounded-xl text-xs font-bold shadow-sm">Update Jadwal</button>
-                </div>
-            </div>
-
-            <div class="flex gap-4 text-[11px]">
-                <div class="bg-white border rounded-xl px-4 py-2 flex items-center gap-2 shadow-sm">
-                    <span class="text-green-500">✓</span> <span class="text-gray-400">STATUS SISTEM:</span> <span class="text-green-600 font-bold">OPERATIONAL</span>
-                </div>
-                <div class="bg-white border rounded-xl px-4 py-2 flex items-center gap-2 shadow-sm">
-                    <span class="text-gray-400">🕒 PERUBAHAN TERAKHIR:</span> <span class="text-gray-700 font-bold">2j 14m yang lalu</span>
                 </div>
             </div>
         </div>
 
         <div class="w-72 space-y-4">
-            <div class="bg-white p-5 rounded-2xl border shadow-sm">
+            <div class="bg-white p-5 rounded-2xl border shadow-sm h-[500px] overflow-y-auto">
                 <h3 class="font-bold text-gray-800 text-sm">Kelas Yang Belum Terjadwal</h3>
-                <p class="text-xs text-gray-400 mt-0.5 mb-4">Drag and drop kelas</p>
+                <p class="text-xs text-gray-400 mt-0.5 mb-4">Drag and drop kelas ke jadwal aktif</p>
                 
-                <span class="text-[10px] bg-gray-100 px-2 py-0.5 rounded font-bold text-gray-500 tracking-wider">UNASSIGNED (4)</span>
+                <% 
+                    const unassignedKelas = (typeof kelasList !== 'undefined' && kelasList) ? kelasList.filter(k => !k.jadwalAbsensi || k.jadwalAbsensi.length === 0) : [];
+                %>
+                <span class="text-[10px] bg-gray-100 px-2 py-0.5 rounded font-bold text-gray-500 tracking-wider">UNASSIGNED (<%= unassignedKelas.length %>)</span>
                 
-                <div class="mt-3 border rounded-xl p-3 flex justify-between items-center bg-gray-50/50 hover:bg-white transition cursor-grab">
+                <% unassignedKelas.forEach(k => { %>
+                <div class="draggable mt-3 border rounded-xl p-3 flex justify-between items-center bg-gray-50/50 hover:bg-white transition cursor-grab" draggable="true" data-kelas-id="<%= k.id %>">
                     <div class="flex items-center gap-3">
                         <span class="text-gray-400 text-base">🏫</span>
                         <div>
-                            <p class="font-bold text-gray-800 text-xs">XI - B</p>
-                            <p class="text-[10px] text-gray-400">32 Siswa</p>
+                            <p class="font-bold text-gray-800 text-xs"><%= k.namaKelas %></p>
                         </div>
                     </div>
                     <span class="text-gray-300 text-xs">:::</span>
                 </div>
-
-                <div class="mt-2 border rounded-xl p-3 flex justify-between items-center bg-gray-50/50 hover:bg-white transition cursor-grab">
-                    <div class="flex items-center gap-3">
-                        <span class="text-gray-400 text-base">💻</span>
-                        <div>
-                            <p class="font-bold text-gray-800 text-xs">X - F</p>
-                            <p class="text-[10px] text-gray-400">28 Siswa</p>
-                        </div>
-                    </div>
-                    <span class="text-gray-300 text-xs">:::</span>
-                </div>
-
-                <div class="mt-2 border rounded-xl p-3 flex justify-between items-center bg-gray-50/50 hover:bg-white transition cursor-grab">
-                    <div class="flex items-center gap-3">
-                        <span class="text-gray-400 text-base">⚡</span>
-                        <div>
-                            <p class="font-bold text-gray-800 text-xs">XII - C</p>
-                            <p class="text-[10px] text-gray-400">30 Siswa</p>
-                        </div>
-                    </div>
-                    <span class="text-gray-300 text-xs">:::</span>
-                </div>
+                <% }) %>
             </div>
 
             <div class="bg-orange-50/70 border border-orange-100 p-5 rounded-2xl space-y-2">
                 <div class="flex items-center gap-2 text-orange-700 text-xs font-bold">
-                    <span>ℹ️</span> <h4>Rotasi Mingguan</h4>
+                    <span>ℹ️</span> <h4>Panduan</h4>
                 </div>
-                <p class="text-[11px] text-orange-800 leading-relaxed opacity-90">Sistem akan memutar jadwal secara otomatis. Shift setiap hari Senin untuk Semester 2 jadwal.</p>
+                <p class="text-[11px] text-orange-800 leading-relaxed opacity-90">Seret (drag) kelas dari daftar di atas lalu jatuhkan (drop) ke salah satu kotak Jadwal Aktif di sebelah kiri.</p>
+            </div>
+        </div>
+
+        <!-- Modal Buat/Edit Jadwal -->
+        <div id="jadwalModal" class="fixed inset-0 bg-black/50 hidden flex justify-center items-center z-50">
+            <div class="bg-white p-8 rounded-2xl w-[450px] shadow-xl">
+                <h3 id="modalTitle" class="text-xl font-bold mb-4 text-[#006652]">Buat Jadwal Baru</h3>
+                <form id="formJadwal" class="space-y-4">
+                    <input type="hidden" id="jadwalId" name="id">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Nama Jadwal / Shift</label>
+                        <input type="text" id="inputNama" name="namaJadwal" required placeholder="Contoh: Waktu Pembelajaran Pagi" class="w-full border p-2 rounded-lg text-sm outline-none focus:border-[#006652]">
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-gray-600 mb-1">Hari Beroperasi</label>
+                            <select id="inputHari" name="hari" class="w-full border p-2 rounded-lg text-sm outline-none focus:border-[#006652] bg-white">
+                                <option value="Senin-Jumat">Senin - Jumat</option>
+                                <option value="Senin">Senin</option>
+                                <option value="Selasa">Selasa</option>
+                                <option value="Rabu">Rabu</option>
+                                <option value="Kamis">Kamis</option>
+                                <option value="Jumat">Jumat</option>
+                                <option value="Sabtu">Sabtu</option>
+                                <option value="Minggu">Minggu</option>
+                            </select>
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-gray-600 mb-1">Tanggal (Opsional)</label>
+                            <input type="date" id="inputTanggal" name="tanggal" class="w-full border p-2 rounded-lg text-sm outline-none focus:border-[#006652]">
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-gray-600 mb-1">Mulai Check-In</label>
+                            <input type="time" id="inputJamMasukStart" name="jamMasukStart" required class="w-full border p-2 rounded-lg text-sm outline-none focus:border-[#006652]">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-gray-600 mb-1">Batas Terlambat</label>
+                            <input type="time" id="inputJamMasukFinish" name="jamMasukFinish" required class="w-full border p-2 rounded-lg text-sm outline-none focus:border-[#006652]">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Check-Out (Pulang)</label>
+                        <input type="time" id="inputJamPulang" name="jamPulang" required class="w-full border p-2 rounded-lg text-sm outline-none focus:border-[#006652]">
+                    </div>
+                    <div class="flex justify-end gap-3 pt-4">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm text-gray-500 font-bold hover:text-gray-700 cursor-pointer">Batal</button>
+                        <button type="submit" class="bg-[#006652] text-white px-5 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-[#005c49] cursor-pointer">Simpan</button>
+                    </div>
+                </form>
             </div>
         </div>
     </main>
+
+    <script>
+        const modal = document.getElementById('jadwalModal');
+        const form = document.getElementById('formJadwal');
+        const modalTitle = document.getElementById('modalTitle');
+
+        function openModal() { 
+            form.reset();
+            document.getElementById('jadwalId').value = '';
+            modalTitle.textContent = 'Buat Jadwal Baru';
+            modal.classList.remove('hidden'); 
+        }
+
+        function closeModal() { modal.classList.add('hidden'); }
+
+        function editJadwal(id, nama, hari, tanggal, masuk, batas, pulang) {
+            // Hentikan agar onclick Jadwal Aktif tidak terpicu
+            event.stopPropagation();
+            
+            document.getElementById('jadwalId').value = id;
+            document.getElementById('inputNama').value = nama;
+            document.getElementById('inputHari').value = hari;
+            document.getElementById('inputTanggal').value = tanggal;
+            document.getElementById('inputJamMasukStart').value = masuk;
+            document.getElementById('inputJamMasukFinish').value = batas;
+            document.getElementById('inputJamPulang').value = pulang;
+            
+            modalTitle.textContent = 'Edit Jadwal';
+            modal.classList.remove('hidden');
+        }
+
+        async function hapusJadwal(id) {
+            event.stopPropagation();
+            if(confirm('Apakah Anda yakin ingin menghapus jadwal ini?')) {
+                try {
+                    const res = await fetch(`http://localhost:3000/api/jadwal/${id}`, {
+                        method: 'DELETE'
+                    });
+                    if(res.ok) window.location.reload();
+                    else alert('Gagal menghapus jadwal');
+                } catch(err) {
+                    alert('Kesalahan jaringan');
+                }
+            }
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            const id = data.id;
+            delete data.id;
+
+            const url = id ? `http://localhost:3000/api/jadwal/${id}` : 'http://localhost:3000/api/jadwal';
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if(res.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Gagal menyimpan jadwal');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Terjadi kesalahan jaringan');
+            }
+        });
+
+        function showParams(checkin, late, checkout) {
+            document.getElementById('param-checkin').value = checkin || '--';
+            document.getElementById('param-late').value = late || '--';
+            document.getElementById('param-checkout').value = checkout || '--';
+        }
+
+        const draggables = document.querySelectorAll('.draggable');
+        const dropZones = document.querySelectorAll('.drop-zone');
+
+        draggables.forEach(draggable => {
+            draggable.addEventListener('dragstart', () => {
+                draggable.classList.add('opacity-50');
+                draggable.dataset.dragging = 'true';
+            });
+
+            draggable.addEventListener('dragend', () => {
+                draggable.classList.remove('opacity-50');
+                delete draggable.dataset.dragging;
+            });
+        });
+
+        dropZones.forEach(zone => {
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('drag-over');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('drag-over');
+            });
+
+            zone.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+                const draggedItem = document.querySelector('[data-dragging="true"]');
+                if (draggedItem) {
+                    const kelasId = draggedItem.getAttribute('data-kelas-id');
+                    const jadwalId = zone.getAttribute('data-jadwal-id');
+
+                    try {
+                        const res = await fetch(`http://localhost:3000/api/jadwal/${jadwalId}/assign`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ kelasId })
+                        });
+                        if (res.ok) {
+                            window.location.reload();
+                        } else {
+                            alert('Gagal menetapkan kelas ke jadwal');
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert('Terjadi kesalahan jaringan');
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>
