@@ -6,12 +6,11 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   static String get baseUrl {
-    String host;
-    if (!kIsWeb && Platform.isAndroid) {
-      host = 'http://10.0.2.2:3000';
-    } else {
-      host = 'http://localhost:3000';
-    }
+    // [UPDATE VERCEL] 
+    // Mengarahkan host langsung ke domain Vercel Anda.
+    // Tidak perlu lagi mengecek emulator Android atau Web lokal.
+    String host = 'https://app-pa-di.vercel.app';
+    
     return '$host/api'; 
   }
 
