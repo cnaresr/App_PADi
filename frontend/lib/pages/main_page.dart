@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:platform_absensi_digital/pages/home_page.dart';
 import 'package:platform_absensi_digital/pages/absensi_page.dart';
 import 'package:platform_absensi_digital/pages/izin_page.dart';
 import 'package:platform_absensi_digital/pages/profil_page.dart';
+import 'package:platform_absensi_digital/providers/user_provider.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -14,20 +16,31 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   // Index untuk melacak menu mana yang sedang dipilih (0 = Beranda)
   int _selectedIndex = 0;
+  late final List<Widget> _pages;
 
-  // Daftar halaman yang akan ditampilkan sesuai urutan navbar
-  final List<Widget> _pages = [
-    const HomePage(),
-    const AbsensiPage(),
-    const IzinPage(openRiwayatTab: true),
-    const ProfilPage(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Ambil data user sekali saja saat inisialisasi, tanpa "mendengarkan" perubahan
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    // Inisialisasi daftar halaman di initState agar tidak dibuat ulang setiap saat
+    _pages = [
+      const HomePage(),
+      AbsensiPage(siswaId: userProvider.userId), // Halaman absensi
+      const IzinPage(openRiwayatTab: true), // Halaman riwayat
+      const ProfilPage(), // Halaman profil
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      // Body akan berubah sesuai index yang dipilih
+      
+      // [PERBAIKAN SIBER]: IndexedStack dihapus! 
+      // Sekarang halaman hanya akan dibangun (dan kamera dinyalakan) 
+      // JIKA index-nya benar-benar sedang aktif dipilih.
       body: _pages[_selectedIndex],
       
       // Menggunakan NavigationBar Material 3 agar mirip dengan desain Anda

@@ -81,7 +81,7 @@ class _LoginGuruPageState extends State<LoginGuruPage> {
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF151B2B), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), elevation: 10, shadowColor: const Color(0xFF151B2B).withOpacity(0.2)),
                       onPressed: () async {
                         // MENGGUNAKAN .trim() AGAR KEBAL TERHADAP SPASI GAIB
-                        var response = await ApiService().login(_emailController.text.trim(), _passwordController.text);
+                        var response = await ApiService.login(_emailController.text.trim(), _passwordController.text);
                         
                         if (response['status'] == 'success') {
                           var userData = response['data'] as Map<String, dynamic>;
@@ -98,7 +98,7 @@ class _LoginGuruPageState extends State<LoginGuruPage> {
                                 .setUserData(idUser, namaLengkap, nip, userData['role']);
 
                             // 2. AMBIL DATA DASHBOARD KHUSUS GURU
-                            var dashResponse = await ApiService().getDashboardGuru(idUser);
+                            var dashResponse = await ApiService.getDashboardGuru(idUser);
                             if (dashResponse['status'] == 'success') {
                               var dashData = dashResponse['data'];
                               Provider.of<UserProvider>(context, listen: false).setDashboardGuruData(

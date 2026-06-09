@@ -138,7 +138,11 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: 15),
               GestureDetector(
                 onTap: () {
-                   Navigator.push(context, MaterialPageRoute(builder: (context) => const AbsensiPage()));
+                   // Ambil ID siswa dari provider saat tombol ditekan
+                   final int siswaId = context.read<UserProvider>().userId;
+                   Navigator.push(context, MaterialPageRoute(
+                     builder: (context) => AbsensiPage(siswaId: siswaId)
+                   ));
                 },
                 child: Container(
                   width: double.infinity,

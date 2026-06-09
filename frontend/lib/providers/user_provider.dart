@@ -12,6 +12,8 @@ class UserProvider with ChangeNotifier {
   List<dynamic> _riwayatAbsensi = [];
   List<dynamic> _riwayatPerizinan = [];
 
+  // [DIUBAH] Variabel geofencing sekarang menyimpan poligon, bukan radius.
+  List<Map<String, double>>? _schoolPolygon;
   // Getters
   int get userId => _userId;
   String get namaLengkap => _namaLengkap;
@@ -22,12 +24,20 @@ class UserProvider with ChangeNotifier {
   List<dynamic> get riwayatAbsensi => _riwayatAbsensi;
   List<dynamic> get riwayatPerizinan => _riwayatPerizinan;
 
+  // [BARU] Getter untuk data poligon.
+  List<Map<String, double>>? get schoolPolygon => _schoolPolygon;
   // Menyimpan data Akun saat login
   void setUserData(int id, String nama, String detail, String roleUser) {
     _userId = id;
     _namaLengkap = nama;
     _kelasAtauNip = detail;
     _role = roleUser;
+    notifyListeners();
+  }
+
+  // [BARU] Setter untuk menyimpan data poligon dari API.
+  void setSchoolPolygon(List<Map<String, double>> polygon) {
+    _schoolPolygon = polygon;
     notifyListeners();
   }
 
@@ -49,8 +59,12 @@ class UserProvider with ChangeNotifier {
     _persentaseKehadiran = 0;
     _riwayatAbsensi = [];
     _riwayatPerizinan = [];
+    
+    // [DIUBAH] Bersihkan data poligon saat logout.
+    _schoolPolygon = null;
     notifyListeners();
   }
+
   // --- VARIABEL KHUSUS GURU ---
   int _jumlahIzinPending = 0;
   int _persentaseKehadiranKelas = 0;
