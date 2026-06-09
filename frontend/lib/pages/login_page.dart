@@ -106,17 +106,23 @@ class _LoginPageState extends State<LoginPage> {
                           userProvider.setUserData(idUser, namaLengkap, infoKelas, roleUser);
 
                           // [BARU] 1.5 SIMPAN DATA GEOFENCE KE PROVIDER
-                          if (userData['geofence'] != null) {
-                            var geo = userData['geofence'];
-                            // Mengubah ke tipe int dan double agar sesuai
-                            userProvider.setSchoolGeofence(
-                              (geo['latitude'] as num).toDouble(),
-                              (geo['longitude'] as num).toDouble(),
-                              (geo['radius'] as num).toDouble()
-                            );
-                            debugPrint("Lokasi tersimpan: Lat ${geo['latitude']}, Lon ${geo['longitude']}, Radius ${geo['radius']}");
+                          // [DIUBAH] Sekarang menyimpan data poligon, bukan radius.
+                          if (userData['geofence'] != null && userData['geofence']['polygon'] != null) {
+                            // Konversi dari List<dynamic> (JSON) ke List<Map<String, double>>
+                            try {
+                              List<Map<String, double>> polygon = (userData['geofence']['polygon'] as List)
+                                .map((point) => {
+                                      'latitude': (point[1] as num).toDouble(), // index 1 adalah latitude
+                                      'longitude': (point[0] as num).toDouble(), // index 0 adalah longitude
+                                    })
+                                .toList();
+                              userProvider.setSchoolPolygon(polygon); // Panggil method baru di provider
+                              debugPrint("Geofence poligon sekolah berhasil disimpan.");
+                            } catch (e) {
+                              debugPrint("Error parsing polygon geofence: $e");
+                            }
                           } else {
-                            debugPrint("Warning: Data geofence dari server kosong.");
+                            debugPrint("Warning: Data geofence poligon dari server kosong.");
                           }
 
                           // 2. TEMBAK API DASHBOARD

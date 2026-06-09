@@ -14,15 +14,65 @@ import '../main.dart';
 import '../services/api_service.dart';
 import '../providers/user_provider.dart'; // [BARU] Import UserProvider
 
+// =======================================================================
+// [PERUBAHAN] - MEMBUAT HALAMAN ABSENSI MENJADI "LAZY"
+// =======================================================================
+
+// 1. Widget AbsensiPage yang asli sekarang menjadi "pembungkus" (wrapper).
+//    Tugasnya adalah menunda pembuatan konten kamera sampai halaman ini benar-benar terlihat.
 class AbsensiPage extends StatefulWidget {
-  final int siswaId; // ID siswa yang sedang login
+  final int siswaId;
   const AbsensiPage({super.key, required this.siswaId});
 
   @override
   State<AbsensiPage> createState() => _AbsensiPageState();
 }
 
-class _AbsensiPageState extends State<AbsensiPage> {
+class _AbsensiPageState extends State<AbsensiPage> with AutomaticKeepAliveClientMixin {
+  // Flag untuk memastikan konten (termasuk kamera) hanya dibuat sekali.
+  bool _isContentLoaded = false;
+
+  @override
+  bool get wantKeepAlive => true; // Ini penting untuk menjaga state saat berpindah tab.
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // Diperlukan oleh AutomaticKeepAliveClientMixin.
+
+    // Trik ini akan membangun konten sebenarnya hanya setelah widget ini
+    // pertama kali muncul di layar.
+    if (!_isContentLoaded) {
+      // Kita menggunakan post-frame callback untuk aman memperbarui state setelah build selesai.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _isContentLoaded = true;
+          });
+        }
+      });
+    }
+
+    // Selama konten belum siap, tampilkan placeholder.
+    // Setelah siap, baru bangun halaman kamera yang sebenarnya.
+    return _isContentLoaded
+        ? _AbsensiPageContent(siswaId: widget.siswaId)
+        : const Scaffold(
+            backgroundColor: Color(0xFFFAFAFA),
+            body: Center(child: CircularProgressIndicator(color: Color(0xFF006D5B))),
+          );
+  }
+}
+
+// 2. Logika dan UI AbsensiPage yang asli dipindahkan ke dalam widget dan state baru ini.
+class _AbsensiPageContent extends StatefulWidget {
+  final int siswaId;
+  const _AbsensiPageContent({required this.siswaId});
+
+  @override
+  State<_AbsensiPageContent> createState() => _AbsensiPageContentState();
+}
+
+class _AbsensiPageContentState extends State<_AbsensiPageContent> {
   CameraController? _controller;
   Future<void>? _initializeControllerFuture;
 
@@ -37,22 +87,22 @@ class _AbsensiPageState extends State<AbsensiPage> {
   bool _isProcessing = false;
   String? _cameraError;
 
-  // [UPDATE] Data Sekolah sekarang menggunakan 'late' agar bisa diisi dari API
-  late double _schoolLat;
-  late double _schoolLon;
-  late double _schoolRadius;
+  // [DIUBAH] State sekarang menyimpan poligon, bukan titik pusat dan radius.
+  late List<Map<String, double>> _schoolPolygon;
 
   @override
   void initState() {
     super.initState();
     
-    // [BARU] Menarik data koordinat dari UserProvider secara dinamis
+    // [DIUBAH] Menarik data poligon dari UserProvider.
     final userProvider = context.read<UserProvider>();
     
-    // Fallback ke koordinat Polines jika API gagal mengirim data (untuk keamanan)
-    _schoolLat = userProvider.schoolLat ?? -7.0524271;
-    _schoolLon = userProvider.schoolLon ?? 110.4327263;
-    _schoolRadius = userProvider.schoolRadius ?? 400.0;
+    // Fallback ke poligon kosong jika data dari provider tidak ada.
+    _schoolPolygon = userProvider.schoolPolygon ?? [];
+    
+    // [DEBUGGING] Tambahkan print ini untuk memastikan data poligon ter-load.
+    // Jika outputnya "0 vertices", berarti data tidak masuk dari halaman login.
+    debugPrint("AbsensiPage: Memuat poligon sekolah dengan ${_schoolPolygon.length} vertices.");
 
     _initializeCamera();
     _loadModel();
@@ -166,20 +216,47 @@ class _AbsensiPageState extends State<AbsensiPage> {
 
   // Fungsi baru untuk memproses update lokasi & UI (menghindari duplikasi)
   void _updateLocationStatus(Position position) {
-    final distance = Geolocator.distanceBetween(
-        position.latitude, position.longitude, _schoolLat, _schoolLon);
+    // [DIUBAH] Logika pengecekan diubah dari menghitung jarak menjadi pengecekan di dalam poligon.
+    final isInside = _isPointInPolygon(position, _schoolPolygon);
 
     if (!mounted) return;
     setState(() {
       _currentPosition = position;
-      if (distance <= _schoolRadius) {
+      if (isInside) {
         _isWithinRadius = true;
-        _locationMessage = "Dalam Jangkauan (${distance.toStringAsFixed(0)}m)";
+        _locationMessage = "Anda berada di dalam area";
       } else {
         _isWithinRadius = false;
-        _locationMessage = "Di Luar Jangkauan (${distance.toStringAsFixed(0)}m)";
+        _locationMessage = "Anda berada di luar area";
       }
     });
+  }
+
+  // [BARU] Algoritma Ray-Casting untuk mengecek apakah sebuah titik berada di dalam poligon.
+  // Ini adalah pengganti Geolocator.distanceBetween.
+  // [PERBAIKAN] Logika dibuat lebih eksplisit untuk menghindari kebingungan lat/lon.
+  bool _isPointInPolygon(Position point, List<Map<String, double>> polygon) {
+    if (polygon.isEmpty) {
+      debugPrint("Pengecekan gagal: Poligon area sekolah kosong.");
+      return false;
+    }
+
+    double pointLon = point.longitude; // Anggap Longitude sebagai sumbu X
+    double pointLat = point.latitude;  // Anggap Latitude sebagai sumbu Y
+    bool isInside = false;
+    
+    for (int i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      double vertexLonI = polygon[i]['longitude']!; // X1
+      double vertexLatI = polygon[i]['latitude']!;  // Y1
+      double vertexLonJ = polygon[j]['longitude']!; // X2
+      double vertexLatJ = polygon[j]['latitude']!;  // Y2
+
+      bool intersect = ((vertexLatI > pointLat) != (vertexLatJ > pointLat)) && (pointLon < (vertexLonJ - vertexLonI) * (pointLat - vertexLatI) / (vertexLatJ - vertexLatI) + vertexLonI);
+      if (intersect) {
+        isInside = !isInside;
+      }
+    }
+    return isInside;
   }
 
   // --- TAHAP 2: FACE EMBEDDING ---
@@ -237,7 +314,7 @@ class _AbsensiPageState extends State<AbsensiPage> {
 
       // Menggunakan ApiService yang sudah ada
       final result = await ApiService.kirimAbsensiMasuk(
-        userId: widget.siswaId,
+        userId: widget.siswaId, // Akses siswaId dari state widget baru
         faceEmbedding: faceEmbedding,
         latitude: _currentPosition!.latitude,
         longitude: _currentPosition!.longitude,
@@ -407,7 +484,7 @@ class _AbsensiPageState extends State<AbsensiPage> {
                         ),
                         const SizedBox(height: 4),
                         // [UPDATE] Teks Hardcode dihapus, diganti menggunakan nama Sekolah dari provider
-                        Text("$namaSekolah • Toleransi ${_schoolRadius.toStringAsFixed(0)}m", style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                        Text(namaSekolah, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                       ],
                     ),
                   ),

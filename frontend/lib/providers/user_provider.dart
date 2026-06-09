@@ -12,11 +12,8 @@ class UserProvider with ChangeNotifier {
   List<dynamic> _riwayatAbsensi = [];
   List<dynamic> _riwayatPerizinan = [];
 
-  // --- [BARU] VARIABEL GEOFENCING SEKOLAH ---
-  double? _schoolLat;
-  double? _schoolLon;
-  double? _schoolRadius;
-
+  // [DIUBAH] Variabel geofencing sekarang menyimpan poligon, bukan radius.
+  List<Map<String, double>>? _schoolPolygon;
   // Getters
   int get userId => _userId;
   String get namaLengkap => _namaLengkap;
@@ -27,11 +24,8 @@ class UserProvider with ChangeNotifier {
   List<dynamic> get riwayatAbsensi => _riwayatAbsensi;
   List<dynamic> get riwayatPerizinan => _riwayatPerizinan;
 
-  // --- [BARU] GETTERS GEOFENCING ---
-  double? get schoolLat => _schoolLat;
-  double? get schoolLon => _schoolLon;
-  double? get schoolRadius => _schoolRadius;
-
+  // [BARU] Getter untuk data poligon.
+  List<Map<String, double>>? get schoolPolygon => _schoolPolygon;
   // Menyimpan data Akun saat login
   void setUserData(int id, String nama, String detail, String roleUser) {
     _userId = id;
@@ -41,11 +35,9 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // --- [BARU] SETTER UNTUK GEOFENCE SEKOLAH ---
-  void setSchoolGeofence(double lat, double lon, double radius) {
-    _schoolLat = lat;
-    _schoolLon = lon;
-    _schoolRadius = radius;
+  // [BARU] Setter untuk menyimpan data poligon dari API.
+  void setSchoolPolygon(List<Map<String, double>> polygon) {
+    _schoolPolygon = polygon;
     notifyListeners();
   }
 
@@ -68,11 +60,8 @@ class UserProvider with ChangeNotifier {
     _riwayatAbsensi = [];
     _riwayatPerizinan = [];
     
-    // --- [BARU] BERSIHKAN DATA GEOFENCE SAAT LOGOUT ---
-    _schoolLat = null;
-    _schoolLon = null;
-    _schoolRadius = null;
-    
+    // [DIUBAH] Bersihkan data poligon saat logout.
+    _schoolPolygon = null;
     notifyListeners();
   }
 

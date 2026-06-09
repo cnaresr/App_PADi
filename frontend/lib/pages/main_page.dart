@@ -37,8 +37,11 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      // Gunakan IndexedStack untuk menjaga state setiap halaman tetap hidup
-      body: IndexedStack(index: _selectedIndex, children: _pages),
+      
+      // [PERBAIKAN SIBER]: IndexedStack dihapus! 
+      // Sekarang halaman hanya akan dibangun (dan kamera dinyalakan) 
+      // JIKA index-nya benar-benar sedang aktif dipilih.
+      body: _pages[_selectedIndex],
       
       // Menggunakan NavigationBar Material 3 agar mirip dengan desain Anda
       bottomNavigationBar: NavigationBarTheme(
