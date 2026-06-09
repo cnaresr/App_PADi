@@ -15,3 +15,4 @@ frontend/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.
 # Direktori konfigurasi yang dibuat oleh IDE Android Studio
 .idea/
 *.iml
+/generated/prisma
