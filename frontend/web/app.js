@@ -79,8 +79,15 @@ app.get('/daftar-guru', cekAdmin, (req, res) => {
     res.render('daftar_guru');
 });
 
-app.get('/jadwal', cekAdmin, (req, res) => {
-    res.render('jadwal');
+app.get('/jadwal', cekAdmin, async (req, res) => {
+    try {
+        const response = await axios.get('http://localhost:3000/api/jadwal');
+        const data = response.data.data;
+        res.render('jadwal', { jadwalList: data.jadwal, kelasList: data.kelas });
+    } catch (error) {
+        console.error("Error fetching jadwal:", error.message);
+        res.render('jadwal', { jadwalList: [], kelasList: [] });
+    }
 });
 
 // Rute Logout

@@ -6,6 +6,7 @@ const path = require('path'); // Wajib untuk membaca folder EJS/Public
 const dashboardRoutes = require('./routes/dashboard');
 const guruRoutes = require('./routes/guru');
 const authRoutes = require('./routes/auth');
+const jadwalRoutes = require('./routes/jadwal');
 const absensiRoutes = require('./routes/absensi'); // Rute baru Anda
 
 const app = express();
@@ -24,6 +25,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/guru', guruRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/guru', guruRoutes);
+app.use('/api/jadwal', jadwalRoutes);
 app.use('/api/absensi', absensiRoutes); 
 
 // --- Rute Utama Web Admin ---
