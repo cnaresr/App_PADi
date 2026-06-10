@@ -6,7 +6,8 @@ const verifyToken = (req, res, next) => {
 
   if (!token) return res.status(401).json({ message: 'Token tidak tersedia' });
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+  const secretKey = process.env.JWT_SECRET || 'PADi_SECRET_KEY_PRODUCTION';
+  jwt.verify(token, secretKey, (err, decoded) => {
     if (err) return res.status(403).json({ message: 'Token tidak valid' });
     
     // Simpan data decoded (id, email, role) ke req.user agar bisa dibaca oleh adminAuth

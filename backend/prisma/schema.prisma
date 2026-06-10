@@ -69,7 +69,7 @@ model User {
   email    String  @unique
   fcmToken String? @map("fcm_token")
 
-  role       Role         @relation(fields: [roleId], references: [id])
+  roleRelation Role    @relation(fields: [roleId], references: [id])
   admin      Admin?
   guru       Guru?
   siswa      Siswa?

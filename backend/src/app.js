@@ -18,5 +18,10 @@ const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/admin', adminRoutes);
+const PORT = 3000;
+app.listen(PORT, () => {
+    console.log(`🚀 Server Backend PADi berjalan di http://localhost:${PORT}`);
+});
 
 module.exports = app;
