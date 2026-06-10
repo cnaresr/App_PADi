@@ -48,6 +48,7 @@ app.post('/login', async (req, res) => {
         if (data.status === 'success' && String(data.data.role) === 'Admin') {
             req.session.token = data.token;
             req.session.role = String(data.data.role);
+            req.session.user = data.data; // Simpan data user lengkap (username, id, dll)
             
             // Simpan session agar tidak terlempar kembali
             req.session.save(() => {
@@ -63,11 +64,11 @@ app.post('/login', async (req, res) => {
     }
 });
 
-app.get('/dashboard', (req, res) => {
+app.get('/dashboard', cekAdmin, (req, res) => {
     // Jika Anda menggunakan session tapi belum diisi saat login, 
     // halaman ini akan terus-terusan melempar Anda keluar (Redirect).
     res.render('Dashboard', { 
-        user: req.session.user || { username: 'Admin' } 
+        user: req.session.user
     });
 });
 // ==========================================
@@ -82,14 +83,20 @@ app.get('/daftar-guru', cekAdmin, async (req, res) => {
 
         const responseGuru = await axios.get('http://localhost:3000/api/guru', config);
 
-        res.render('daftar_guru', { 
-            gurus: responseGuru.data.data, 
-            error: req.query.error,
-            success: req.query.success 
+        res.render('daftar_guru', {
+            gurus: responseGuru.data.data || [],
+            user: req.session.user || { username: 'Admin' }, // Pastikan user tidak undefined
+            error: req.query.error || null,
+            success: req.query.success || null
         });
     } catch (err) {
         console.error("Gagal mengambil data guru dari API:", err.message);
-        res.render('daftar_guru', { gurus: [], sekolahs: [], error: 'Gagal memuat data dari server pusat.' });
+        res.render('daftar_guru', { 
+            gurus: [], 
+            user: req.session.user || { username: 'Admin' }, 
+            error: 'Gagal memuat data dari server pusat.',
+            success: null 
+        });
     }
 });
 
@@ -131,11 +138,15 @@ app.get('/daftar-guru/hapus/:id_guru', cekAdmin, async (req, res) => {
 
 // Halaman Lainnya
 app.get('/daftar-siswa', cekAdmin, (req, res) => {
-    res.render('daftar_siswa');
+    res.render('daftar_siswa', {
+        user: req.session.user
+    });
 });
 
 app.get('/jadwal', cekAdmin, (req, res) => {
-    res.render('jadwal');
+    res.render('jadwal', {
+        user: req.session.user
+    });
 });
 
 // Rute Proses Logout

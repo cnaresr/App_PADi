@@ -1,61 +1,155 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manajemen Guru - Sistem PADi</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>Daftar Guru - Web Admin PADi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #f8f9fa; }
-        .card { border: none; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }
+        :root {
+            --primary-color: #006D5B; /* Hijau PADi */
+            --secondary-color: #C8F6E6;
+            --sidebar-width: 250px;
+        }
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        /* Sidebar Style */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            background-color: white;
+            border-right: 1px solid #dee2e6;
+            padding-top: 20px;
+        }
+        .sidebar-brand {
+            padding: 0 25px 20px;
+            font-weight: bold;
+            font-size: 24px;
+            color: var(--primary-color);
+        }
+        .nav-link {
+            padding: 12px 25px;
+            color: #6c757d;
+            transition: 0.3s;
+        }
+        .nav-link:hover, .nav-link.active {
+            background-color: var(--secondary-color);
+            color: var(--primary-color) !important;
+            border-right: 4px solid var(--primary-color);
+        }
+        .nav-link i { margin-right: 10px; }
+        
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+        }
+        .navbar-custom {
+            background-color: white;
+            border-bottom: 1px solid #dee2e6;
+            padding: 15px 25px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+        }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .btn-primary { background-color: var(--primary-color); border: none; }
+        .btn-primary:hover { background-color: #005a4b; }
+        .table thead { background-color: #f8f9fa; }
     </style>
 </head>
-<body class="container mt-4">
+<body>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Manajemen Data Guru</h2>
-        <a href="/dashboard" class="btn btn-secondary">Kembali ke Dashboard</a>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-brand">PADi Admin</div>
+        <nav class="nav flex-column">
+            <a class="nav-link" href="/dashboard"><i class="fa-solid fa-grid-view"></i> Beranda</a>
+            <a class="nav-link active" href="/daftar-guru"><i class="fa-solid fa-chalkboard-user"></i> Daftar Guru</a>
+            <a class="nav-link" href="/daftar-siswa"><i class="fa-solid fa-user-graduate"></i> Daftar Siswa</a>
+            <a class="nav-link" href="/jadwal"><i class="fa-solid fa-calendar-days"></i> Jadwal</a>
+            <hr>
+            <a class="nav-link text-danger" href="/logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        </nav>
     </div>
 
-    <div class="card">
-        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Daftar Guru Terdaftar</h5>
-            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalTambah">Tambah Guru</button>
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Navbar -->
+        <div class="navbar-custom d-flex justify-content-between align-items-center">
+            <h4 class="m-0">Manajemen Data Guru</h4>
+            <div class="user-profile d-flex align-items-center">
+                <span class="me-2 text-muted small">Halo,</span>
+                <strong><%= locals.user ? user.username : 'Admin' %></strong>
+                <img src="https://ui-avatars.com/api/?name=<%= locals.user ? user.username : 'Admin' %>&background=006D5B&color=fff" class="rounded-circle ms-3" width="35">
+            </div>
         </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="ps-3">No</th>
-                            <th>NIP</th>
-                            <th>Nama Lengkap</th>
-                            <th>Email</th>
-                            <th class="text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% if (gurus && gurus.length > 0) { %>
-                            <% gurus.forEach((guru, index) => { %>
-                                <tr>
-                                    <td class="ps-3"><%= index + 1 %></td>
-                                    <td><%= guru.nip %></td>
-                                    <td><strong><%= guru.namaLengkap %></strong></td>
-                                    <td><%= guru.user ? guru.user.email : '-' %></td>
-                                    <td class="text-center">
-                                        <button class="btn btn-sm btn-warning" onclick="editGuru('<%= JSON.stringify(guru) %>')">Edit</button>
-                                        <button class="btn btn-sm btn-danger" onclick="hapusGuru('<%= guru.id %>')">Hapus</button>
-                                    </td>
-                                </tr>
-                            <% }) %>
-                        <% } else { %>
+
+        <!-- Alerts -->
+        <% if (success) { %>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-circle-check me-2"></i> <%= success %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <% } %>
+        <% if (error) { %>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-circle-exclamation me-2"></i> <%= error %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <% } %>
+
+        <div class="card">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between mb-4">
+                    <h5 class="card-title">List Data Guru Aktif</h5>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambah">
+                        <i class="fa-solid fa-plus me-2"></i> Tambah Guru Baru
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
                             <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">Belum ada data guru terdaftar.</td>
+                                <th>NIP</th>
+                                <th>Nama Lengkap</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Aksi</th>
                             </tr>
-                        <% } %>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <% if (gurus.length > 0) { %>
+                                <% gurus.forEach(guru => { %>
+                                    <tr>
+                                        <td><span class="badge bg-light text-dark fw-normal"><%= guru.nip %></span></td>
+                                        <td><strong><%= guru.namaLengkap %></strong></td>
+                                        <td>@<%= guru.user.username %></td>
+                                        <td><%= guru.user.email %></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary me-1" 
+                                                onclick="openEditModal('<%= guru.id %>', '<%= guru.namaLengkap %>', '<%= guru.nip %>', '<%= guru.user.username %>', '<%= guru.user.email %>')">
+                                                <i class="fa-solid fa-pen-to-square"></i>
+                                            </button>
+                                            <a href="/daftar-guru/hapus/<%= guru.id %>" class="btn btn-sm btn-outline-danger" 
+                                               onclick="return confirm('Apakah Anda yakin ingin menghapus guru ini?')">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">Belum ada data guru.</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -63,175 +157,132 @@
     <!-- Modal Tambah Guru -->
     <div class="modal fade" id="modalTambah" tabindex="-1">
         <div class="modal-dialog">
-            <form id="formTambahGuru" class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">Tambah Guru Baru</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body row g-3">
-                    <div class="col-12">
-                        <label class="form-label small fw-bold">NIP Guru</label>
-                        <input type="text" name="NIP" class="form-control" required placeholder="Contoh: 198203..." oninput="this.value = this.value.replace(/[^0-9]/g, '')" inputmode="numeric">
+            <div class="modal-content">
+                <form id="formTambah">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Tambah Guru Baru</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="col-12">
-                        <label class="form-label small fw-bold">Nama Lengkap</label>
-                        <input type="text" name="nama_lengkap" class="form-control" required placeholder="Nama dan Gelar">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nama Lengkap</label>
+                            <input type="text" name="nama_lengkap" class="form-control" required placeholder="Contoh: Dr. Budi Santoso">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">NIP</label>
+                            <input type="text" name="nip" class="form-control" required placeholder="Nomor Induk Pegawai">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            <input type="text" name="username" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" name="password" class="form-control" required>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label small fw-bold">Username</label>
-                        <input type="text" name="username" class="form-control" required placeholder="username_guru">
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan Data</button>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label small fw-bold">Email Aktif</label>
-                        <input type="email" name="email" class="form-control" required placeholder="guru@mail.com">
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label small fw-bold">Password</label>
-                        <input type="password" name="password" class="form-control" required placeholder="Minimal 6 karakter">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan Data</button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
 
     <!-- Modal Edit Guru -->
     <div class="modal fade" id="modalEdit" tabindex="-1">
         <div class="modal-dialog">
-            <form id="formEditGuru" method="POST" class="modal-content">
-                <div class="modal-header bg-warning">
-                    <h5 class="modal-title">Perbarui Data Guru</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body row g-3">
-                    <div class="col-12">
-                        <label class="form-label small fw-bold">NIP</label>
-                        <input type="text" name="NIP" id="edit_nip" class="form-control" required oninput="this.value = this.value.replace(/[^0-9]/g, '')" inputmode="numeric">
+            <div class="modal-content">
+                <form id="formEdit">
+                    <input type="hidden" id="edit_id">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Data Guru</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="col-12">
-                        <label class="form-label small fw-bold">Nama Lengkap</label>
-                        <input type="text" name="nama_lengkap" id="edit_nama" class="form-control" required>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nama Lengkap</label>
+                            <input type="text" id="edit_nama" name="nama_lengkap" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">NIP</label>
+                            <input type="text" id="edit_nip" name="nip" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            <input type="text" id="edit_username" name="username" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="edit_email" name="email" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password Baru (Kosongkan jika tidak diubah)</label>
+                            <input type="password" name="password" class="form-control">
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label small fw-bold">Username</label>
-                        <input type="text" name="username" id="edit_username" class="form-control" required>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Update Data</button>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label small fw-bold">Email</label>
-                        <input type="email" name="email" id="edit_email" class="form-control" required>
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label small fw-bold">Password (Kosongkan jika tidak diubah)</label>
-                        <input type="password" name="password" class="form-control" placeholder="******">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-warning">Perbarui Data</button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
     <script>
-        // Menangani Notifikasi dari URL Query
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('success')) Swal.fire('Berhasil!', urlParams.get('success'), 'success');
-        if (urlParams.has('error')) Swal.fire('Error!', urlParams.get('error'), 'error');
-
-        // CREATE: Menangani Submit Form Tambah Guru (AJAX)
-        document.getElementById('formTambahGuru').addEventListener('submit', async (e) => {
+        // Handler Tambah Guru
+        document.getElementById('formTambah').onsubmit = async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
-            const dataObjek = Object.fromEntries(formData.entries());
-
-            // VALIDASI NIP: Hanya Angka
-            if (!/^\d+$/.test(dataObjek.NIP)) {
-                return Swal.fire('Peringatan!', 'NIP hanya boleh berisi angka.', 'warning');
-            }
+            const data = Object.fromEntries(formData.entries());
 
             try {
-                // Gunakan rute internal '/daftar-guru/tambah' agar diproses app.js yang memegang token session
-                const response = await fetch('/daftar-guru/tambah', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams(dataObjek)
-                });
-
-                const result = await response.json();
-                if (result.status === 'success') {
-                    Swal.fire('Berhasil!', result.message, 'success')
-                        .then(() => window.location.reload()); // Refresh untuk melihat update tabel (SSR)
-                } else {
-                    Swal.fire('Gagal!', result.message || 'Terjadi kesalahan saat menyimpan data.', 'error');
+                const res = await axios.post('/daftar-guru/tambah', data);
+                if (res.data.status === 'success') {
+                    window.location.href = '/daftar-guru?success=' + res.data.message;
                 }
-            } catch (error) {
-                console.error(error);
-                Swal.fire('Error!', 'Gagal menghubungi server.', 'error');
+            } catch (err) {
+                alert(err.response?.data?.message || 'Terjadi kesalahan');
             }
-        });
+        };
 
-        // UPDATE: Menangani Submit Form Edit Guru (AJAX)
-        document.getElementById('formEditGuru').addEventListener('submit', async (e) => {
+        // Fungsi Buka Modal Edit
+        function openEditModal(id, nama, nip, username, email) {
+            document.getElementById('edit_id').value = id;
+            document.getElementById('edit_nama').value = nama;
+            document.getElementById('edit_nip').value = nip;
+            document.getElementById('edit_username').value = username;
+            document.getElementById('edit_email').value = email;
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalEdit'));
+            modal.show();
+        }
+
+        // Handler Update Guru
+        document.getElementById('formEdit').onsubmit = async (e) => {
             e.preventDefault();
+            const id = document.getElementById('edit_id').value;
             const formData = new FormData(e.target);
-            const dataObjek = Object.fromEntries(formData.entries());
-
-            // VALIDASI NIP: Hanya Angka
-            if (!/^\d+$/.test(dataObjek.NIP)) {
-                return Swal.fire('Peringatan!', 'NIP hanya boleh berisi angka.', 'warning');
-            }
+            const data = Object.fromEntries(formData.entries());
 
             try {
-                const response = await fetch(e.target.action, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams(dataObjek)
-                });
-
-                const result = await response.json();
-                if (result.status === 'success') {
-                    Swal.fire('Berhasil!', result.message, 'success')
-                        .then(() => window.location.reload());
-                } else {
-                    Swal.fire('Gagal!', result.message || 'Terjadi kesalahan.', 'error');
+                const res = await axios.post(`/daftar-guru/edit/${id}`, data);
+                if (res.data.status === 'success') {
+                    window.location.href = '/daftar-guru?success=' + res.data.message;
                 }
-            } catch (error) {
-                Swal.fire('Error!', 'Gagal menghubungi server.', 'error');
+            } catch (err) {
+                alert(err.response?.data?.message || 'Terjadi kesalahan');
             }
-        });
-
-        // UPDATE: Mengisi Data ke Modal Edit
-        function editGuru(guruRaw) {
-            const guru = JSON.parse(guruRaw);
-            document.getElementById('formEditGuru').action = `/daftar-guru/edit/${guru.id}`;
-            document.getElementById('edit_nip').value = guru.nip;
-            document.getElementById('edit_nama').value = guru.namaLengkap;
-            document.getElementById('edit_username').value = guru.user.username;
-            document.getElementById('edit_email').value = guru.user.email;
-            new bootstrap.Modal(document.getElementById('modalEdit')).show();
-        }
-
-        // DELETE: Konfirmasi Hapus
-        function hapusGuru(id) {
-            Swal.fire({
-                title: 'Hapus Guru?',
-                text: "Akun login dan profil guru ini akan dihapus permanen.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                confirmButtonText: 'Ya, Hapus',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = `/daftar-guru/hapus/${id}`;
-                }
-            });
-        }
+        };
     </script>
 </body>
 </html>
