@@ -197,9 +197,32 @@
                         <label class="block text-xs font-bold text-gray-600 mb-1">Check-Out (Pulang)</label>
                         <input type="time" id="inputJamPulang" name="jamPulang" required class="w-full border p-2 rounded-lg text-sm outline-none focus:border-[#006652]">
                     </div>
+                    
+                    <!-- KELOLA KELAS (Dinamis saat Edit) -->
+                    <div id="kelolaKelasContainer" class="hidden border-t pt-4 mt-4">
+                        <h4 class="text-sm font-bold text-gray-800 mb-2">Kelola Kelas (Khusus Edit)</h4>
+                        
+                        <div class="mb-3">
+                            <label class="block text-[10px] font-bold text-gray-500 mb-1">KELAS TERDAFTAR</label>
+                            <div id="kelasTerdaftarList" class="flex flex-wrap gap-2">
+                                <!-- Diisi lewat JS -->
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 mb-1">TAMBAH KELAS</label>
+                            <div class="flex gap-2">
+                                <select id="selectKelasBaru" class="flex-1 border p-1.5 text-xs rounded-md outline-none bg-white">
+                                    <option value="">-- Pilih Kelas Belum Terjadwal --</option>
+                                </select>
+                                <button type="button" onclick="assignKelasModal()" class="bg-[#006652] text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-[#005c49]">Tambah</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="flex justify-end gap-3 pt-4">
                         <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm text-gray-500 font-bold hover:text-gray-700 cursor-pointer">Batal</button>
-                        <button type="submit" class="bg-[#006652] text-white px-5 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-[#005c49] cursor-pointer">Simpan</button>
+                        <button type="submit" class="bg-[#006652] text-white px-5 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-[#005c49] cursor-pointer">Simpan Jadwal</button>
                     </div>
                 </form>
             </div>
@@ -210,11 +233,18 @@
         const modal = document.getElementById('jadwalModal');
         const form = document.getElementById('formJadwal');
         const modalTitle = document.getElementById('modalTitle');
+        
+        // Simpan data array ke scope JS
+        const dataServer = <%- JSON.stringify({ 
+            jadwalList: typeof jadwalList !== 'undefined' ? jadwalList : [], 
+            kelasList: typeof kelasList !== 'undefined' ? kelasList : [] 
+        }) %>;
 
         function openModal() { 
             form.reset();
             document.getElementById('jadwalId').value = '';
             modalTitle.textContent = 'Buat Jadwal Baru';
+            document.getElementById('kelolaKelasContainer').classList.add('hidden');
             modal.classList.remove('hidden'); 
         }
 
@@ -233,7 +263,67 @@
             document.getElementById('inputJamPulang').value = pulang;
             
             modalTitle.textContent = 'Edit Jadwal';
+            
+            // Konfigurasi Kelola Kelas
+            document.getElementById('kelolaKelasContainer').classList.remove('hidden');
+            
+            const jadwalData = dataServer.jadwalList.find(j => j.id == id);
+            const containerTerdaftar = document.getElementById('kelasTerdaftarList');
+            containerTerdaftar.innerHTML = '';
+            if(jadwalData && jadwalData.kelas && jadwalData.kelas.length > 0) {
+                jadwalData.kelas.forEach(k => {
+                    containerTerdaftar.innerHTML += `
+                        <div class="bg-gray-100 border px-2 py-1 rounded text-xs font-bold flex items-center gap-2">
+                            ${k.namaKelas}
+                            <button type="button" onclick="unassignKelasModal('${jadwalData.id}', '${k.id}')" class="text-red-500 hover:text-red-700 font-bold" title="Hapus Kelas">×</button>
+                        </div>
+                    `;
+                });
+            } else {
+                containerTerdaftar.innerHTML = '<span class="text-xs text-gray-400 italic">Belum ada kelas</span>';
+            }
+            
+            const selectBaru = document.getElementById('selectKelasBaru');
+            selectBaru.innerHTML = '<option value="">-- Pilih Kelas Belum Terjadwal --</option>';
+            const unassigned = dataServer.kelasList.filter(k => !k.jadwalAbsensi || k.jadwalAbsensi.length === 0);
+            unassigned.forEach(k => {
+                selectBaru.innerHTML += `<option value="${k.id}">${k.namaKelas}</option>`;
+            });
+
             modal.classList.remove('hidden');
+        }
+
+        async function unassignKelasModal(jadwalId, kelasId) {
+            if(!confirm("Hapus kelas ini dari jadwal?")) return;
+            try {
+                const res = await fetch(`http://localhost:3000/api/jadwal/${jadwalId}/unassign`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ kelasId })
+                });
+                if(res.ok) window.location.reload();
+                else alert('Gagal membatalkan kelas dari jadwal');
+            } catch(err) {
+                alert('Kesalahan jaringan');
+            }
+        }
+
+        async function assignKelasModal() {
+            const jadwalId = document.getElementById('jadwalId').value;
+            const kelasId = document.getElementById('selectKelasBaru').value;
+            if(!jadwalId || !kelasId) return alert('Silakan pilih jadwal dan kelas terlebih dahulu!');
+            
+            try {
+                const res = await fetch(`http://localhost:3000/api/jadwal/${jadwalId}/assign`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ kelasId })
+                });
+                if(res.ok) window.location.reload();
+                else alert('Gagal menambahkan kelas ke jadwal');
+            } catch(err) {
+                alert('Kesalahan jaringan');
+            }
         }
 
         async function hapusJadwal(id) {
