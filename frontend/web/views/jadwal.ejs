@@ -74,8 +74,11 @@
                                     <% }) %>
                                 <% } %>
                             </div>
+                            <button onclick="toggleJadwal('<%= jadwal.id %>', <%= jadwal.isLibur %>)" class="ml-2 text-[10px] font-bold px-2 py-1 rounded <%= jadwal.isLibur ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-green-100 text-green-600 hover:bg-green-200' %>" title="Klik untuk mengubah status">
+                                <%= jadwal.isLibur ? 'Nonaktif' : 'Aktif' %>
+                            </button>
                             <button onclick="editJadwal('<%= jadwal.id %>', '<%= jadwal.namaJadwal %>', '<%= jadwal.hari %>', '<%= jadwal.tanggal ? jadwal.tanggal.split('T')[0] : '' %>', '<%= jadwal.jamMasukStart ? jadwal.jamMasukStart.substring(11, 16) : '' %>', '<%= jadwal.jamMasukFinish ? jadwal.jamMasukFinish.substring(11, 16) : '' %>', '<%= jadwal.jamPulang ? jadwal.jamPulang.substring(11, 16) : '' %>')" class="text-blue-500 hover:text-blue-700 ml-2" title="Edit">✏️</button>
-                            <button onclick="hapusJadwal('<%= jadwal.id %>')" class="text-red-500 hover:text-red-700" title="Hapus">🗑️</button>
+                            <button onclick="hapusJadwal('<%= jadwal.id %>')" class="text-red-500 hover:text-red-700 ml-2" title="Hapus">🗑️</button>
                         </div>
                     </div>
                     <% }) %>
@@ -281,6 +284,30 @@
             document.getElementById('param-late').value = late || '--';
             document.getElementById('param-checkout').value = checkout || '--';
         }
+
+        async function toggleJadwal(id, currentStatus) {
+            event.stopPropagation();
+            const newStatus = !currentStatus;
+            try {
+                const res = await fetch(`http://localhost:3000/api/jadwal/${id}/toggle`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ isLibur: newStatus })
+                });
+                if(res.ok) window.location.reload();
+                else alert('Gagal mengubah status jadwal');
+            } catch(err) {
+                alert('Kesalahan jaringan');
+            }
+        }
+
+        document.getElementById('inputTanggal').addEventListener('change', function() {
+            if(this.value) {
+                const date = new Date(this.value);
+                const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                document.getElementById('inputHari').value = days[date.getDay()];
+            }
+        });
 
         const draggables = document.querySelectorAll('.draggable');
         const dropZones = document.querySelectorAll('.drop-zone');
