@@ -53,10 +53,10 @@ packages:
     dependency: transitive
     description:
       name: camera_android
-      sha256: a2001f839b90d97fd40164c29661868403e92de5a98ae03e3f5a12848e606063
+      sha256: "039fc1a0bcdfc1a35ac8438524ca2ae45bd2fc921475c03808f76790b7f337e3"
       url: "https://pub.dev"
     source: hosted
-    version: "0.10.10+17"
+    version: "0.10.10+18"
   camera_avfoundation:
     dependency: transitive
     description:
@@ -210,10 +210,10 @@ packages:
     dependency: transitive
     description:
       name: flutter_plugin_android_lifecycle
-      sha256: "38d1c268de9097ff59cf0e844ac38759fc78f76836d37edad06fa21e182055a0"
+      sha256: "3854fe5e3bff0b113c658f260b90c95dea17c92db0f2addeac2e343dd9969785"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.34"
+    version: "2.0.35"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -252,10 +252,10 @@ packages:
     dependency: transitive
     description:
       name: geolocator_platform_interface
-      sha256: "30cb64f0b9adcc0fb36f628b4ebf4f731a2961a0ebd849f4b56200205056fe67"
+      sha256: dde05dae7d584db6e82feb87dd9fb0b4b4c83ed68065667b4bef637be38e13a7
       url: "https://pub.dev"
     source: hosted
-    version: "4.2.6"
+    version: "4.2.7"
   geolocator_web:
     dependency: transitive
     description:
@@ -272,6 +272,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.5"
+  google_mlkit_commons:
+    dependency: transitive
+    description:
+      name: google_mlkit_commons
+      sha256: "3e69fea4211727732cc385104e675ad1e40b29f12edd492ee52fa108423a6124"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.11.1"
+  google_mlkit_face_detection:
+    dependency: "direct main"
+    description:
+      name: google_mlkit_face_detection
+      sha256: "7b6ddcc69dbd6fbfa313fb2d974ad0f0c3a0d1657560f0da6be465baf1889687"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.13.2"
   html:
     dependency: transitive
     description:
@@ -566,5 +582,5 @@ packages:
     source: hosted
     version: "3.1.3"
 sdks:
-  dart: ">=3.10.0-290.4.beta <4.0.0"
-  flutter: ">=3.35.0"
+  dart: ">=3.10.0 <4.0.0"
+  flutter: ">=3.38.0"

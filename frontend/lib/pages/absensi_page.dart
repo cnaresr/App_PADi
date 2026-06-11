@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:tflite_flutter/tflite_flutter.dart' as tfl;
 import 'package:image/image.dart' as img;
 import 'package:provider/provider.dart'; // [BARU] Import provider
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
 // Asumsi path, sesuaikan jika berbeda
 import '../main.dart'; 
@@ -29,37 +30,31 @@ class AbsensiPage extends StatefulWidget {
 }
 
 class _AbsensiPageState extends State<AbsensiPage> with AutomaticKeepAliveClientMixin {
-  // Flag untuk memastikan konten (termasuk kamera) hanya dibuat sekali.
-  bool _isContentLoaded = false;
+  // [PERBAIKAN] Gunakan Future yang resolve setelah frame pertama untuk lazy loading.
+  // Ini adalah pola yang lebih stabil daripada setState di addPostFrameCallback.
+  final Future<void> _contentLoader = Future.delayed(Duration.zero);
 
   @override
   bool get wantKeepAlive => true; // Ini penting untuk menjaga state saat berpindah tab.
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Diperlukan oleh AutomaticKeepAliveClientMixin.
+    super.build(context); // Wajib dipanggil saat menggunakan AutomaticKeepAliveClientMixin.
 
-    // Trik ini akan membangun konten sebenarnya hanya setelah widget ini
-    // pertama kali muncul di layar.
-    if (!_isContentLoaded) {
-      // Kita menggunakan post-frame callback untuk aman memperbarui state setelah build selesai.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _isContentLoaded = true;
-          });
+    return FutureBuilder<void>(
+      future: _contentLoader,
+      builder: (context, snapshot) {
+        // Jika future sudah selesai (setelah frame pertama), bangun konten utama.
+        if (snapshot.connectionState == ConnectionState.done) {
+          return _AbsensiPageContent(siswaId: widget.siswaId);
         }
-      });
-    }
-
-    // Selama konten belum siap, tampilkan placeholder.
-    // Setelah siap, baru bangun halaman kamera yang sebenarnya.
-    return _isContentLoaded
-        ? _AbsensiPageContent(siswaId: widget.siswaId)
-        : const Scaffold(
-            backgroundColor: Color(0xFFFAFAFA),
-            body: Center(child: CircularProgressIndicator(color: Color(0xFF006D5B))),
-          );
+        // Selama future belum selesai, tampilkan loading indicator.
+        return const Scaffold(
+          backgroundColor: Color(0xFFFAFAFA),
+          body: Center(child: CircularProgressIndicator(color: Color(0xFF006D5B))),
+        );
+      },
+    );
   }
 }
 
@@ -273,14 +268,45 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
   }
 
   Future<List<double>?> _runModelOnImage(File imageFile) async {
-    img.Image? originalImage = img.decodeImage(await imageFile.readAsBytes());
-    if (originalImage == null) return null;
+    // 1. INISIALISASI PENDETEKSI WAJAH GOOGLE ML KIT
+    final options = FaceDetectorOptions(performanceMode: FaceDetectorMode.fast);
+    final faceDetector = FaceDetector(options: options);
+    final inputImage = InputImage.fromFilePath(imageFile.path);
 
-    // Model MobileFaceNet biasanya butuh input 112x112
-    img.Image resizedImage = img.copyResize(originalImage, width: 112, height: 112);
+    // 2. MENCARI LOKASI WAJAH DI DALAM FOTO
+    final List<Face> faces = await faceDetector.processImage(inputImage);
+    faceDetector.close(); // Tutup detector untuk menghemat memori HP
 
-    // Konversi ke List<List<List<double>>> dan normalisasi pixel
-    // Cara yang lebih aman dan bersih untuk memproses gambar
+    // Jika tidak ada wajah manusia di depan kamera, hentikan proses
+    if (faces.isEmpty) {
+      throw Exception("Wajah tidak ditemukan. Pastikan wajah terlihat jelas di kamera.");
+    }
+
+    // Ambil koordinat wajah pertama/terbesar yang terdeteksi
+    final Face firstFace = faces.first;
+    final Rect boundingBox = firstFace.boundingBox;
+
+    // 3. MUAT GAMBAR ASLI UNTUK DIPOTONG
+    img.Image? rawImage = img.decodeImage(await imageFile.readAsBytes());
+    if (rawImage == null) return null;
+    
+    // [TAMBAHKAN INI] Memaksa gambar tegak sesuai rotasi EXIF-nya
+    img.Image originalImage = img.bakeOrientation(rawImage);
+
+    // 4. POTONG (CROP) GAMBAR TEPAT DI KOTAK WAJAH
+    // Mencegah error jika kotak wajah sedikit keluar dari batas layar
+    int x = boundingBox.left.toInt().clamp(0, originalImage.width);
+    int y = boundingBox.top.toInt().clamp(0, originalImage.height);
+    int w = boundingBox.width.toInt().clamp(0, originalImage.width - x);
+    int h = boundingBox.height.toInt().clamp(0, originalImage.height - y);
+
+    // Menggunting gambar agar hanya tersisa bagian wajah (latar belakang dibuang)
+    img.Image croppedFace = img.copyCrop(originalImage, x: x, y: y, width: w, height: h);
+
+    // 5. UBAH UKURAN WAJAH YANG SUDAH DIPOTONG MENJADI 112x112
+    img.Image resizedImage = img.copyResize(croppedFace, width: 112, height: 112);
+
+    // 6. EKSTRAKSI FITUR MENGGUNAKAN TFLITE (MobileFaceNet)
     var input = List.generate(112, (y) {
       return List.generate(112, (x) {
         final pixel = resizedImage.getPixel(x, y);
@@ -288,10 +314,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
       });
     });
 
-    // Ubah shape input menjadi [1, 112, 112, 3]
     var reshapedInput = [input];
-
-    // Output model biasanya [1, 128] atau [1, 512]
     var output = List.filled(1 * 192, 0.0).reshape([1, 192]);
 
     _interpreter.run(reshapedInput, output);
