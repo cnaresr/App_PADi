@@ -8,7 +8,7 @@
 <body class="bg-slate-100 flex font-sans">
     
     <aside class="w-64 h-screen bg-black text-gray-400 p-6 flex flex-col fixed rounded-r-3xl shadow-2xl z-20">
-        <div class="text-3xl font-bold text-white mb-12 mt-4 tracking-widest pl-2">LOGO</div>
+        <div class="text-3xl font-bold text-white mb-12 mt-4 tracking-widest pl-2">PADi</div>
         <nav class="flex-1 space-y-3">
             <a href="/dashboard" class="flex items-center gap-4 p-3.5 hover:text-white hover:bg-white/10 rounded-2xl transition">
                 <span class="text-lg">⊞</span> Dashboard
@@ -33,12 +33,13 @@
     <main class="flex-1 ml-64 p-8">
         
         <div class="bg-blue-600 rounded-3xl p-4 flex justify-between items-center text-white mb-8 shadow-lg shadow-blue-600/20">
-            <div class="relative w-96 ml-2">
+            <form action="/daftar-siswa" method="GET" class="relative w-96 ml-2">
                 <span class="absolute left-4 top-2.5 opacity-50">🔍</span>
-                <input type="text" placeholder="Search student..." class="w-full bg-blue-700/50 text-white placeholder-blue-200 border border-blue-500/50 rounded-full pl-12 pr-4 py-2 outline-none focus:ring-2 focus:ring-white/50 text-sm transition">
-            </div>
+                <input type="text" name="search" value="<%= typeof search !== 'undefined' ? search : '' %>" placeholder="Cari siswa, NIS, atau email..." class="w-full bg-blue-700/50 text-white placeholder-blue-200 border border-blue-500/50 rounded-full pl-12 pr-4 py-2 outline-none focus:ring-2 focus:ring-white/50 text-sm transition">
+            </form>
+
             <div class="flex items-center gap-6 pr-4">
-                <button class="bg-white text-blue-600 px-5 py-2 rounded-full text-xs font-bold shadow-md hover:bg-gray-100 transition">+ Tambah Siswa</button>
+                <button onclick="toggleModal('modalTambahSiswa')" class="bg-white text-blue-600 px-5 py-2 rounded-full text-xs font-bold shadow-md hover:bg-gray-100 transition">+ Tambah Siswa</button>
                 <div class="flex items-center gap-3 border-l border-blue-400/50 pl-6 cursor-pointer">
                     <span class="text-sm font-bold tracking-wide uppercase">Admin PADI</span>
                     <div class="w-9 h-9 bg-white rounded-full flex items-center justify-center text-blue-600 font-bold text-xs">AD</div>
@@ -50,21 +51,21 @@
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex justify-between items-center">
                 <div>
                     <p class="text-gray-400 text-xs font-bold uppercase">Total Siswa</p>
-                    <h3 class="text-3xl font-bold text-gray-800 mt-1">1,248</h3>
+                    <h3 class="text-3xl font-bold text-gray-800 mt-1"><%= siswas ? siswas.length : 0 %></h3>
                 </div>
                 <div class="bg-slate-100 border p-4 rounded-full text-2xl">👥</div>
             </div>
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex justify-between items-center">
                 <div>
                     <p class="text-gray-400 text-xs font-bold uppercase">Siswa Aktif</p>
-                    <h3 class="text-3xl font-bold text-gray-800 mt-1">1,190</h3>
+                    <h3 class="text-3xl font-bold text-gray-800 mt-1"><%= siswas ? siswas.length : 0 %></h3>
                 </div>
                 <div class="bg-green-50 border border-green-100 p-4 rounded-full text-2xl text-green-500">✅</div>
             </div>
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex justify-between items-center">
                 <div>
                     <p class="text-gray-400 text-xs font-bold uppercase">Dalam Izin</p>
-                    <h3 class="text-3xl font-bold text-gray-800 mt-1">58</h3>
+                    <h3 class="text-3xl font-bold text-gray-800 mt-1">0</h3>
                 </div>
                 <div class="bg-orange-50 border border-orange-100 p-4 rounded-full text-2xl text-orange-500">🌙</div>
             </div>
@@ -89,54 +90,88 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y text-sm">
-                    <tr class="hover:bg-slate-50 transition cursor-pointer">
-                        <td class="px-8 py-4 flex items-center gap-4">
-                            <div class="w-10 h-10 bg-blue-100 text-blue-600 font-bold rounded-full flex items-center justify-center">BS</div>
-                            <div>
-                                <p class="font-bold text-gray-800">Budi Santoso</p>
-                                <p class="text-xs text-gray-400">budisantoso@sekolah.edu</p>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 text-gray-500 font-mono text-xs">21221001</td>
-                        <td class="px-6 py-4"><span class="bg-slate-100 border text-gray-600 px-3 py-1.5 rounded-lg text-[10px] font-bold">XII RPL 1</span></td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3">
-                                <span class="font-bold text-gray-800 text-xs w-8">98%</span>
-                                <div class="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden"><div class="bg-blue-600 h-full w-[98%]"></div></div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4"><span class="text-green-500 font-bold text-xs flex items-center gap-1">● Aktif</span></td>
-                    </tr>
-                    <tr class="hover:bg-slate-50 transition cursor-pointer">
-                        <td class="px-8 py-4 flex items-center gap-4">
-                            <div class="w-10 h-10 bg-purple-100 text-purple-600 font-bold rounded-full flex items-center justify-center">SR</div>
-                            <div>
-                                <p class="font-bold text-gray-800">Siti Rahmawati</p>
-                                <p class="text-xs text-gray-400">sitirahma@sekolah.edu</p>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 text-gray-500 font-mono text-xs">21221045</td>
-                        <td class="px-6 py-4"><span class="bg-slate-100 border text-gray-600 px-3 py-1.5 rounded-lg text-[10px] font-bold">X TKJ 2</span></td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3">
-                                <span class="font-bold text-gray-800 text-xs w-8">85%</span>
-                                <div class="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden"><div class="bg-orange-500 h-full w-[85%]"></div></div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4"><span class="text-orange-500 font-bold text-xs flex items-center gap-1">● Peringatan</span></td>
-                    </tr>
+                    <% if (typeof siswas !== 'undefined' && siswas.length > 0) { %>
+                        <% siswas.forEach(function(user) { %>
+                            <tr class="hover:bg-slate-50 transition cursor-pointer">
+                                <td class="px-8 py-4 flex items-center gap-4">
+                                    <div class="w-10 h-10 bg-blue-100 text-blue-600 font-bold rounded-full flex items-center justify-center">
+                                        <%= user.siswa && user.siswa.namaLengkap ? user.siswa.namaLengkap.substring(0, 2).toUpperCase() : 'U' %>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-gray-800"><%= user.siswa ? user.siswa.namaLengkap : 'Tanpa Nama' %></p>
+                                        <p class="text-xs text-gray-400"><%= user.email %></p>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-gray-500 font-mono text-xs"><%= user.siswa ? user.siswa.nis : '-' %></td>
+                                <td class="px-6 py-4"><span class="bg-slate-100 border text-gray-600 px-3 py-1.5 rounded-lg text-[10px] font-bold">Menunggu...</span></td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <span class="font-bold text-gray-800 text-xs w-8">0%</span>
+                                        <div class="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden"><div class="bg-blue-600 h-full w-[0%]"></div></div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4"><span class="text-green-500 font-bold text-xs flex items-center gap-1">● Aktif</span></td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="5" class="px-8 py-8 text-center text-gray-500 font-bold">Tidak ada data siswa ditemukan.</td>
+                        </tr>
+                    <% } %>
                 </tbody>
             </table>
+            
             <div class="p-6 border-t flex justify-between items-center text-xs text-gray-400">
-                <p class="font-semibold">Menampilkan 10 dari 1,248 siswa</p>
-                <div class="flex gap-2">
-                    <button class="px-3.5 py-2 rounded-lg bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30">1</button>
-                    <button class="px-3.5 py-2 rounded-lg border hover:bg-slate-50 font-bold text-gray-600">2</button>
-                    <button class="px-3.5 py-2 rounded-lg border hover:bg-slate-50 font-bold text-gray-600">3</button>
-                    <span class="px-2 py-2">...</span>
-                </div>
+                <p class="font-semibold">Total <%= siswas ? siswas.length : 0 %> siswa ditemukan</p>
             </div>
         </div>
     </main>
+
+    <div id="modalTambahSiswa" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex justify-center items-center">
+        <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative transform transition-all">
+            <button onclick="toggleModal('modalTambahSiswa')" class="absolute top-6 right-6 text-gray-400 hover:text-black font-bold">✖</button>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Tambah Siswa</h2>
+            <p class="text-xs text-gray-500 mb-6">Buat akun siswa dan lengkapi profilnya.</p>
+            
+            <form action="/daftar-siswa" method="POST" class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-700">Nama Lengkap</label>
+                    <input type="text" name="namaLengkap" required class="w-full bg-slate-50 border border-gray-200 rounded-xl px-4 py-3 mt-1 text-sm outline-none focus:border-blue-500 focus:bg-white">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-700">NIS (Nomor Induk)</label>
+                        <input type="text" name="nis" required class="w-full bg-slate-50 border border-gray-200 rounded-xl px-4 py-3 mt-1 text-sm outline-none focus:border-blue-500 focus:bg-white">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-700">Username Akun</label>
+                        <input type="text" name="username" required class="w-full bg-slate-50 border border-gray-200 rounded-xl px-4 py-3 mt-1 text-sm outline-none focus:border-blue-500 focus:bg-white">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-700">Alamat Email</label>
+                    <input type="email" name="email" required class="w-full bg-slate-50 border border-gray-200 rounded-xl px-4 py-3 mt-1 text-sm outline-none focus:border-blue-500 focus:bg-white">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-700">Password</label>
+                    <input type="password" name="password" required class="w-full bg-slate-50 border border-gray-200 rounded-xl px-4 py-3 mt-1 text-sm outline-none focus:border-blue-500 focus:bg-white">
+                </div>
+                <input type="hidden" name="sekolahId" value="1">
+                
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold rounded-xl py-3.5 mt-4 hover:bg-blue-700 shadow-lg shadow-blue-600/30 transition">Simpan Data Siswa</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleModal(modalID) {
+            const modal = document.getElementById(modalID);
+            if(modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+    </script>
 </body>
 </html>

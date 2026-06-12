@@ -66,17 +66,68 @@ app.post('/login', async (req, res) => {
     }
 });
 
+
+
 // --- RUTE YANG DILINDUNGI (Wajib Login) ---
-app.get('/dashboard', cekAdmin, (req, res) => {
-    res.render('dashboard');
+app.get('/dashboard', cekAdmin, async (req, res) => {
+    try {
+        // PERUBAHAN KRUSIAL: localhost diubah menjadi 127.0.0.1 agar Node.js tidak tersesat
+        const response = await axios.get('http://127.0.0.1:3000/api/dashboard/stats');
+        const statsData = response.data.data;
+        
+        // Kirim data 'stats' ke file EJS
+        res.render('dashboard', { stats: statsData });
+    } catch (error) {
+        // Jika masih error, kita akan melihat alasannya di terminal VS Code
+        console.error("Gagal mengambil statistik via Axios:", error.message);
+        res.render('dashboard', { 
+            stats: { totalSiswa: 0, totalGuru: 0, totalAdmin: 0, attendanceWeekly: [0,0,0,0,0,0,0], statusChart: [0,0,0] } 
+        });
+    }
 });
 
-app.get('/daftar-siswa', cekAdmin, (req, res) => {
-    res.render('daftar_siswa');
+// --- GANTI RUTE DAFTAR SISWA ---
+app.get('/daftar-siswa', cekAdmin, async (req, res) => {
+    try {
+        const search = req.query.search || '';
+        const response = await axios.get(`http://127.0.0.1:3000/api/admin/siswa?search=${search}`);
+        res.render('daftar_siswa', { siswas: response.data.data, search: search });
+    } catch (error) {
+        console.error("Gagal mengambil daftar siswa:", error.message);
+        res.render('daftar_siswa', { siswas: [], search: '' });
+    }
 });
 
-app.get('/daftar-guru', cekAdmin, (req, res) => {
-    res.render('daftar_guru');
+app.post('/daftar-siswa', cekAdmin, async (req, res) => {
+    try {
+        await axios.post('http://127.0.0.1:3000/api/admin/siswa', req.body);
+        res.redirect('/daftar-siswa'); // Refresh halaman setelah berhasil
+    } catch (error) {
+        console.error("Gagal tambah siswa:", error.message);
+        res.redirect('/daftar-siswa?error=Gagal_menambahkan_siswa');
+    }
+});
+
+// --- GANTI RUTE DAFTAR GURU ---
+app.get('/daftar-guru', cekAdmin, async (req, res) => {
+    try {
+        const search = req.query.search || '';
+        const response = await axios.get(`http://127.0.0.1:3000/api/admin/guru?search=${search}`);
+        res.render('daftar_guru', { gurus: response.data.data, search: search });
+    } catch (error) {
+        console.error("Gagal mengambil daftar guru:", error.message);
+        res.render('daftar_guru', { gurus: [], search: '' });
+    }
+});
+
+app.post('/daftar-guru', cekAdmin, async (req, res) => {
+    try {
+        await axios.post('http://127.0.0.1:3000/api/admin/guru', req.body);
+        res.redirect('/daftar-guru');
+    } catch (error) {
+        console.error("Gagal tambah guru:", error.message);
+        res.redirect('/daftar-guru?error=Gagal_menambahkan_guru');
+    }
 });
 
 app.get('/jadwal', cekAdmin, async (req, res) => {

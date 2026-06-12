@@ -9,7 +9,8 @@
 <body class="bg-slate-100 flex font-sans">
     
     <aside class="w-64 h-screen bg-black text-gray-400 p-6 flex flex-col fixed rounded-r-3xl shadow-2xl z-20">
-        <div class="text-3xl font-bold text-white mb-12 mt-4 tracking-widest pl-2">LOGO</div>
+        <div class="text-3xl font-bold text-white mb-12 mt-4 tracking-widest pl-2">PADi</div>
+        
         <nav class="flex-1 space-y-3">
             <a href="/dashboard" class="flex items-center gap-4 p-3.5 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-600/40 transition">
                 <span class="text-lg">⊞</span> Dashboard
@@ -39,10 +40,6 @@
                 <input type="text" placeholder="Search" class="w-full bg-blue-700/50 text-white placeholder-blue-200 border border-blue-500/50 rounded-full pl-12 pr-4 py-2 outline-none focus:ring-2 focus:ring-white/50 text-sm transition">
             </div>
             <div class="flex items-center gap-6 pr-4">
-                <div class="flex gap-4 opacity-70 cursor-pointer">
-                    <span class="hover:opacity-100 transition">✉️</span>
-                    <span class="hover:opacity-100 transition">🔔</span>
-                </div>
                 <div class="flex items-center gap-3 border-l border-blue-400/50 pl-6 cursor-pointer">
                     <span class="text-sm font-bold tracking-wide uppercase">Admin PADI</span>
                     <div class="w-9 h-9 bg-white rounded-full flex items-center justify-center text-blue-600 font-bold text-xs">AD</div>
@@ -56,10 +53,10 @@
                     <div class="bg-slate-100 p-3 rounded-full text-xl border">🎓</div>
                     <div>
                         <p class="text-gray-400 text-xs font-bold uppercase">Total Siswa</p>
-                        <h3 class="text-2xl font-bold text-gray-800">1,240</h3>
+                        <h3 class="text-2xl font-bold text-gray-800"><%= locals.stats ? locals.stats.totalSiswa : 0 %></h3>
                     </div>
                 </div>
-                <p class="text-green-500 text-xs font-semibold">↑ 12% dari bulan lalu</p>
+                <p class="text-green-500 text-xs font-semibold">Aktif di database</p>
             </div>
             
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
@@ -67,7 +64,7 @@
                     <div class="bg-slate-100 p-3 rounded-full text-xl border">👨‍🏫</div>
                     <div>
                         <p class="text-gray-400 text-xs font-bold uppercase">Total Guru</p>
-                        <h3 class="text-2xl font-bold text-gray-800">86</h3>
+                        <h3 class="text-2xl font-bold text-gray-800"><%= locals.stats ? locals.stats.totalGuru : 0 %></h3>
                     </div>
                 </div>
                 <p class="text-blue-500 text-xs font-semibold">Akun terverifikasi penuh</p>
@@ -78,26 +75,64 @@
                     <div class="bg-blue-500 border border-blue-400 p-3 rounded-full text-xl">🛡️</div>
                     <div>
                         <p class="text-blue-200 text-xs font-bold uppercase">Total Admin</p>
-                        <h3 class="text-2xl font-bold">04</h3>
+                        <h3 class="text-2xl font-bold"><%= locals.stats ? locals.stats.totalAdmin : 0 %></h3>
                     </div>
                 </div>
-                <p class="text-blue-200 text-xs font-semibold">Sedang mengakses sistem</p>
+                <p class="text-blue-200 text-xs font-semibold">Memiliki hak akses penuh</p>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div class="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <div>
-                        <h3 class="font-bold text-gray-800 text-lg">Statistik Kehadiran Siswa</h3>
-                        <p class="text-xs text-gray-400 font-semibold mt-1">Semester Ganjil 2025/2026</p>
+            <div class="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="font-bold text-gray-800 text-lg">Statistik Kehadiran Siswa</h3>
+                            <p class="text-xs text-gray-400 font-semibold mt-1">Estimasi Sistem Dinamis</p>
+                        </div>
                     </div>
-                    <select class="border rounded-xl px-3 py-1.5 text-xs text-gray-500 outline-none font-bold bg-slate-50">
-                        <option>Bulan Ini</option>
-                        <option>Tahun Ini</option>
-                    </select>
+                    <div id="attendanceChart" class="w-full h-64"></div>
                 </div>
-                <div id="attendanceChart" class="w-full h-64"></div>
+
+                <div class="mt-4 pt-6 border-t border-gray-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold text-gray-800 text-sm">Siswa Perlu Perhatian (Hari Ini)</h4>
+                        <a href="/daftar-siswa" class="text-xs text-blue-600 font-bold hover:underline">Lihat Semua</a>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        
+                        <%
+                        function getTheme(theme) {
+                            if(theme === 'red') return { box: 'bg-red-50 border-red-100', icon: 'bg-red-200 text-red-600', text: 'text-red-500' };
+                            if(theme === 'orange') return { box: 'bg-orange-50 border-orange-100', icon: 'bg-orange-200 text-orange-600', text: 'text-orange-500' };
+                            return { box: 'bg-blue-50 border-blue-100', icon: 'bg-blue-200 text-blue-600', text: 'text-blue-500' };
+                        }
+                        %>
+
+                        <% if (locals.stats && locals.stats.siswaPerluPerhatian && locals.stats.siswaPerluPerhatian.length > 0) { %>
+                            <% locals.stats.siswaPerluPerhatian.forEach(function(s) { 
+                                const style = getTheme(s.theme);
+                            %>
+                                <div class="<%= style.box %> p-3 rounded-xl flex items-center gap-3 transition hover:shadow-md cursor-pointer">
+                                    <div class="w-8 h-8 <%= style.icon %> rounded-full flex justify-center items-center font-bold text-xs"><%= s.inisial %></div>
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-800"><%= s.nama %></p>
+                                        <p class="text-[10px] <%= style.text %> font-semibold"><%= s.statusText %></p>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        <% } else { %>
+                            <div class="col-span-2 md:col-span-3 bg-green-50 border border-green-100 p-4 rounded-xl flex items-center gap-3">
+                                <div class="w-8 h-8 bg-green-200 text-green-600 rounded-full flex justify-center items-center font-bold text-sm">✓</div>
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">Semua Terkendali!</p>
+                                    <p class="text-[10px] text-green-600 font-semibold">Tidak ada siswa yang tercatat absen, terlambat, atau izin hari ini.</p>
+                                </div>
+                            </div>
+                        <% } %>
+
+                    </div>
+                </div>
             </div>
 
             <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
@@ -106,33 +141,33 @@
                     <div id="statusChart" class="flex justify-center -mt-2"></div>
                 </div>
                 
-                <div class="mt-4 space-y-4">
-                    <h4 class="font-bold text-gray-800 text-sm">Persentase Keterlambatan</h4>
+                <div class="mt-4 pt-6 border-t border-gray-100">
+                    <h4 class="font-bold text-gray-800 text-sm mb-4">Persentase Keterlambatan</h4>
                     
-                    <div class="space-y-1">
-                        <div class="flex justify-between text-xs font-bold">
-                            <span class="text-gray-500">Kelas X</span>
-                            <span class="text-gray-800">45%</span>
+                    <div class="mb-3">
+                        <div class="flex justify-between text-xs font-bold text-gray-600 mb-1">
+                            <span>Kelas X</span>
+                            <span>45%</span>
                         </div>
                         <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                             <div class="bg-blue-600 h-full w-[45%]"></div>
                         </div>
                     </div>
                     
-                    <div class="space-y-1">
-                        <div class="flex justify-between text-xs font-bold">
-                            <span class="text-gray-500">Kelas XI</span>
-                            <span class="text-gray-800">30%</span>
+                    <div class="mb-3">
+                        <div class="flex justify-between text-xs font-bold text-gray-600 mb-1">
+                            <span>Kelas XI</span>
+                            <span>30%</span>
                         </div>
                         <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                             <div class="bg-black h-full w-[30%]"></div>
                         </div>
                     </div>
                     
-                    <div class="space-y-1">
-                        <div class="flex justify-between text-xs font-bold">
-                            <span class="text-gray-500">Kelas XII</span>
-                            <span class="text-gray-800">25%</span>
+                    <div class="mb-1">
+                        <div class="flex justify-between text-xs font-bold text-gray-600 mb-1">
+                            <span>Kelas XII</span>
+                            <span>25%</span>
                         </div>
                         <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                             <div class="bg-gray-400 h-full w-[25%]"></div>
@@ -145,105 +180,61 @@
     </main>
 
     <script>
-        // 1. Konfigurasi Grafik Gelombang (Kehadiran)
+        const weeklyData = <%- locals.stats ? JSON.stringify(locals.stats.attendanceWeekly) : '[0,0,0,0,0,0,0]' %>;
+        const statusData = <%- locals.stats ? JSON.stringify(locals.stats.statusChart) : '[0,0,0]' %>;
+
+        // 1. Konfigurasi Grafik Gelombang
         const attendanceOptions = {
             series: [{
                 name: 'Tepat Waktu',
-                data: [850, 920, 1100, 1050, 1180, 1220, 1190]
+                data: weeklyData 
             }],
-            chart: {
-                height: 280,
-                type: 'area',
-                fontFamily: 'inherit',
-                toolbar: { show: false },
-                animations: {
-                    enabled: true,
-                    easing: 'easeinout',
-                    speed: 800
-                }
-            },
-            colors: ['#2563eb'], // Warna Biru Elektrik sesuai tema
+            chart: { height: 280, type: 'area', fontFamily: 'inherit', toolbar: { show: false } },
+            colors: ['#2563eb'],
             fill: {
                 type: 'gradient',
-                gradient: {
-                    shadeIntensity: 1,
-                    opacityFrom: 0.4,
-                    opacityTo: 0.05,
-                    stops: [0, 90, 100]
-                }
+                gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100] }
             },
             dataLabels: { enabled: false },
-            stroke: {
-                curve: 'smooth',
-                width: 3
-            },
+            stroke: { curve: 'smooth', width: 3 },
             xaxis: {
                 categories: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'],
-                axisBorder: { show: false },
-                axisTicks: { show: false },
-                labels: {
-                    style: { colors: '#94a3b8', fontSize: '12px', fontWeight: 600 }
-                }
+                axisBorder: { show: false }, axisTicks: { show: false },
+                labels: { style: { colors: '#94a3b8', fontSize: '12px', fontWeight: 600 } }
             },
-            yaxis: {
-                labels: {
-                    style: { colors: '#94a3b8', fontSize: '12px', fontWeight: 600 }
-                }
+            yaxis: { 
+                labels: { 
+                    style: { colors: '#94a3b8', fontSize: '12px', fontWeight: 600 },
+                    formatter: function (value) { return Math.round(value); } 
+                } 
             },
-            grid: {
-                borderColor: '#f1f5f9',
-                strokeDashArray: 4,
-                yaxis: { lines: { show: true } }
-            }
+            grid: { borderColor: '#f1f5f9', strokeDashArray: 4, yaxis: { lines: { show: true } } }
         };
 
-        // Render Grafik Gelombang
         const attendanceChart = new ApexCharts(document.querySelector("#attendanceChart"), attendanceOptions);
         attendanceChart.render();
 
-        // 2. Konfigurasi Grafik Donut (Status)
+        // 2. Konfigurasi Grafik Donut
         const statusOptions = {
-            series: [85, 10, 5],
+            series: statusData, 
             labels: ['Hadir', 'Izin/Sakit', 'Alpha'],
-            chart: {
-                type: 'donut',
-                height: 220,
-                fontFamily: 'inherit',
-            },
-            colors: ['#2563eb', '#000000', '#94a3b8'], // Biru, Hitam, Abu-abu
+            chart: { type: 'donut', height: 220, fontFamily: 'inherit' },
+            colors: ['#2563eb', '#000000', '#94a3b8'],
             plotOptions: {
                 pie: {
                     donut: {
                         size: '70%',
                         labels: {
-                            show: true,
-                            name: { show: false },
-                            value: {
-                                show: true,
-                                fontSize: '24px',
-                                fontWeight: 700,
-                                color: '#1e293b',
-                                formatter: function (val) { return val + "%" }
-                            },
-                            total: {
-                                show: true,
-                                showAlways: true,
-                                label: 'Hadir',
-                                color: '#1e293b',
-                                formatter: function (w) {
-                                    return w.globals.seriesTotals[0] + "%"
-                                }
-                            }
+                            show: true, name: { show: false },
+                            value: { show: true, fontSize: '24px', fontWeight: 700, color: '#1e293b', formatter: function (val) { return val + "%" } },
+                            total: { show: true, showAlways: true, label: 'Hadir', color: '#1e293b', formatter: function (w) { return w.globals.seriesTotals[0] + "%" } }
                         }
                     }
                 }
             },
-            dataLabels: { enabled: false },
-            stroke: { width: 0 },
-            legend: { show: false } // Menyembunyikan legend bawaan agar terlihat bersih
+            dataLabels: { enabled: false }, stroke: { width: 0 }, legend: { show: false }
         };
 
-        // Render Grafik Donut
         const statusChart = new ApexCharts(document.querySelector("#statusChart"), statusOptions);
         statusChart.render();
     </script>
