@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Daftar Siswa - App_PADi</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-slate-100 flex font-sans">
     
@@ -72,27 +73,20 @@
         </div>
 
         <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="p-6 border-b flex justify-between items-center bg-white">
-                <div class="flex gap-3">
-                    <select class="border rounded-xl px-4 py-2.5 text-sm text-gray-600 font-semibold outline-none focus:border-blue-600"><option>Semua Tahun</option></select>
-                    <select class="border rounded-xl px-4 py-2.5 text-sm text-gray-600 font-semibold outline-none focus:border-blue-600"><option>Semua Kelas</option></select>
-                </div>
-            </div>
-
             <table class="w-full text-left">
                 <thead class="bg-slate-50 text-[10px] text-gray-400 uppercase tracking-wider font-bold">
                     <tr>
                         <th class="px-8 py-4">Siswa</th>
                         <th class="px-6 py-4">NIS</th>
                         <th class="px-6 py-4">Kelas</th>
-                        <th class="px-6 py-4">Kehadiran</th>
                         <th class="px-6 py-4">Status</th>
+                        <th class="px-6 py-4 text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y text-sm">
                     <% if (typeof siswas !== 'undefined' && siswas.length > 0) { %>
                         <% siswas.forEach(function(user) { %>
-                            <tr class="hover:bg-slate-50 transition cursor-pointer">
+                            <tr class="hover:bg-slate-50 transition">
                                 <td class="px-8 py-4 flex items-center gap-4">
                                     <div class="w-10 h-10 bg-blue-100 text-blue-600 font-bold rounded-full flex items-center justify-center">
                                         <%= user.siswa && user.siswa.namaLengkap ? user.siswa.namaLengkap.substring(0, 2).toUpperCase() : 'U' %>
@@ -104,61 +98,55 @@
                                 </td>
                                 <td class="px-6 py-4 text-gray-500 font-mono text-xs"><%= user.siswa ? user.siswa.nis : '-' %></td>
                                 <td class="px-6 py-4"><span class="bg-slate-100 border text-gray-600 px-3 py-1.5 rounded-lg text-[10px] font-bold">Menunggu...</span></td>
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-3">
-                                        <span class="font-bold text-gray-800 text-xs w-8">0%</span>
-                                        <div class="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden"><div class="bg-blue-600 h-full w-[0%]"></div></div>
-                                    </div>
-                                </td>
                                 <td class="px-6 py-4"><span class="text-green-500 font-bold text-xs flex items-center gap-1">● Aktif</span></td>
+                                <td class="px-6 py-4 flex justify-center gap-2">
+                                    <button onclick="bukaEditSiswa('<%= user.id %>', '<%= user.siswa ? user.siswa.namaLengkap : '' %>', '<%= user.siswa ? user.siswa.nis : '' %>', '<%= user.username %>', '<%= user.email %>')" class="bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-200 transition">Edit</button>
+                                    
+                                    <form action="/daftar-siswa/delete/<%= user.id %>" method="POST" class="inline" onsubmit="return confirmDelete(event, this);">
+                                        <button type="submit" class="bg-red-100 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-200 transition">Hapus</button>
+                                    </form>
+                                </td>
                             </tr>
                         <% }); %>
                     <% } else { %>
-                        <tr>
-                            <td colspan="5" class="px-8 py-8 text-center text-gray-500 font-bold">Tidak ada data siswa ditemukan.</td>
-                        </tr>
+                        <tr><td colspan="5" class="px-8 py-8 text-center text-gray-500 font-bold">Tidak ada data siswa.</td></tr>
                     <% } %>
                 </tbody>
             </table>
-            
-            <div class="p-6 border-t flex justify-between items-center text-xs text-gray-400">
-                <p class="font-semibold">Total <%= siswas ? siswas.length : 0 %> siswa ditemukan</p>
-            </div>
         </div>
     </main>
 
     <div id="modalTambahSiswa" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex justify-center items-center">
-        <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative transform transition-all">
+        <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative">
             <button onclick="toggleModal('modalTambahSiswa')" class="absolute top-6 right-6 text-gray-400 hover:text-black font-bold">✖</button>
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">Tambah Siswa</h2>
-            <p class="text-xs text-gray-500 mb-6">Buat akun siswa dan lengkapi profilnya.</p>
-            
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Tambah Siswa</h2>
             <form action="/daftar-siswa" method="POST" class="space-y-4">
-                <div>
-                    <label class="text-xs font-bold text-gray-700">Nama Lengkap</label>
-                    <input type="text" name="namaLengkap" required class="w-full bg-slate-50 border border-gray-200 rounded-xl px-4 py-3 mt-1 text-sm outline-none focus:border-blue-500 focus:bg-white">
-                </div>
+                <input type="text" name="namaLengkap" placeholder="Nama Lengkap" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500">
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-xs font-bold text-gray-700">NIS (Nomor Induk)</label>
-                        <input type="text" name="nis" required class="w-full bg-slate-50 border border-gray-200 rounded-xl px-4 py-3 mt-1 text-sm outline-none focus:border-blue-500 focus:bg-white">
-                    </div>
-                    <div>
-                        <label class="text-xs font-bold text-gray-700">Username Akun</label>
-                        <input type="text" name="username" required class="w-full bg-slate-50 border border-gray-200 rounded-xl px-4 py-3 mt-1 text-sm outline-none focus:border-blue-500 focus:bg-white">
-                    </div>
+                    <input type="text" name="nis" placeholder="NIS" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500">
+                    <input type="text" name="username" placeholder="Username" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500">
                 </div>
-                <div>
-                    <label class="text-xs font-bold text-gray-700">Alamat Email</label>
-                    <input type="email" name="email" required class="w-full bg-slate-50 border border-gray-200 rounded-xl px-4 py-3 mt-1 text-sm outline-none focus:border-blue-500 focus:bg-white">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-gray-700">Password</label>
-                    <input type="password" name="password" required class="w-full bg-slate-50 border border-gray-200 rounded-xl px-4 py-3 mt-1 text-sm outline-none focus:border-blue-500 focus:bg-white">
-                </div>
+                <input type="email" name="email" placeholder="Email" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500">
+                <input type="password" name="password" placeholder="Password" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500">
                 <input type="hidden" name="sekolahId" value="1">
-                
-                <button type="submit" class="w-full bg-blue-600 text-white font-bold rounded-xl py-3.5 mt-4 hover:bg-blue-700 shadow-lg shadow-blue-600/30 transition">Simpan Data Siswa</button>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold rounded-xl py-3.5 mt-4 hover:bg-blue-700">Simpan Data</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalEditSiswa" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex justify-center items-center">
+        <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative">
+            <button onclick="toggleModal('modalEditSiswa')" class="absolute top-6 right-6 text-gray-400 hover:text-black font-bold">✖</button>
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Edit Siswa</h2>
+            <form id="formEditSiswa" method="POST" class="space-y-4">
+                <input type="text" id="editNama" name="namaLengkap" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500">
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="editNis" name="nis" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500">
+                    <input type="text" id="editUsername" name="username" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500">
+                </div>
+                <input type="email" id="editEmail" name="email" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500">
+                <input type="password" name="password" placeholder="Kosongkan jika tidak ingin ganti sandi" class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500">
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold rounded-xl py-3.5 mt-4 hover:bg-blue-700">Update Data</button>
             </form>
         </div>
     </div>
@@ -166,11 +154,26 @@
     <script>
         function toggleModal(modalID) {
             const modal = document.getElementById(modalID);
-            if(modal.classList.contains('hidden')) {
-                modal.classList.remove('hidden');
-            } else {
-                modal.classList.add('hidden');
-            }
+            modal.classList.toggle('hidden');
+        }
+
+        function bukaEditSiswa(id, nama, nis, username, email) {
+            document.getElementById('formEditSiswa').action = '/daftar-siswa/edit/' + id;
+            document.getElementById('editNama').value = nama;
+            document.getElementById('editNis').value = nis;
+            document.getElementById('editUsername').value = username;
+            document.getElementById('editEmail').value = email;
+            toggleModal('modalEditSiswa');
+        }
+
+        function confirmDelete(e, form) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Hapus Siswa?', text: "Semua riwayat absen siswa ini akan ikut terhapus permanen!", icon: 'warning',
+                showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#64748b', confirmButtonText: 'Ya, Hapus!'
+            }).then((result) => {
+                if (result.isConfirmed) form.submit();
+            });
         }
     </script>
 </body>
