@@ -4,67 +4,239 @@
     <meta charset="UTF-8">
     <title>Admin Dashboard - App_PADi</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 </head>
-<body class="bg-[#F8F9FA] flex">
-    <aside class="w-64 h-screen bg-white border-r p-6 flex flex-col">
-        <div class="text-2xl font-bold text-[#006652] mb-10 flex items-center gap-2">
-            <div class="bg-[#006652] w-8 h-8 rounded-lg"></div> Portal
-        </div>
-        <nav class="flex-1 space-y-2">
-            <a href="/dashboard" class="flex items-center gap-3 p-3 bg-[#006652] text-white rounded-lg shadow-md">Dashboard</a>
-            <a href="/daftar-siswa" class="flex items-center gap-3 p-3 text-gray-500 hover:bg-gray-100 rounded-lg">Daftar Siswa</a>
-            <a href="/daftar-guru" class="flex items-center gap-3 p-3 text-gray-500 hover:bg-gray-100 rounded-lg">Daftar Guru</a>
-            <a href="/jadwal" class="flex items-center gap-3 p-3 text-gray-500 hover:bg-gray-100 rounded-lg">Jadwal</a>
+<body class="bg-slate-100 flex font-sans">
+    
+    <aside class="w-64 h-screen bg-black text-gray-400 p-6 flex flex-col fixed rounded-r-3xl shadow-2xl z-20">
+        <div class="text-3xl font-bold text-white mb-12 mt-4 tracking-widest pl-2">PADi</div>
+        
+        <nav class="flex-1 space-y-3">
+            <a href="/dashboard" class="flex items-center gap-4 p-3.5 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-600/40 transition">
+                <span class="text-lg">⊞</span> Dashboard
+            </a>
+            <a href="/daftar-siswa" class="flex items-center gap-4 p-3.5 hover:text-white hover:bg-white/10 rounded-2xl transition">
+                <span class="text-lg">👤</span> Daftar Siswa
+            </a>
+            <a href="/daftar-guru" class="flex items-center gap-4 p-3.5 hover:text-white hover:bg-white/10 rounded-2xl transition">
+                <span class="text-lg">👨‍🏫</span> Daftar Guru
+            </a>
+            <a href="/jadwal" class="flex items-center gap-4 p-3.5 hover:text-white hover:bg-white/10 rounded-2xl transition">
+                <span class="text-lg">📅</span> Jadwal
+            </a>
         </nav>
-        <div class="mt-auto border-t pt-4">
-            <a href="/" class="text-red-500 font-medium">Log Out</a>
+        <div class="mt-auto mb-4">
+            <a href="/logout" class="flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-full transition shadow-lg shadow-blue-600/30">
+                <span class="text-lg">⎋</span> LOGOUT
+            </a>
         </div>
     </aside>
 
-    <main class="flex-1 p-10">
-        <header class="flex justify-between items-center mb-10">
-            <h2 class="text-2xl font-bold text-gray-800">Manajemen Akun</h2>
-            <button class="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-bold">+ Tambahkan User</button>
-        </header>
-
-        <div class="grid grid-cols-3 gap-6 mb-10">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border">
-                <p class="text-gray-400 text-sm">SISWA</p>
-                <h3 class="text-3xl font-bold">1,240</h3>
-                <p class="text-green-500 text-xs mt-2">↑ 12% dari kehadiran lalu</p>
+    <main class="flex-1 ml-64 p-8">
+        
+        <div class="bg-blue-600 rounded-3xl p-4 flex justify-between items-center text-white mb-8 shadow-lg shadow-blue-600/20">
+            <div class="relative w-96 ml-2">
+                <span class="absolute left-4 top-2.5 opacity-50">🔍</span>
+                <input type="text" placeholder="Search" class="w-full bg-blue-700/50 text-white placeholder-blue-200 border border-blue-500/50 rounded-full pl-12 pr-4 py-2 outline-none focus:ring-2 focus:ring-white/50 text-sm transition">
             </div>
-            <div class="bg-white p-6 rounded-2xl shadow-sm border">
-                <p class="text-gray-400 text-sm">GURU</p>
-                <h3 class="text-3xl font-bold">86</h3>
-                <p class="text-gray-400 text-xs mt-2">Akun terverifikasi</p>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-sm border">
-                <p class="text-gray-400 text-sm">ADMIN</p>
-                <h3 class="text-3xl font-bold">04</h3>
-                <p class="text-gray-400 text-xs mt-2">Admin yang mengakses</p>
+            <div class="flex items-center gap-6 pr-4">
+                <div class="flex items-center gap-3 border-l border-blue-400/50 pl-6 cursor-pointer">
+                    <span class="text-sm font-bold tracking-wide uppercase">Admin PADI</span>
+                    <div class="w-9 h-9 bg-white rounded-full flex items-center justify-center text-blue-600 font-bold text-xs">AD</div>
+                </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
-            <table class="w-full text-left">
-                <thead class="bg-gray-50 text-xs text-gray-400 uppercase">
-                    <tr>
-                        <th class="px-6 py-4">Profil Pengguna</th>
-                        <th class="px-6 py-4">Role</th>
-                        <th class="px-6 py-4">NIP / NIK</th>
-                        <th class="px-6 py-4">Status</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y text-sm">
-                    <tr>
-                        <td class="px-6 py-4">Sarah Wijaya</td>
-                        <td class="px-6 py-4"><span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">TEACHER</span></td>
-                        <td class="px-6 py-4">24235354</td>
-                        <td class="px-6 py-4 text-green-500">● Aktif</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="grid grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
+                <div class="flex gap-4 items-center mb-4">
+                    <div class="bg-slate-100 p-3 rounded-full text-xl border">🎓</div>
+                    <div>
+                        <p class="text-gray-400 text-xs font-bold uppercase">Total Siswa</p>
+                        <h3 class="text-2xl font-bold text-gray-800"><%= locals.stats ? locals.stats.totalSiswa : 0 %></h3>
+                    </div>
+                </div>
+                <p class="text-green-500 text-xs font-semibold">Aktif di database</p>
+            </div>
+            
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
+                <div class="flex gap-4 items-center mb-4">
+                    <div class="bg-slate-100 p-3 rounded-full text-xl border">👨‍🏫</div>
+                    <div>
+                        <p class="text-gray-400 text-xs font-bold uppercase">Total Guru</p>
+                        <h3 class="text-2xl font-bold text-gray-800"><%= locals.stats ? locals.stats.totalGuru : 0 %></h3>
+                    </div>
+                </div>
+                <p class="text-blue-500 text-xs font-semibold">Akun terverifikasi penuh</p>
+            </div>
+            
+            <div class="bg-blue-600 p-6 rounded-3xl shadow-lg shadow-blue-600/20 text-white relative overflow-hidden">
+                <div class="flex gap-4 items-center mb-4">
+                    <div class="bg-blue-500 border border-blue-400 p-3 rounded-full text-xl">🛡️</div>
+                    <div>
+                        <p class="text-blue-200 text-xs font-bold uppercase">Total Admin</p>
+                        <h3 class="text-2xl font-bold"><%= locals.stats ? locals.stats.totalAdmin : 0 %></h3>
+                    </div>
+                </div>
+                <p class="text-blue-200 text-xs font-semibold">Memiliki hak akses penuh</p>
+            </div>
         </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="font-bold text-gray-800 text-lg">Statistik Kehadiran Siswa</h3>
+                            <p class="text-xs text-gray-400 font-semibold mt-1">Estimasi Sistem Dinamis</p>
+                        </div>
+                    </div>
+                    <div id="attendanceChart" class="w-full h-64"></div>
+                </div>
+
+                <div class="mt-4 pt-6 border-t border-gray-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold text-gray-800 text-sm">Siswa Perlu Perhatian (Hari Ini)</h4>
+                        <a href="/daftar-siswa" class="text-xs text-blue-600 font-bold hover:underline">Lihat Semua</a>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        
+                        <%
+                        function getTheme(theme) {
+                            if(theme === 'red') return { box: 'bg-red-50 border-red-100', icon: 'bg-red-200 text-red-600', text: 'text-red-500' };
+                            if(theme === 'orange') return { box: 'bg-orange-50 border-orange-100', icon: 'bg-orange-200 text-orange-600', text: 'text-orange-500' };
+                            return { box: 'bg-blue-50 border-blue-100', icon: 'bg-blue-200 text-blue-600', text: 'text-blue-500' };
+                        }
+                        %>
+
+                        <% if (locals.stats && locals.stats.siswaPerluPerhatian && locals.stats.siswaPerluPerhatian.length > 0) { %>
+                            <% locals.stats.siswaPerluPerhatian.forEach(function(s) { 
+                                const style = getTheme(s.theme);
+                            %>
+                                <div class="<%= style.box %> p-3 rounded-xl flex items-center gap-3 transition hover:shadow-md cursor-pointer">
+                                    <div class="w-8 h-8 <%= style.icon %> rounded-full flex justify-center items-center font-bold text-xs"><%= s.inisial %></div>
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-800"><%= s.nama %></p>
+                                        <p class="text-[10px] <%= style.text %> font-semibold"><%= s.statusText %></p>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        <% } else { %>
+                            <div class="col-span-2 md:col-span-3 bg-green-50 border border-green-100 p-4 rounded-xl flex items-center gap-3">
+                                <div class="w-8 h-8 bg-green-200 text-green-600 rounded-full flex justify-center items-center font-bold text-sm">✓</div>
+                                <div>
+                                    <p class="text-xs font-bold text-gray-800">Semua Terkendali!</p>
+                                    <p class="text-[10px] text-green-600 font-semibold">Tidak ada siswa yang tercatat absen, terlambat, atau izin hari ini.</p>
+                                </div>
+                            </div>
+                        <% } %>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
+                <div>
+                    <h3 class="font-bold text-gray-800 text-lg mb-4">Status Kehadiran Hari Ini</h3>
+                    <div id="statusChart" class="flex justify-center -mt-2"></div>
+                </div>
+                
+                <div class="mt-4 pt-6 border-t border-gray-100">
+                    <h4 class="font-bold text-gray-800 text-sm mb-4">Persentase Keterlambatan</h4>
+                    
+                    <div class="mb-3">
+                        <div class="flex justify-between text-xs font-bold text-gray-600 mb-1">
+                            <span>Kelas X</span>
+                            <span>45%</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div class="bg-blue-600 h-full w-[45%]"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="flex justify-between text-xs font-bold text-gray-600 mb-1">
+                            <span>Kelas XI</span>
+                            <span>30%</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div class="bg-black h-full w-[30%]"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-1">
+                        <div class="flex justify-between text-xs font-bold text-gray-600 mb-1">
+                            <span>Kelas XII</span>
+                            <span>25%</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div class="bg-gray-400 h-full w-[25%]"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
+
+    <script>
+        const weeklyData = <%- locals.stats ? JSON.stringify(locals.stats.attendanceWeekly) : '[0,0,0,0,0,0,0]' %>;
+        const statusData = <%- locals.stats ? JSON.stringify(locals.stats.statusChart) : '[0,0,0]' %>;
+
+        // 1. Konfigurasi Grafik Gelombang
+        const attendanceOptions = {
+            series: [{
+                name: 'Tepat Waktu',
+                data: weeklyData 
+            }],
+            chart: { height: 280, type: 'area', fontFamily: 'inherit', toolbar: { show: false } },
+            colors: ['#2563eb'],
+            fill: {
+                type: 'gradient',
+                gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100] }
+            },
+            dataLabels: { enabled: false },
+            stroke: { curve: 'smooth', width: 3 },
+            xaxis: {
+                categories: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'],
+                axisBorder: { show: false }, axisTicks: { show: false },
+                labels: { style: { colors: '#94a3b8', fontSize: '12px', fontWeight: 600 } }
+            },
+            yaxis: { 
+                labels: { 
+                    style: { colors: '#94a3b8', fontSize: '12px', fontWeight: 600 },
+                    formatter: function (value) { return Math.round(value); } 
+                } 
+            },
+            grid: { borderColor: '#f1f5f9', strokeDashArray: 4, yaxis: { lines: { show: true } } }
+        };
+
+        const attendanceChart = new ApexCharts(document.querySelector("#attendanceChart"), attendanceOptions);
+        attendanceChart.render();
+
+        // 2. Konfigurasi Grafik Donut
+        const statusOptions = {
+            series: statusData, 
+            labels: ['Hadir', 'Izin/Sakit', 'Alpha'],
+            chart: { type: 'donut', height: 220, fontFamily: 'inherit' },
+            colors: ['#2563eb', '#000000', '#94a3b8'],
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '70%',
+                        labels: {
+                            show: true, name: { show: false },
+                            value: { show: true, fontSize: '24px', fontWeight: 700, color: '#1e293b', formatter: function (val) { return val + "%" } },
+                            total: { show: true, showAlways: true, label: 'Hadir', color: '#1e293b', formatter: function (w) { return w.globals.seriesTotals[0] + "%" } }
+                        }
+                    }
+                }
+            },
+            dataLabels: { enabled: false }, stroke: { width: 0 }, legend: { show: false }
+        };
+
+        const statusChart = new ApexCharts(document.querySelector("#statusChart"), statusOptions);
+        statusChart.render();
+    </script>
 </body>
 </html>

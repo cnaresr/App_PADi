@@ -1,77 +1,221 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Vocational Portal</title>
+
+    <title>Login - App_PADi</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 </head>
-<body class="bg-gray-50 font-sans">
-    <div class="flex h-screen">
-        <div class="hidden lg:flex w-1/2 bg-[#006652] p-12 flex-col justify-center text-white relative">
-            <h1 class="text-5xl font-bold mb-4">Admin Dashboard</h1>
-            <p class="text-lg opacity-80 mb-8">Akses panel administrasi untuk mengelola data, pengguna, dan aktivitas sistem secara real-time.</p>
-            
-            <div class="flex gap-4">
-                <div class="bg-white/20 p-6 rounded-xl backdrop-blur-md w-40">
-                    <p class="text-2xl font-bold">12K+</p>
-                    <p class="text-xs">ACTIVE APPRENTICES</p>
-                </div>
-                <div class="bg-white/20 p-6 rounded-xl backdrop-blur-md w-40">
-                    <p class="text-2xl font-bold">450+</p>
-                    <p class="text-xs">PARTNER INDUSTRIES</p>
-                </div>
-            </div>
-        </div>
 
-        <div class="w-full lg:w-1/2 flex flex-col justify-center px-12 md:px-24">
-            <div class="mb-8">
-                <h2 class="text-3xl font-bold text-gray-800">Welcome Back</h2>
-                <p class="text-gray-500">Masuk ke akun Admin Anda.</p>
-            </div>
+<body class="bg-slate-50 font-sans overflow-hidden">
 
-            <form action="/login" method="POST" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Email</label>
-                    <input type="email" name="email" placeholder="nama@sekolah.sch.id" class="w-full px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-[#006652] focus:bg-white focus:ring-0 text-sm" required>
-                </div>
-                <div>
-                    <div class="flex justify-between items-center">
-                        <label class="block text-sm font-medium text-gray-700">Password</label>
-                        <a href="#" class="text-xs text-orange-500">Lupa Password?</a>
-                    </div>
-                    <input type="password" name="password" placeholder="Masukkan password" class="w-full px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-[#006652] focus:bg-white focus:ring-0 text-sm" required>
-                </div>
-                <div class="flex items-center">
-                    <input type="checkbox" class="rounded text-[#006652]">
-                    <span class="ml-2 text-xs text-gray-600">Tetap masuk di perangkat ini</span>
-                </div>
-                <button type="submit" class="w-full bg-[#006652] text-white font-bold py-3 rounded-lg hover:bg-[#004d3e] transition flex justify-center items-center gap-2">
-                    Masuk 
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+    <div class="flex h-screen w-full relative">
+
+       
+
+        <div class="hidden lg:flex w-5/12 flex-col justify-center px-16 xl:px-24 z-10 relative">
+
+            <div class="flex items-center gap-4 mb-16">
+
+                <div class="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-600/30">
+
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+
                     </svg>
-                </button>
-            </form>
 
-            <div class="mt-8 text-center text-xs text-gray-500">
-                Belum memiliki akun? <a href="#" class="text-[#006652] font-bold">Daftar sekarang</a>
+                </div>
+
+                <span class="text-4xl font-black tracking-widest text-blue-600">PADi</span>
+
             </div>
+
+           
+
+            <h1 class="text-6xl font-black text-blue-600 mb-6 tracking-tight leading-[1.1]">WELCOME<br>BACK!</h1>
+
+            <p class="text-xl text-slate-500 font-medium max-w-md leading-relaxed">Masuk ke akun Admin Anda untuk mengelola portal absensi secara real-time.</p>
+
         </div>
+
+
+
+        <div class="w-full lg:w-7/12 bg-gradient-to-br from-blue-600 to-blue-900 flex flex-col justify-center items-center text-white z-20 relative lg:[clip-path:polygon(15%_0%,100%_0%,100%_100%,0%_100%)] shadow-2xl">
+
+           
+
+            <div class="lg:hidden flex items-center gap-3 mb-10">
+
+                <div class="bg-white p-2.5 rounded-xl shadow-lg">
+
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+
+                </div>
+
+                <span class="text-3xl font-black tracking-widest text-white">PADi</span>
+
+            </div>
+
+
+
+            <div class="w-full max-w-md px-8 lg:px-0 lg:ml-20">
+
+                <h2 class="text-4xl font-bold mb-2">SIGN IN</h2>
+
+                <p class="text-blue-300 text-xs tracking-[0.25em] mb-8 font-bold">TO ACCESS THE PORTAL</p>
+
+               
+
+                <div class="bg-white/10 backdrop-blur-md border border-white/20 p-8 sm:p-10 rounded-[2.5rem] shadow-2xl">
+
+                    <form id="loginForm" action="/login" method="POST" class="space-y-6">
+
+                       
+
+                        <div>
+
+                            <div class="flex items-center bg-white rounded-full px-5 py-2 focus-within:ring-4 focus-within:ring-blue-400/50 transition-all shadow-inner">
+
+                                <svg class="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+
+                                <input type="text" id="email" name="email" placeholder="Email / Username" class="w-full bg-transparent text-gray-800 px-4 py-2.5 outline-none text-sm font-bold placeholder-gray-400" required>
+
+                            </div>
+
+                        </div>
+
+                       
+
+                        <div>
+
+                            <div class="flex items-center bg-white rounded-full px-5 py-2 focus-within:ring-4 focus-within:ring-blue-400/50 transition-all shadow-inner">
+
+                                <svg class="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+
+                                <input type="password" id="password" name="password" placeholder="Password" class="w-full bg-transparent text-gray-800 px-4 py-2.5 outline-none text-sm font-bold placeholder-gray-400" required>
+
+                            </div>
+
+                            <div class="flex justify-between items-center mt-4 px-2">
+
+                                <label class="flex items-center cursor-pointer group">
+
+                                    <input type="checkbox" class="rounded text-black focus:ring-black border-transparent w-4 h-4 cursor-pointer accent-black">
+
+                                    <span class="ml-2 text-xs text-blue-100 group-hover:text-white transition font-medium">Tetap masuk</span>
+
+                                </label>
+
+                                <a href="#" class="text-xs text-blue-200 hover:text-white transition font-semibold hover:underline">Lupa Password?</a>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <button type="submit" class="w-full bg-black text-white font-bold py-4 rounded-full hover:bg-gray-800 hover:scale-[1.02] transition-all shadow-xl shadow-black/30 mt-2 flex justify-center items-center gap-2">
+
+                            MASUK
+
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+
+                            </svg>
+
+                        </button>
+
+                    </form>
+
+                </div>
+
+
+
+                <p class="text-center text-xs text-blue-300/60 mt-8 font-medium">© 2026 PADi Digital Solution. All rights reserved.</p>
+
+            </div>
+
+        </div>
+
     </div>
 
-    <% if (typeof error !== 'undefined' && error) { %>
-        <script>
-            // Menjalankan SweetAlert2 ketika ada variabel 'error' yang dikirim dari app.js
-            Swal.fire({
-                icon: 'error',
-                title: 'Gagal Masuk',
-                text: '<%= error %>', // Teks ini otomatis menyesuaikan (salah sandi atau bukan admin)
-                confirmButtonColor: '#006652',
-                confirmButtonText: 'Coba Lagi'
-            });
-        </script>
-    <% } %>
-    </body>
+
+
+    <script>
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+
+            e.preventDefault();
+
+            const emailInput = document.getElementById('email').value;
+
+            const passwordInput = document.getElementById('password').value;
+
+
+
+            try {
+
+                // Tembak API
+
+                const response = await fetch('/login', {
+
+                    method: 'POST',
+
+                    headers: { 'Content-Type': 'application/json' },
+
+                    body: JSON.stringify({ email: emailInput, password: passwordInput })
+
+                });
+
+
+
+                const result = await response.json();
+
+
+
+                if (response.ok && result.status === 'success') {
+
+                    if (result.data.role !== 'Admin') {
+
+                        Swal.fire({ icon: 'error', title: 'Akses Ditolak', text: 'Halaman ini khusus untuk Admin.', confirmButtonColor: '#000000' });
+
+                        return;
+
+                    }
+
+                    localStorage.setItem('adminToken', result.token);
+
+                    window.location.href = '/dashboard';
+
+                } else {
+
+                    Swal.fire({ icon: 'error', title: 'Gagal Masuk', text: result.message || 'Kombinasi email dan sandi salah.', confirmButtonColor: '#000000' });
+
+                }
+
+            } catch (error) {
+
+                // Fallback jika API terhubung via action bawaan EJS Session
+
+                e.target.submit();
+
+            }
+
+        });
+
+    </script>
+
+</body>
+
 </html>
