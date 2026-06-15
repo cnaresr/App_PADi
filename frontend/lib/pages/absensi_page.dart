@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert'; // [BARU] Untuk Base64 encoding
 
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
@@ -8,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:tflite_flutter/tflite_flutter.dart' as tfl;
 import 'package:image/image.dart' as img;
 import 'package:provider/provider.dart'; // [BARU] Import provider
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
 // Asumsi path, sesuaikan jika berbeda
 import '../main.dart'; 
@@ -29,37 +31,31 @@ class AbsensiPage extends StatefulWidget {
 }
 
 class _AbsensiPageState extends State<AbsensiPage> with AutomaticKeepAliveClientMixin {
-  // Flag untuk memastikan konten (termasuk kamera) hanya dibuat sekali.
-  bool _isContentLoaded = false;
+  // [PERBAIKAN] Gunakan Future yang resolve setelah frame pertama untuk lazy loading.
+  // Ini adalah pola yang lebih stabil daripada setState di addPostFrameCallback.
+  final Future<void> _contentLoader = Future.delayed(Duration.zero);
 
   @override
   bool get wantKeepAlive => true; // Ini penting untuk menjaga state saat berpindah tab.
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Diperlukan oleh AutomaticKeepAliveClientMixin.
+    super.build(context); // Wajib dipanggil saat menggunakan AutomaticKeepAliveClientMixin.
 
-    // Trik ini akan membangun konten sebenarnya hanya setelah widget ini
-    // pertama kali muncul di layar.
-    if (!_isContentLoaded) {
-      // Kita menggunakan post-frame callback untuk aman memperbarui state setelah build selesai.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _isContentLoaded = true;
-          });
+    return FutureBuilder<void>(
+      future: _contentLoader,
+      builder: (context, snapshot) {
+        // Jika future sudah selesai (setelah frame pertama), bangun konten utama.
+        if (snapshot.connectionState == ConnectionState.done) {
+          return _AbsensiPageContent(siswaId: widget.siswaId);
         }
-      });
-    }
-
-    // Selama konten belum siap, tampilkan placeholder.
-    // Setelah siap, baru bangun halaman kamera yang sebenarnya.
-    return _isContentLoaded
-        ? _AbsensiPageContent(siswaId: widget.siswaId)
-        : const Scaffold(
-            backgroundColor: Color(0xFFFAFAFA),
-            body: Center(child: CircularProgressIndicator(color: Color(0xFF006D5B))),
-          );
+        // Selama future belum selesai, tampilkan loading indicator.
+        return const Scaffold(
+          backgroundColor: Color(0xFFFAFAFA),
+          body: Center(child: CircularProgressIndicator(color: Color(0xFF006D5B))),
+        );
+      },
+    );
   }
 }
 
@@ -273,14 +269,45 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
   }
 
   Future<List<double>?> _runModelOnImage(File imageFile) async {
-    img.Image? originalImage = img.decodeImage(await imageFile.readAsBytes());
-    if (originalImage == null) return null;
+    // 1. INISIALISASI PENDETEKSI WAJAH GOOGLE ML KIT
+    final options = FaceDetectorOptions(performanceMode: FaceDetectorMode.fast);
+    final faceDetector = FaceDetector(options: options);
+    final inputImage = InputImage.fromFilePath(imageFile.path);
 
-    // Model MobileFaceNet biasanya butuh input 112x112
-    img.Image resizedImage = img.copyResize(originalImage, width: 112, height: 112);
+    // 2. MENCARI LOKASI WAJAH DI DALAM FOTO
+    final List<Face> faces = await faceDetector.processImage(inputImage);
+    faceDetector.close(); // Tutup detector untuk menghemat memori HP
 
-    // Konversi ke List<List<List<double>>> dan normalisasi pixel
-    // Cara yang lebih aman dan bersih untuk memproses gambar
+    // Jika tidak ada wajah manusia di depan kamera, hentikan proses
+    if (faces.isEmpty) {
+      throw Exception("Wajah tidak ditemukan. Pastikan wajah terlihat jelas di kamera.");
+    }
+
+    // Ambil koordinat wajah pertama/terbesar yang terdeteksi
+    final Face firstFace = faces.first;
+    final Rect boundingBox = firstFace.boundingBox;
+
+    // 3. MUAT GAMBAR ASLI UNTUK DIPOTONG
+    img.Image? rawImage = img.decodeImage(await imageFile.readAsBytes());
+    if (rawImage == null) return null;
+    
+    // [TAMBAHKAN INI] Memaksa gambar tegak sesuai rotasi EXIF-nya
+    img.Image originalImage = img.bakeOrientation(rawImage);
+
+    // 4. POTONG (CROP) GAMBAR TEPAT DI KOTAK WAJAH
+    // Mencegah error jika kotak wajah sedikit keluar dari batas layar
+    int x = boundingBox.left.toInt().clamp(0, originalImage.width);
+    int y = boundingBox.top.toInt().clamp(0, originalImage.height);
+    int w = boundingBox.width.toInt().clamp(0, originalImage.width - x);
+    int h = boundingBox.height.toInt().clamp(0, originalImage.height - y);
+
+    // Menggunting gambar agar hanya tersisa bagian wajah (latar belakang dibuang)
+    img.Image croppedFace = img.copyCrop(originalImage, x: x, y: y, width: w, height: h);
+
+    // 5. UBAH UKURAN WAJAH YANG SUDAH DIPOTONG MENJADI 112x112
+    img.Image resizedImage = img.copyResize(croppedFace, width: 112, height: 112);
+
+    // 6. EKSTRAKSI FITUR MENGGUNAKAN TFLITE (MobileFaceNet)
     var input = List.generate(112, (y) {
       return List.generate(112, (x) {
         final pixel = resizedImage.getPixel(x, y);
@@ -288,10 +315,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
       });
     });
 
-    // Ubah shape input menjadi [1, 112, 112, 3]
     var reshapedInput = [input];
-
-    // Output model biasanya [1, 128] atau [1, 512]
     var output = List.filled(1 * 192, 0.0).reshape([1, 192]);
 
     _interpreter.run(reshapedInput, output);
@@ -299,13 +323,26 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
   }
 
   // --- TAHAP 3: VALIDASI & PENYIMPANAN ---
-  Future<void> _onAbsenButtonPressed() async {
+  // [DIUBAH] Nama fungsi diubah agar lebih spesifik
+  Future<void> _onAbsenMasukButtonPressed() async {
     if (_controller == null || !_controller!.value.isInitialized || _isProcessing || _currentPosition == null) return;
 
     setState(() => _isProcessing = true);
 
     try {
       final XFile imageFile = await _controller!.takePicture();
+
+      // [OPTIMASI] Kompres gambar sebelum dikirim ke server
+      img.Image? originalImage = img.decodeImage(await imageFile.readAsBytes());
+      if (originalImage == null) {
+        throw Exception("Gagal memproses gambar yang diambil.");
+      }
+      // Ubah ukuran gambar agar tidak terlalu besar (misal lebar 800px)
+      img.Image resizedImage = img.copyResize(originalImage, width: 800);
+      // Encode ke format JPG dengan kualitas 85%
+      final imageBytes = img.encodeJpg(resizedImage, quality: 85);
+      final String base64Image = base64Encode(imageBytes);
+
       final faceEmbedding = await _runModelOnImage(File(imageFile.path));
 
       if (faceEmbedding == null) {
@@ -318,6 +355,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
         faceEmbedding: faceEmbedding,
         latitude: _currentPosition!.latitude,
         longitude: _currentPosition!.longitude,
+        fotoMasuk: base64Image, // [BARU] Kirim gambar dalam format Base64
       );
 
       if (!mounted) return;
@@ -328,8 +366,64 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
       ));
 
       if (result['success'] == true) {
-        // Optional: Kembali ke halaman sebelumnya atau refresh
-        Navigator.of(context).pop();
+        // [DIHAPUS] Navigator.pop() dihapus untuk mencegah layar hitam.
+      }
+
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Error: ${e.toString()}"),
+        backgroundColor: Colors.red,
+      ));
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
+    }
+  }
+
+  // [BARU] Fungsi untuk menangani tombol Absen Pulang
+  Future<void> _onAbsenPulangButtonPressed() async {
+    if (_controller == null || !_controller!.value.isInitialized || _isProcessing || _currentPosition == null) return;
+
+    setState(() => _isProcessing = true);
+
+    try {
+      final XFile imageFile = await _controller!.takePicture();
+      
+      // [OPTIMASI] Kompres gambar sebelum dikirim ke server (sama seperti absen masuk)
+      img.Image? originalImage = img.decodeImage(await imageFile.readAsBytes());
+      if (originalImage == null) {
+        throw Exception("Gagal memproses gambar yang diambil.");
+      }
+      img.Image resizedImage = img.copyResize(originalImage, width: 800);
+      final imageBytes = img.encodeJpg(resizedImage, quality: 85);
+      final String base64Image = base64Encode(imageBytes);
+
+      final faceEmbedding = await _runModelOnImage(File(imageFile.path));
+
+      if (faceEmbedding == null) {
+        throw Exception("Wajah tidak terdeteksi pada gambar.");
+      }
+
+      // Panggil service untuk absen pulang
+      final result = await ApiService.kirimAbsensiPulang(
+        userId: widget.siswaId,
+        faceEmbedding: faceEmbedding,
+        latitude: _currentPosition!.latitude,
+        longitude: _currentPosition!.longitude,
+        fotoPulang: base64Image,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(result['message'] ?? 'Terjadi kesalahan.'),
+        backgroundColor: (result['success'] ?? false) ? Colors.green : Colors.red,
+      ));
+
+      if (result['success'] == true) {
+        // [DIHAPUS] Navigator.pop() dihapus untuk mencegah layar hitam.
       }
 
     } catch (e) {
@@ -521,30 +615,61 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
             const SizedBox(height: 35),
 
             // 4. Tombol Utama Ambil Absensi
-            SizedBox(
-              width: double.infinity,
-              height: 65,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _isWithinRadius ? const Color(0xFF151B2B) : Colors.grey, 
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  elevation: 10,
-                  shadowColor: const Color(0xFF151B2B).withOpacity(0.3),
+            // [DIUBAH] Menjadi dua tombol: Masuk dan Pulang
+            Row(
+              children: [
+                // Tombol Absen Masuk
+                Expanded(
+                  child: SizedBox(
+                    height: 65,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _isWithinRadius ? const Color(0xFF006D5B) : Colors.grey, // Warna hijau
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        elevation: 5,
+                        shadowColor: const Color(0xFF006D5B).withOpacity(0.3),
+                      ),
+                      onPressed: (_isWithinRadius && !_isProcessing) ? _onAbsenMasukButtonPressed : null,
+                      child: _isProcessing 
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.login_rounded, color: Colors.white),
+                          SizedBox(height: 4),
+                          Text("Absen Masuk", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                onPressed: (_isWithinRadius && !_isProcessing) ? _onAbsenButtonPressed : null,
-                child: _isProcessing 
-                ? const CircularProgressIndicator(color: Colors.white)
-                : const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Ambil Absensi", 
-                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                    SizedBox(width: 10),
-                    Icon(Icons.face_retouching_natural_rounded, color: Colors.white),
-                  ],
+                const SizedBox(width: 16),
+                // Tombol Absen Pulang
+                Expanded(
+                  child: SizedBox(
+                    height: 65,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _isWithinRadius ? const Color(0xFF151B2B) : Colors.grey, // Warna gelap
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        elevation: 5,
+                        shadowColor: const Color(0xFF151B2B).withOpacity(0.3),
+                      ),
+                      onPressed: (_isWithinRadius && !_isProcessing) ? _onAbsenPulangButtonPressed : null,
+                      child: _isProcessing 
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.logout_rounded, color: Colors.white),
+                          SizedBox(height: 4),
+                          Text("Absen Pulang", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
             const SizedBox(height: 30),
           ],
