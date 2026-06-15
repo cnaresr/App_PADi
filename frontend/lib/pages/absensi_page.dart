@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert'; // [BARU] Untuk Base64 encoding
 
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
@@ -322,13 +323,26 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
   }
 
   // --- TAHAP 3: VALIDASI & PENYIMPANAN ---
-  Future<void> _onAbsenButtonPressed() async {
+  // [DIUBAH] Nama fungsi diubah agar lebih spesifik
+  Future<void> _onAbsenMasukButtonPressed() async {
     if (_controller == null || !_controller!.value.isInitialized || _isProcessing || _currentPosition == null) return;
 
     setState(() => _isProcessing = true);
 
     try {
       final XFile imageFile = await _controller!.takePicture();
+
+      // [OPTIMASI] Kompres gambar sebelum dikirim ke server
+      img.Image? originalImage = img.decodeImage(await imageFile.readAsBytes());
+      if (originalImage == null) {
+        throw Exception("Gagal memproses gambar yang diambil.");
+      }
+      // Ubah ukuran gambar agar tidak terlalu besar (misal lebar 800px)
+      img.Image resizedImage = img.copyResize(originalImage, width: 800);
+      // Encode ke format JPG dengan kualitas 85%
+      final imageBytes = img.encodeJpg(resizedImage, quality: 85);
+      final String base64Image = base64Encode(imageBytes);
+
       final faceEmbedding = await _runModelOnImage(File(imageFile.path));
 
       if (faceEmbedding == null) {
@@ -341,6 +355,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
         faceEmbedding: faceEmbedding,
         latitude: _currentPosition!.latitude,
         longitude: _currentPosition!.longitude,
+        fotoMasuk: base64Image, // [BARU] Kirim gambar dalam format Base64
       );
 
       if (!mounted) return;
@@ -351,8 +366,64 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
       ));
 
       if (result['success'] == true) {
-        // Optional: Kembali ke halaman sebelumnya atau refresh
-        Navigator.of(context).pop();
+        // [DIHAPUS] Navigator.pop() dihapus untuk mencegah layar hitam.
+      }
+
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Error: ${e.toString()}"),
+        backgroundColor: Colors.red,
+      ));
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
+    }
+  }
+
+  // [BARU] Fungsi untuk menangani tombol Absen Pulang
+  Future<void> _onAbsenPulangButtonPressed() async {
+    if (_controller == null || !_controller!.value.isInitialized || _isProcessing || _currentPosition == null) return;
+
+    setState(() => _isProcessing = true);
+
+    try {
+      final XFile imageFile = await _controller!.takePicture();
+      
+      // [OPTIMASI] Kompres gambar sebelum dikirim ke server (sama seperti absen masuk)
+      img.Image? originalImage = img.decodeImage(await imageFile.readAsBytes());
+      if (originalImage == null) {
+        throw Exception("Gagal memproses gambar yang diambil.");
+      }
+      img.Image resizedImage = img.copyResize(originalImage, width: 800);
+      final imageBytes = img.encodeJpg(resizedImage, quality: 85);
+      final String base64Image = base64Encode(imageBytes);
+
+      final faceEmbedding = await _runModelOnImage(File(imageFile.path));
+
+      if (faceEmbedding == null) {
+        throw Exception("Wajah tidak terdeteksi pada gambar.");
+      }
+
+      // Panggil service untuk absen pulang
+      final result = await ApiService.kirimAbsensiPulang(
+        userId: widget.siswaId,
+        faceEmbedding: faceEmbedding,
+        latitude: _currentPosition!.latitude,
+        longitude: _currentPosition!.longitude,
+        fotoPulang: base64Image,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(result['message'] ?? 'Terjadi kesalahan.'),
+        backgroundColor: (result['success'] ?? false) ? Colors.green : Colors.red,
+      ));
+
+      if (result['success'] == true) {
+        // [DIHAPUS] Navigator.pop() dihapus untuk mencegah layar hitam.
       }
 
     } catch (e) {
@@ -544,30 +615,61 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
             const SizedBox(height: 35),
 
             // 4. Tombol Utama Ambil Absensi
-            SizedBox(
-              width: double.infinity,
-              height: 65,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _isWithinRadius ? const Color(0xFF151B2B) : Colors.grey, 
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  elevation: 10,
-                  shadowColor: const Color(0xFF151B2B).withOpacity(0.3),
+            // [DIUBAH] Menjadi dua tombol: Masuk dan Pulang
+            Row(
+              children: [
+                // Tombol Absen Masuk
+                Expanded(
+                  child: SizedBox(
+                    height: 65,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _isWithinRadius ? const Color(0xFF006D5B) : Colors.grey, // Warna hijau
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        elevation: 5,
+                        shadowColor: const Color(0xFF006D5B).withOpacity(0.3),
+                      ),
+                      onPressed: (_isWithinRadius && !_isProcessing) ? _onAbsenMasukButtonPressed : null,
+                      child: _isProcessing 
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.login_rounded, color: Colors.white),
+                          SizedBox(height: 4),
+                          Text("Absen Masuk", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                onPressed: (_isWithinRadius && !_isProcessing) ? _onAbsenButtonPressed : null,
-                child: _isProcessing 
-                ? const CircularProgressIndicator(color: Colors.white)
-                : const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Ambil Absensi", 
-                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                    SizedBox(width: 10),
-                    Icon(Icons.face_retouching_natural_rounded, color: Colors.white),
-                  ],
+                const SizedBox(width: 16),
+                // Tombol Absen Pulang
+                Expanded(
+                  child: SizedBox(
+                    height: 65,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _isWithinRadius ? const Color(0xFF151B2B) : Colors.grey, // Warna gelap
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        elevation: 5,
+                        shadowColor: const Color(0xFF151B2B).withOpacity(0.3),
+                      ),
+                      onPressed: (_isWithinRadius && !_isProcessing) ? _onAbsenPulangButtonPressed : null,
+                      child: _isProcessing 
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.logout_rounded, color: Colors.white),
+                          SizedBox(height: 4),
+                          Text("Absen Pulang", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
             const SizedBox(height: 30),
           ],

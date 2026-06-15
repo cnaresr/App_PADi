@@ -8,7 +8,7 @@ class ApiService {
   static String get baseUrl {
     String host;
     if (!kIsWeb && Platform.isAndroid) {
-      host = 'http://10.0.2.2:3000';
+      host = 'http://192.168.1.98:3000';
     } else {
       host = 'http://localhost:3000';
     }
@@ -38,6 +38,7 @@ class ApiService {
     required List<double> faceEmbedding,
     required double latitude,
     required double longitude,
+    required String fotoMasuk, // [BARU] Tambahkan foto (sebagai Base64 String)
   }) async {
     try {
       final response = await http.post(
@@ -48,6 +49,7 @@ class ApiService {
           'faceEmbedding': faceEmbedding,
           'latitude': latitude,
           'longitude': longitude,
+          'fotoMasuk': fotoMasuk, // [BARU] Kirim foto ke backend
         }),
       );
 
@@ -66,6 +68,45 @@ class ApiService {
       }
     } catch (e) {
       debugPrint('Error di ApiService (kirimAbsensiMasuk): $e');
+      return {'success': false, 'message': 'Tidak dapat terhubung ke server.'};
+    }
+  }
+
+  // [BARU] Fungsi untuk mengirim absensi pulang
+  static Future<Map<String, dynamic>> kirimAbsensiPulang({
+    required int userId,
+    required List<double> faceEmbedding,
+    required double latitude,
+    required double longitude,
+    required String fotoPulang, // Foto bukti pulang
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/absensi/pulang'), // Panggil endpoint /pulang
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'userId': userId,
+          'faceEmbedding': faceEmbedding,
+          'latitude': latitude,
+          'longitude': longitude,
+          'fotoPulang': fotoPulang, // Kirim foto pulang
+        }),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final responseBody = jsonDecode(response.body);
+        // Berikan pesan sukses yang lebih spesifik untuk pulang
+        return {'success': true, 'message': responseBody['message'] ?? 'Absensi pulang berhasil.'};
+      } else {
+        try {
+          final errorBody = jsonDecode(response.body);
+          return {'success': false, 'message': errorBody['message'] ?? 'Gagal: Terjadi kesalahan di server.'};
+        } catch(e) {
+          return {'success': false, 'message': 'Server Error (Kode: ${response.statusCode}). Response tidak valid.'};
+        }
+      }
+    } catch (e) {
+      debugPrint('Error di ApiService (kirimAbsensiPulang): $e');
       return {'success': false, 'message': 'Tidak dapat terhubung ke server.'};
     }
   }
