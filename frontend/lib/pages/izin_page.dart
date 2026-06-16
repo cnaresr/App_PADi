@@ -310,7 +310,13 @@ class _IzinPageState extends State<IzinPage> {
                 Color bgWarna = const Color(0xFFFFF3E0); Color textWarna = const Color(0xFFEBC15B);
                 if (izin['status'] == 'Disetujui') { bgWarna = const Color(0xFFD3EADD); textWarna = const Color(0xFF006D5B); } 
                 else if (izin['status'] == 'Ditolak') { bgWarna = const Color(0xFFFFEBEE); textWarna = Colors.redAccent; }
-                return _buildIzinStatusItem("Izin ${izin['jenisIzin']}", "Dibuat: ${_formatIsoDateToID(izin['createdAt'])}", izin['status'], bgWarna, textWarna);
+
+                String dateRange = "${_formatIsoDateToID(izin['tanggalMulai'])} - ${_formatIsoDateToID(izin['tanggalSelesai'])}";
+                String submissionDate = "Diajukan: ${_formatIsoDateToID(izin['createdAt'])}";
+
+                return _buildIzinStatusItem(
+                  "Izin ${izin['jenisIzin']}", dateRange, submissionDate, izin['status'], bgWarna, textWarna
+                );
               },
             ),
       ],
@@ -446,7 +452,7 @@ class _IzinPageState extends State<IzinPage> {
     );
   }
 
-  Widget _buildIzinStatusItem(String title, String fileName, String statusText, Color bgStatus, Color textStatus) {
+  Widget _buildIzinStatusItem(String title, String dateRange, String submissionDate, String statusText, Color bgStatus, Color textStatus) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15), padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 15, offset: const Offset(0, 5))]),
@@ -454,7 +460,17 @@ class _IzinPageState extends State<IzinPage> {
         children: [
           Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFFFAFAFA), borderRadius: BorderRadius.circular(16)), child: const Icon(Icons.description_rounded, color: Colors.blueAccent, size: 24)),
           const SizedBox(width: 15),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E1E1E))), const SizedBox(height: 4), Text(fileName, style: const TextStyle(color: Colors.grey, fontSize: 12), overflow: TextOverflow.ellipsis)])),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E1E1E))), 
+                const SizedBox(height: 4), 
+                Text(dateRange, style: const TextStyle(color: Colors.grey, fontSize: 12), overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 2),
+                Text(submissionDate, style: const TextStyle(color: Colors.grey, fontSize: 11), overflow: TextOverflow.ellipsis),
+              ])
+          ),
           Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8), decoration: BoxDecoration(color: bgStatus, borderRadius: BorderRadius.circular(12)), child: Text(statusText, style: TextStyle(color: textStatus, fontWeight: FontWeight.bold, fontSize: 12))),
         ],
       ),

@@ -19,11 +19,9 @@ class _RekapAbsensiPageState extends State<RekapAbsensiPage> {
   @override
   void initState() {
     super.initState();
-    // Otomatis tarik data saat halaman dibuka
     _refreshData();
   }
 
-  // --- Fungsi Tarik Data dari Database ---
   Future<void> _refreshData() async {
     setState(() => isLoading = true);
     final user = context.read<UserProvider>();
@@ -92,8 +90,8 @@ class _RekapAbsensiPageState extends State<RekapAbsensiPage> {
         backgroundColor: Colors.transparent, elevation: 0, automaticallyImplyLeading: false,
         title: const Text("Rekap Kelas", style: TextStyle(color: Color(0xFF1E1E1E), fontWeight: FontWeight.bold, fontSize: 24, letterSpacing: -0.5)),
         actions: [
+          // TOMBOL UNDUH SUDAH DIHAPUS, HANYA TERSISA TOMBOL REFRESH
           IconButton(icon: const Icon(Icons.refresh_rounded, color: Color(0xFF1E1E1E)), onPressed: _refreshData),
-          IconButton(icon: const Icon(Icons.file_download_outlined, color: Color(0xFF1E1E1E)), onPressed: () {}),
         ],
       ),
       body: isLoading 
