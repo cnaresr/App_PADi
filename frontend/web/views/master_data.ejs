@@ -137,7 +137,6 @@
                         <thead class="bg-slate-50 text-[10px] text-gray-400 uppercase tracking-wider font-bold sticky top-0">
                             <tr>
                                 <th class="px-4 py-3">Angkatan</th>
-                                <th class="px-4 py-3 text-center">Status</th>
                                 <th class="px-4 py-3 text-center">Aksi</th>
                             </tr>
                         </thead>
@@ -147,17 +146,6 @@
                                     <tr class="hover:bg-slate-50">
                                         <td class="px-4 py-3 font-bold text-gray-700"><%= a.nomorAngkatan %></td>
                                         <td class="px-4 py-3 text-center">
-                                            <% if(a.isActive) { %>
-                                                <form action="/master-data/angkatan/activate/<%= a.id %>" method="POST" class="inline">
-                                                    <button type="submit" class="bg-green-100 text-green-600 px-2 py-1 rounded-md text-[10px] font-bold hover:bg-green-200">Aktif</button>
-                                                </form>
-                                            <% } else { %>
-                                                <form action="/master-data/angkatan/activate/<%= a.id %>" method="POST" class="inline">
-                                                    <button type="submit" class="bg-gray-100 text-gray-500 px-2 py-1 rounded-md text-[10px] font-bold hover:bg-gray-200">Nonaktif</button>
-                                                </form>
-                                            <% } %>
-                                        </td>
-                                        <td class="px-4 py-3 text-center">
                                             <form action="/master-data/angkatan/delete/<%= a.id %>" method="POST" onsubmit="return confirmDelete(event, this, 'Angkatan ini akan dihapus permanen!');">
                                                 <button type="submit" class="bg-red-100 text-red-600 px-2 py-1 rounded-md text-xs font-bold hover:bg-red-200">Hapus</button>
                                             </form>
@@ -165,7 +153,7 @@
                                     </tr>
                                 <% }); %>
                             <% } else { %>
-                                <tr><td colspan="3" class="px-4 py-6 text-center text-gray-500 font-bold text-xs">Belum ada data.</td></tr>
+                                <tr><td colspan="2" class="px-4 py-6 text-center text-gray-500 font-bold text-xs">Belum ada data.</td></tr>
                             <% } %>
                         </tbody>
                     </table>
@@ -227,7 +215,14 @@
             <button onclick="toggleModal('modalTambahKelas')" class="absolute top-6 right-6 text-gray-400 hover:text-black font-bold">✖</button>
             <h2 class="text-2xl font-bold text-gray-800 mb-6">Tambah Kelas</h2>
             <form action="/master-data/kelas" method="POST" class="space-y-4">
-                <input type="text" name="namaKelas" placeholder="Nama Kelas (Contoh: X RPL 1)" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500">
+                <div class="flex gap-2">
+                    <select name="prefix" required class="bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 w-1/3 text-center appearance-none cursor-pointer">
+                        <option value="X">X</option>
+                        <option value="XI">XI</option>
+                        <option value="XII">XII</option>
+                    </select>
+                    <input type="text" name="namaKelasAkhiran" placeholder="Jurusan & Urutan (Contoh: PPLG 1)" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500">
+                </div>
                 <button type="submit" class="w-full bg-blue-600 text-white font-bold rounded-xl py-3.5 mt-4 hover:bg-blue-700">Simpan Kelas</button>
             </form>
         </div>

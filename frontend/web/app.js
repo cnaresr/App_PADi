@@ -3,6 +3,11 @@ const app = express();
 const path = require('path');
 const axios = require('axios'); // Untuk menembak API
 const session = require('express-session'); // Untuk menyimpan sesi login
+const multer = require('multer');
+const FormData = require('form-data');
+const fs = require('fs');
+const os = require('os');
+const upload = multer({ dest: os.tmpdir() });
 
 app.set('view engine', 'ejs');
 app.use(express.static(path.join(__dirname, 'public')));
@@ -276,30 +281,93 @@ app.get('/enrolment', cekAdmin, async (req, res) => {
             axios.get('http://127.0.0.1:3000/api/admin/enrolment'),
             axios.get('http://127.0.0.1:3000/api/admin/enrolment/master-data')
         ]);
+        const enrolmentData = resEnrolment.data.data;
+        const masterKelasList = resMaster.data.data.kelas;
+
+        // Hitung prefixData (Tingkat Kelas)
+        const prefixes = [...new Set(masterKelasList.map(k => k.namaKelas.split(' ')[0].toUpperCase()))].sort();
+        const prefixData = prefixes.map(pref => {
+            const enr = enrolmentData.find(row => row.masterKelas.namaKelas.startsWith(pref + ' ') && row.enrolment);
+            return {
+                prefix: pref,
+                angkatanId: enr ? enr.enrolment.angkatanId : '',
+                tahunAkademikId: enr ? enr.enrolment.tahunAkademikId : '',
+                angkatanName: enr ? enr.enrolment.masterAngkatan.nomorAngkatan : '-',
+                taName: enr ? `${enr.enrolment.masterTahunAkademik.tahunAjaran} (${enr.enrolment.masterTahunAkademik.semester})` : '-'
+            };
+        });
+
         res.render('enrolment', { 
-            enrolmentData: resEnrolment.data.data,
-            masterData: resMaster.data.data
+            enrolmentData: enrolmentData,
+            masterData: resMaster.data.data,
+            prefixData: prefixData
         });
     } catch (error) {
         console.error("Gagal mengambil data enrolment:", error.message);
-        res.render('enrolment', { enrolmentData: [], masterData: { kelas: [], angkatan: [], ta: [] } });
+        res.render('enrolment', { enrolmentData: [], masterData: { kelas: [], angkatan: [], ta: [] }, prefixData: [] });
     }
 });
 
-app.post('/enrolment/edit/:kelasId', cekAdmin, async (req, res) => {
+app.post('/enrolment/edit-tingkat', cekAdmin, async (req, res) => {
     try {
-        await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/edit/${req.params.kelasId}`, req.body);
+        await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/edit-tingkat`, req.body);
         res.redirect('/enrolment');
     } catch (error) { 
-        res.redirect('/enrolment?error=' + encodeURIComponent(error.response?.data?.message || 'Gagal_mengatur_kelas')); 
+        res.redirect('/enrolment?error=' + encodeURIComponent(error.response?.data?.message || 'Gagal_mengatur_tingkat')); 
     }
 });
 
-app.post('/enrolment/reset/:kelasId', cekAdmin, async (req, res) => {
+app.post('/enrolment/reset-tingkat', cekAdmin, async (req, res) => {
     try {
-        await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/reset/${req.params.kelasId}`);
+        await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/reset-tingkat`, req.body);
         res.redirect('/enrolment');
-    } catch (error) { res.redirect('/enrolment?error=Gagal_mereset_kelas'); }
+    } catch (error) { res.redirect('/enrolment?error=Gagal_mereset_tingkat'); }
+});
+
+app.post('/enrolment/edit-keterangan/:kelasId', cekAdmin, async (req, res) => {
+    try {
+        await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/edit-keterangan/${req.params.kelasId}`, req.body);
+        res.redirect('/enrolment');
+    } catch (error) { 
+        res.redirect('/enrolment?error=' + encodeURIComponent(error.response?.data?.message || 'Gagal_mengatur_keterangan')); 
+    }
+});
+
+// GET Template Excel
+app.get('/enrolment/template-excel', cekAdmin, async (req, res) => {
+    try {
+        const response = await axios.get('http://127.0.0.1:3000/api/admin/enrolment/template-excel', { responseType: 'arraybuffer' });
+        res.setHeader('Content-Disposition', 'attachment; filename="Template_Upload_Siswa.xlsx"');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.send(response.data);
+    } catch (error) {
+        console.error("Gagal unduh template:", error.message);
+        res.redirect('/enrolment?error=Gagal_mengunduh_template');
+    }
+});
+
+// Upload Excel Siswa
+app.post('/enrolment/:id/siswa/upload', cekAdmin, upload.single('fileExcel'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.redirect(`/enrolment/${req.params.id}?error=File_tidak_ditemukan`);
+        }
+        const formData = new FormData();
+        formData.append('fileExcel', fs.createReadStream(req.file.path));
+
+        await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/${req.params.id}/siswa/upload`, formData, {
+            headers: {
+                ...formData.getHeaders()
+            }
+        });
+        
+        fs.unlinkSync(req.file.path);
+        res.redirect(`/enrolment/${req.params.id}`);
+    } catch (error) {
+        if(req.file) fs.unlinkSync(req.file.path);
+        console.error("Gagal upload excel:", error.message);
+        res.redirect(`/enrolment/${req.params.id}?error=Gagal_upload_excel`);
+    }
 });
 
 // Detail Enrolment (Siswa & Guru)

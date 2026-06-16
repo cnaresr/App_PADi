@@ -49,86 +49,88 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- TOP ROW: WALI KELAS & PENCARIAN -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             
-            <!-- PANEL SISWA -->
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col h-[600px]">
+            <!-- PANEL WALI KELAS -->
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col h-auto">
                 <div class="flex justify-between items-center mb-6">
                     <div>
-                        <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">👤 Daftar Siswa</h2>
-                        <p class="text-sm text-gray-500"><%= detail.enrolment.enrolmentSiswa.length %> Siswa tergabung</p>
+                        <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">👨‍🏫 Wali Kelas</h2>
+                        <p class="text-sm text-gray-500"><%= detail.enrolment.enrolmentGuru.length > 0 ? 'Sudah Diatur' : 'Belum Diatur' %></p>
                     </div>
+                    <button onclick="toggleModal('modalTambahGuru')" class="bg-yellow-100 text-yellow-700 px-4 py-2 rounded-full text-xs font-bold shadow-md hover:bg-yellow-200 transition"><%= detail.enrolment.enrolmentGuru.length > 0 ? 'Ganti Wali Kelas' : '+ Atur Wali Kelas' %></button>
+                </div>
+                <div>
+                    <% if (detail.enrolment.enrolmentGuru.length > 0) { %>
+                        <% detail.enrolment.enrolmentGuru.forEach(function(eg) { %>
+                            <div class="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-gray-100">
+                                <div>
+                                    <p class="font-bold text-gray-700"><%= eg.guru.namaLengkap %></p>
+                                    <p class="font-mono text-xs text-gray-500">NIP: <%= eg.guru.nip %></p>
+                                </div>
+                                <form action="/enrolment/<%= detail.enrolment.id %>/guru/delete/<%= eg.guru.id %>" method="POST" onsubmit="return confirmDelete(event, this, 'Hapus guru ini sebagai wali kelas?');">
+                                    <button type="submit" class="bg-red-100 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-200">Hapus</button>
+                                </form>
+                            </div>
+                        <% }); %>
+                    <% } else { %>
+                        <div class="p-4 bg-yellow-50 text-yellow-700 rounded-xl border border-yellow-100 text-center text-sm font-bold">
+                            Wali kelas belum diatur.
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- PANEL PENCARIAN SISWA -->
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col h-auto justify-center">
+                <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2 mb-2">🔍 Cari Siswa di Kelas Ini</h2>
+                <p class="text-sm text-gray-500 mb-4">Temukan siswa berdasarkan nama atau NIS dengan cepat.</p>
+                <input type="text" id="searchInput" onkeyup="filterSiswa()" placeholder="Ketik nama atau NIS..." class="w-full bg-slate-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 transition shadow-inner">
+            </div>
+
+        </div>
+
+        <!-- PANEL SISWA (FULL WIDTH) -->
+        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col h-[600px]">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">👤 Daftar Siswa</h2>
+                    <p class="text-sm text-gray-500"><%= detail.enrolment.enrolmentSiswa.length %> Siswa tergabung</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="toggleModal('modalUploadExcel')" class="bg-green-100 text-green-700 px-4 py-2 rounded-full text-xs font-bold shadow-md hover:bg-green-200 transition">📂 Upload Excel</button>
                     <button onclick="toggleModal('modalTambahSiswa')" class="bg-blue-600 text-white px-4 py-2 rounded-full text-xs font-bold shadow-md hover:bg-blue-700 transition">+ Tambah Siswa</button>
                 </div>
-                <div class="overflow-y-auto flex-1 border rounded-xl">
-                    <table class="w-full text-left">
-                        <thead class="bg-slate-50 text-[10px] text-gray-400 uppercase tracking-wider font-bold sticky top-0">
-                            <tr>
-                                <th class="px-4 py-3">Nama Siswa</th>
-                                <th class="px-4 py-3">NIS</th>
-                                <th class="px-4 py-3 text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y text-sm">
-                            <% if (detail.enrolment.enrolmentSiswa.length > 0) { %>
-                                <% detail.enrolment.enrolmentSiswa.forEach(function(es) { %>
-                                    <tr class="hover:bg-slate-50">
-                                        <td class="px-4 py-3 font-bold text-gray-700"><%= es.siswa.namaLengkap %></td>
-                                        <td class="px-4 py-3 font-mono text-xs text-gray-500"><%= es.siswa.nis %></td>
-                                        <td class="px-4 py-3 text-center">
-                                            <form action="/enrolment/<%= detail.enrolment.id %>/siswa/delete/<%= es.siswa.id %>" method="POST" onsubmit="return confirmDelete(event, this, 'Keluarkan siswa ini dari kelas?');">
-                                                <button type="submit" class="bg-red-100 text-red-600 px-2 py-1 rounded-md text-xs font-bold hover:bg-red-200">Keluarkan</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                <% }); %>
-                            <% } else { %>
-                                <tr><td colspan="3" class="px-4 py-8 text-center text-gray-500 font-bold text-sm">Belum ada siswa di kelas ini.</td></tr>
-                            <% } %>
-                        </tbody>
-                    </table>
-                </div>
             </div>
-
-            <!-- PANEL GURU -->
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col h-[600px]">
-                <div class="flex justify-between items-center mb-6">
-                    <div>
-                        <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">👨‍🏫 Daftar Guru (Pengajar)</h2>
-                        <p class="text-sm text-gray-500"><%= detail.enrolment.enrolmentGuru.length %> Guru tergabung</p>
-                    </div>
-                    <button onclick="toggleModal('modalTambahGuru')" class="bg-green-600 text-white px-4 py-2 rounded-full text-xs font-bold shadow-md hover:bg-green-700 transition">+ Tambah Guru</button>
-                </div>
-                <div class="overflow-y-auto flex-1 border rounded-xl">
-                    <table class="w-full text-left">
-                        <thead class="bg-slate-50 text-[10px] text-gray-400 uppercase tracking-wider font-bold sticky top-0">
-                            <tr>
-                                <th class="px-4 py-3">Nama Guru</th>
-                                <th class="px-4 py-3">NIP</th>
-                                <th class="px-4 py-3 text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y text-sm">
-                            <% if (detail.enrolment.enrolmentGuru.length > 0) { %>
-                                <% detail.enrolment.enrolmentGuru.forEach(function(eg) { %>
-                                    <tr class="hover:bg-slate-50">
-                                        <td class="px-4 py-3 font-bold text-gray-700"><%= eg.guru.namaLengkap %></td>
-                                        <td class="px-4 py-3 font-mono text-xs text-gray-500"><%= eg.guru.nip %></td>
-                                        <td class="px-4 py-3 text-center">
-                                            <form action="/enrolment/<%= detail.enrolment.id %>/guru/delete/<%= eg.guru.id %>" method="POST" onsubmit="return confirmDelete(event, this, 'Keluarkan guru ini dari kelas?');">
-                                                <button type="submit" class="bg-red-100 text-red-600 px-2 py-1 rounded-md text-xs font-bold hover:bg-red-200">Keluarkan</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                <% }); %>
-                            <% } else { %>
-                                <tr><td colspan="3" class="px-4 py-8 text-center text-gray-500 font-bold text-sm">Belum ada guru di kelas ini.</td></tr>
-                            <% } %>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="overflow-y-auto flex-1 border rounded-xl">
+                <table class="w-full text-left" id="tableSiswa">
+                    <thead class="bg-slate-50 text-[10px] text-gray-400 uppercase tracking-wider font-bold sticky top-0">
+                        <tr>
+                            <th class="px-4 py-3">Nama Siswa</th>
+                            <th class="px-4 py-3">NIS</th>
+                            <th class="px-4 py-3 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y text-sm">
+                        <% if (detail.enrolment.enrolmentSiswa.length > 0) { %>
+                            <% detail.enrolment.enrolmentSiswa.forEach(function(es) { %>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="px-4 py-3 font-bold text-gray-700"><%= es.siswa.namaLengkap %></td>
+                                    <td class="px-4 py-3 font-mono text-xs text-gray-500"><%= es.siswa.nis %></td>
+                                    <td class="px-4 py-3 text-center">
+                                        <form action="/enrolment/<%= detail.enrolment.id %>/siswa/delete/<%= es.siswa.id %>" method="POST" onsubmit="return confirmDelete(event, this, 'Keluarkan siswa ini dari kelas?');">
+                                            <button type="submit" class="bg-red-100 text-red-600 px-2 py-1 rounded-md text-xs font-bold hover:bg-red-200">Keluarkan</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr><td colspan="3" class="px-4 py-8 text-center text-gray-500 font-bold text-sm">Belum ada siswa di kelas ini.</td></tr>
+                        <% } %>
+                    </tbody>
+                </table>
             </div>
-
         </div>
     </main>
 
@@ -156,7 +158,7 @@
     <div id="modalTambahGuru" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex justify-center items-center">
         <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative">
             <button onclick="toggleModal('modalTambahGuru')" class="absolute top-6 right-6 text-gray-400 hover:text-black font-bold">✖</button>
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Pilih Guru</h2>
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Pilih Wali Kelas</h2>
             <form action="/enrolment/<%= detail.enrolment.id %>/guru" method="POST" class="space-y-4">
                 <div>
                     <label class="text-xs font-bold text-gray-500 uppercase">Pilih dari Daftar Guru</label>
@@ -167,7 +169,36 @@
                         <% }) %>
                     </select>
                 </div>
-                <button type="submit" class="w-full bg-green-600 text-white font-bold rounded-xl py-3.5 mt-4 hover:bg-green-700">Tambahkan Guru</button>
+                <button type="submit" class="w-full bg-yellow-400 text-yellow-900 font-bold rounded-xl py-3.5 mt-4 hover:bg-yellow-500">Simpan Wali Kelas</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL UPLOAD EXCEL -->
+    <div id="modalUploadExcel" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex justify-center items-center">
+        <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative">
+            <button onclick="toggleModal('modalUploadExcel')" class="absolute top-6 right-6 text-gray-400 hover:text-black font-bold">✖</button>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Upload Excel Siswa</h2>
+            <p class="text-sm text-gray-500 mb-6">Tambahkan banyak siswa sekaligus.</p>
+            
+            <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-xs text-blue-700 font-bold">Penting:</p>
+                    <a href="/enrolment/template-excel" class="text-xs bg-blue-600 text-white px-3 py-1 rounded-md font-bold hover:bg-blue-700 transition">⬇️ Download Template</a>
+                </div>
+                <ul class="text-xs text-blue-600 list-disc pl-4 space-y-1">
+                    <li>Gunakan format file .xlsx atau .xls</li>
+                    <li>Pastikan terdapat kolom header <b>NIS</b> dan <b>NAMA LENGKAP</b></li>
+                    <li>Siswa yang belum ada di sistem akan ditambahkan otomatis.</li>
+                </ul>
+            </div>
+
+            <form action="/enrolment/<%= detail.enrolment.id %>/siswa/upload" method="POST" enctype="multipart/form-data" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Pilih File Excel</label>
+                    <input type="file" name="fileExcel" accept=".xlsx, .xls" required class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 outline-none">
+                </div>
+                <button type="submit" class="w-full bg-green-600 text-white font-bold rounded-xl py-3.5 mt-4 hover:bg-green-700">Upload Data</button>
             </form>
         </div>
     </div>
@@ -185,6 +216,21 @@
                 showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#64748b', confirmButtonText: 'Ya, Lanjutkan!'
             }).then((result) => {
                 if (result.isConfirmed) form.submit();
+            });
+        }
+        function filterSiswa() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#tableSiswa tbody tr');
+            rows.forEach(row => {
+                if (row.children.length > 1) { // abaikan baris "Belum ada siswa"
+                    const nama = row.children[0].innerText.toLowerCase();
+                    const nis = row.children[1].innerText.toLowerCase();
+                    if (nama.includes(input) || nis.includes(input)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
             });
         }
     </script>
