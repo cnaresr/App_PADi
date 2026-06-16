@@ -144,4 +144,62 @@ class ApiService {
       return {'status': 'error', 'message': e.toString()};
     }
   }
+  // --- FUNGSI PERIZINAN (DINAMIS) ---
+  
+  // 1. Fungsi Siswa Mengirim Izin (Multipart untuk File)
+  static Future<Map<String, dynamic>> ajukanIzin({
+    required int userId,
+    required String tanggalMulai,
+    required String tanggalSelesai,
+    required String jenisIzin,
+    required String alasan,
+    String? filePath,
+  }) async {
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/perizinan'));
+      request.fields['userId'] = userId.toString();
+      request.fields['tanggalMulai'] = tanggalMulai;
+      request.fields['tanggalSelesai'] = tanggalSelesai;
+      request.fields['jenisIzin'] = jenisIzin;
+      request.fields['alasan'] = alasan;
+
+      if (filePath != null) {
+        request.files.add(await http.MultipartFile.fromPath('fileBukti', filePath));
+      }
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      
+      return json.decode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Terjadi kesalahan sistem saat mengirim file.'};
+    }
+  }
+
+  // 2. Fungsi Guru Mengambil Daftar Izin Pending
+  static Future<List<dynamic>> getIzinPending() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/perizinan/pending'));
+      if (response.statusCode == 200) {
+        return json.decode(response.body)['data'];
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // 3. Fungsi Guru Menyetujui/Menolak
+  static Future<Map<String, dynamic>> updateStatusIzin(int izinId, String status, int guruUserId) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/perizinan/$izinId/status'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'statusUpdate': status, 'guruUserId': guruUserId}),
+      );
+      return json.decode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Gagal memperbarui status.'};
+    }
+  }
 }
