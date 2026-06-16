@@ -165,6 +165,182 @@ app.post('/daftar-guru/delete/:id', cekAdmin, async (req, res) => {
     }
 });
 
+// --- RUTE MASTER DATA ---
+app.get('/master-data', cekAdmin, async (req, res) => {
+    try {
+        const [resKelas, resAngkatan, resTa, resPengaturan] = await Promise.all([
+            axios.get('http://127.0.0.1:3000/api/admin/master/kelas'),
+            axios.get('http://127.0.0.1:3000/api/admin/master/angkatan'),
+            axios.get('http://127.0.0.1:3000/api/admin/master/tahun-akademik'),
+            axios.get('http://127.0.0.1:3000/api/admin/master/pengaturan')
+        ]);
+        
+        let bulanGanjil = 7; let bulanSelesaiGanjil = 12;
+        let bulanGenap = 1; let bulanSelesaiGenap = 6;
+        if(resPengaturan.data && resPengaturan.data.data) {
+            const p = resPengaturan.data.data;
+            const ganjil = p.find(x => x.kunci === 'bulan_mulai_ganjil');
+            const ganjilSelesai = p.find(x => x.kunci === 'bulan_selesai_ganjil');
+            const genap = p.find(x => x.kunci === 'bulan_mulai_genap');
+            const genapSelesai = p.find(x => x.kunci === 'bulan_selesai_genap');
+            if(ganjil) bulanGanjil = parseInt(ganjil.nilai);
+            if(ganjilSelesai) bulanSelesaiGanjil = parseInt(ganjilSelesai.nilai);
+            if(genap) bulanGenap = parseInt(genap.nilai);
+            if(genapSelesai) bulanSelesaiGenap = parseInt(genapSelesai.nilai);
+        }
+
+        res.render('master_data', { 
+            kelas: resKelas.data.data,
+            angkatan: resAngkatan.data.data,
+            tahunAkademik: resTa.data.data,
+            pengaturan: { bulanGanjil, bulanSelesaiGanjil, bulanGenap, bulanSelesaiGenap }
+        });
+    } catch (error) {
+        console.error("Gagal mengambil master data:", error.message);
+        res.render('master_data', { kelas: [], angkatan: [], tahunAkademik: [], pengaturan: { bulanGanjil: 7, bulanSelesaiGanjil: 12, bulanGenap: 1, bulanSelesaiGenap: 6 } });
+    }
+});
+
+// Setting Pengaturan
+app.post('/master-data/pengaturan', cekAdmin, async (req, res) => {
+    try {
+        await axios.post('http://127.0.0.1:3000/api/admin/master/pengaturan', req.body);
+        res.redirect('/master-data');
+    } catch (error) { res.redirect('/master-data?error=Gagal_simpan_pengaturan'); }
+});
+
+// Master Kelas
+app.post('/master-data/kelas', cekAdmin, async (req, res) => {
+    try {
+        await axios.post('http://127.0.0.1:3000/api/admin/master/kelas', req.body);
+        res.redirect('/master-data');
+    } catch (error) { 
+        res.redirect('/master-data?error=' + encodeURIComponent(error.response?.data?.message || 'Gagal_tambah_kelas')); 
+    }
+});
+app.post('/master-data/kelas/delete/:id', cekAdmin, async (req, res) => {
+    try {
+        await axios.delete(`http://127.0.0.1:3000/api/admin/master/kelas/${req.params.id}`);
+        res.redirect('/master-data');
+    } catch (error) { res.redirect('/master-data?error=Gagal_hapus_kelas'); }
+});
+
+// Master Angkatan
+app.post('/master-data/angkatan', cekAdmin, async (req, res) => {
+    try {
+        await axios.post('http://127.0.0.1:3000/api/admin/master/angkatan', req.body);
+        res.redirect('/master-data');
+    } catch (error) { 
+        res.redirect('/master-data?error=' + encodeURIComponent(error.response?.data?.message || 'Gagal_tambah_angkatan')); 
+    }
+});
+app.post('/master-data/angkatan/delete/:id', cekAdmin, async (req, res) => {
+    try {
+        await axios.delete(`http://127.0.0.1:3000/api/admin/master/angkatan/${req.params.id}`);
+        res.redirect('/master-data');
+    } catch (error) { res.redirect('/master-data?error=Gagal_hapus_angkatan'); }
+});
+app.post('/master-data/angkatan/activate/:id', cekAdmin, async (req, res) => {
+    try {
+        await axios.put(`http://127.0.0.1:3000/api/admin/master/angkatan/${req.params.id}/toggle-active`);
+        res.redirect('/master-data');
+    } catch (error) { res.redirect('/master-data?error=Gagal_toggle_angkatan'); }
+});
+
+// Master Tahun Akademik
+app.post('/master-data/tahun-akademik', cekAdmin, async (req, res) => {
+    try {
+        await axios.post('http://127.0.0.1:3000/api/admin/master/tahun-akademik', req.body);
+        res.redirect('/master-data');
+    } catch (error) { 
+        res.redirect('/master-data?error=' + encodeURIComponent(error.response?.data?.message || 'Gagal_tambah_ta')); 
+    }
+});
+app.post('/master-data/tahun-akademik/activate/:id', cekAdmin, async (req, res) => {
+    try {
+        await axios.put(`http://127.0.0.1:3000/api/admin/master/tahun-akademik/${req.params.id}/toggle-active`);
+        res.redirect('/master-data');
+    } catch (error) { res.redirect('/master-data?error=Gagal_aktifkan_ta'); }
+});
+app.post('/master-data/tahun-akademik/delete/:id', cekAdmin, async (req, res) => {
+    try {
+        await axios.delete(`http://127.0.0.1:3000/api/admin/master/tahun-akademik/${req.params.id}`);
+        res.redirect('/master-data');
+    } catch (error) { res.redirect('/master-data?error=Gagal_hapus_ta'); }
+});
+
+// --- RUTE ENROLMENT KELAS ---
+app.get('/enrolment', cekAdmin, async (req, res) => {
+    try {
+        const [resEnrolment, resMaster] = await Promise.all([
+            axios.get('http://127.0.0.1:3000/api/admin/enrolment'),
+            axios.get('http://127.0.0.1:3000/api/admin/enrolment/master-data')
+        ]);
+        res.render('enrolment', { 
+            enrolmentData: resEnrolment.data.data,
+            masterData: resMaster.data.data
+        });
+    } catch (error) {
+        console.error("Gagal mengambil data enrolment:", error.message);
+        res.render('enrolment', { enrolmentData: [], masterData: { kelas: [], angkatan: [], ta: [] } });
+    }
+});
+
+app.post('/enrolment/edit/:kelasId', cekAdmin, async (req, res) => {
+    try {
+        await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/edit/${req.params.kelasId}`, req.body);
+        res.redirect('/enrolment');
+    } catch (error) { 
+        res.redirect('/enrolment?error=' + encodeURIComponent(error.response?.data?.message || 'Gagal_mengatur_kelas')); 
+    }
+});
+
+app.post('/enrolment/reset/:kelasId', cekAdmin, async (req, res) => {
+    try {
+        await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/reset/${req.params.kelasId}`);
+        res.redirect('/enrolment');
+    } catch (error) { res.redirect('/enrolment?error=Gagal_mereset_kelas'); }
+});
+
+// Detail Enrolment (Siswa & Guru)
+app.get('/enrolment/:id', cekAdmin, async (req, res) => {
+    try {
+        const response = await axios.get(`http://127.0.0.1:3000/api/admin/enrolment/${req.params.id}/detail`);
+        res.render('enrolment_detail', { detail: response.data.data });
+    } catch (error) {
+        console.error("Gagal mengambil detail kelas:", error.message);
+        res.redirect('/enrolment?error=Gagal_mengambil_detail');
+    }
+});
+
+app.post('/enrolment/:id/siswa', cekAdmin, async (req, res) => {
+    try {
+        await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/${req.params.id}/siswa`, req.body);
+        res.redirect(`/enrolment/${req.params.id}`);
+    } catch (error) { res.redirect(`/enrolment/${req.params.id}?error=Gagal_tambah_siswa`); }
+});
+
+app.post('/enrolment/:id/siswa/delete/:siswaId', cekAdmin, async (req, res) => {
+    try {
+        await axios.delete(`http://127.0.0.1:3000/api/admin/enrolment/${req.params.id}/siswa/${req.params.siswaId}`);
+        res.redirect(`/enrolment/${req.params.id}`);
+    } catch (error) { res.redirect(`/enrolment/${req.params.id}?error=Gagal_hapus_siswa`); }
+});
+
+app.post('/enrolment/:id/guru', cekAdmin, async (req, res) => {
+    try {
+        await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/${req.params.id}/guru`, req.body);
+        res.redirect(`/enrolment/${req.params.id}`);
+    } catch (error) { res.redirect(`/enrolment/${req.params.id}?error=Gagal_tambah_guru`); }
+});
+
+app.post('/enrolment/:id/guru/delete/:guruId', cekAdmin, async (req, res) => {
+    try {
+        await axios.delete(`http://127.0.0.1:3000/api/admin/enrolment/${req.params.id}/guru/${req.params.guruId}`);
+        res.redirect(`/enrolment/${req.params.id}`);
+    } catch (error) { res.redirect(`/enrolment/${req.params.id}?error=Gagal_hapus_guru`); }
+});
+
 // --- RUTE JADWAL ---
 app.get('/jadwal', cekAdmin, async (req, res) => {
     try {
