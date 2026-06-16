@@ -353,7 +353,10 @@ app.post('/enrolment/:id/siswa/upload', cekAdmin, upload.single('fileExcel'), as
             return res.redirect(`/enrolment/${req.params.id}?error=File_tidak_ditemukan`);
         }
         const formData = new FormData();
-        formData.append('fileExcel', fs.createReadStream(req.file.path));
+        formData.append('fileExcel', fs.createReadStream(req.file.path), {
+            filename: req.file.originalname,
+            contentType: req.file.mimetype
+        });
 
         await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/${req.params.id}/siswa/upload`, formData, {
             headers: {
