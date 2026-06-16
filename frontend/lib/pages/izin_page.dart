@@ -143,8 +143,11 @@ class _IzinPageState extends State<IzinPage> {
   String _formatIsoTime(String? isoDate) {
     if (isoDate == null || isoDate.isEmpty) return "-";
     try {
-      DateTime dt = DateTime.parse(isoDate).toLocal();
-      return "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+      // [FIX] The database TIME field is sent by Prisma as a UTC DateTime string (e.g., '...T19:05:00.000Z').
+      // We parse it, but we DO NOT convert it to local time to avoid incorrect timezone shifts.
+      // We directly use the hour and minute from the parsed UTC DateTime object.
+      DateTime dt = DateTime.parse(isoDate);
+      return "${dt.toUtc().hour.toString().padLeft(2, '0')}:${dt.toUtc().minute.toString().padLeft(2, '0')}";
     } catch (e) { return "-"; }
   }
 

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:platform_absensi_digital/providers/user_provider.dart';
 import 'package:platform_absensi_digital/pages/absensi_page.dart';
-import 'package:platform_absensi_digital/pages/riwayat_page.dart';
 import 'package:platform_absensi_digital/pages/profil_page.dart';
 import 'package:platform_absensi_digital/pages/izin_page.dart';
 import 'package:platform_absensi_digital/pages/jadwal_page.dart';

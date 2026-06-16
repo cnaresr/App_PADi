@@ -366,7 +366,18 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
       ));
 
       if (result['success'] == true) {
-        // [DIHAPUS] Navigator.pop() dihapus untuk mencegah layar hitam.
+        // [BARU] Panggil provider untuk refresh data dashboard setelah absen berhasil.
+        // Ini akan membuat halaman riwayat otomatis terupdate.
+        final user = context.read<UserProvider>();
+        final dashRes = await ApiService.getDashboardData(user.userId);
+        if (dashRes['status'] == 'success') {
+          user.setDashboardData(
+            dashRes['data']['hadirBulanIni'],
+            dashRes['data']['persentaseKehadiran'],
+            dashRes['data']['riwayatAbsensi'],
+            dashRes['data']['riwayatPerizinan'],
+          );
+        }
       }
 
     } catch (e) {
@@ -423,7 +434,18 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
       ));
 
       if (result['success'] == true) {
-        // [DIHAPUS] Navigator.pop() dihapus untuk mencegah layar hitam.
+        // [BARU] Panggil provider untuk refresh data dashboard setelah absen berhasil.
+        // Ini akan membuat halaman riwayat otomatis terupdate.
+        final user = context.read<UserProvider>();
+        final dashRes = await ApiService.getDashboardData(user.userId);
+        if (dashRes['status'] == 'success') {
+          user.setDashboardData(
+            dashRes['data']['hadirBulanIni'],
+            dashRes['data']['persentaseKehadiran'],
+            dashRes['data']['riwayatAbsensi'],
+            dashRes['data']['riwayatPerizinan'],
+          );
+        }
       }
 
     } catch (e) {
