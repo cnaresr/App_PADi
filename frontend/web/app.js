@@ -333,45 +333,7 @@ app.post('/enrolment/edit-keterangan/:kelasId', cekAdmin, async (req, res) => {
     }
 });
 
-// GET Template Excel
-app.get('/enrolment/template-excel', cekAdmin, async (req, res) => {
-    try {
-        const response = await axios.get('http://127.0.0.1:3000/api/admin/enrolment/template-excel', { responseType: 'arraybuffer' });
-        res.setHeader('Content-Disposition', 'attachment; filename="Template_Upload_Siswa.xlsx"');
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.send(response.data);
-    } catch (error) {
-        console.error("Gagal unduh template:", error.message);
-        res.redirect('/enrolment?error=Gagal_mengunduh_template');
-    }
-});
 
-// Upload Excel Siswa
-app.post('/enrolment/:id/siswa/upload', cekAdmin, upload.single('fileExcel'), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.redirect(`/enrolment/${req.params.id}?error=File_tidak_ditemukan`);
-        }
-        const formData = new FormData();
-        formData.append('fileExcel', fs.createReadStream(req.file.path), {
-            filename: req.file.originalname,
-            contentType: req.file.mimetype
-        });
-
-        await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/${req.params.id}/siswa/upload`, formData, {
-            headers: {
-                ...formData.getHeaders()
-            }
-        });
-        
-        fs.unlinkSync(req.file.path);
-        res.redirect(`/enrolment/${req.params.id}`);
-    } catch (error) {
-        if(req.file) fs.unlinkSync(req.file.path);
-        console.error("Gagal upload excel:", error.message);
-        res.redirect(`/enrolment/${req.params.id}?error=Gagal_upload_excel`);
-    }
-});
 
 // Detail Enrolment (Siswa & Guru)
 app.get('/enrolment/:id', cekAdmin, async (req, res) => {
@@ -410,6 +372,30 @@ app.post('/enrolment/:id/guru/delete/:guruId', cekAdmin, async (req, res) => {
         await axios.delete(`http://127.0.0.1:3000/api/admin/enrolment/${req.params.id}/guru/${req.params.guruId}`);
         res.redirect(`/enrolment/${req.params.id}`);
     } catch (error) { res.redirect(`/enrolment/${req.params.id}?error=Gagal_hapus_guru`); }
+});
+
+app.post('/enrolment/:id/bulk-status', cekAdmin, async (req, res) => {
+    try {
+        const { updates } = req.body;
+        // Parsing form data since it sends dynamic keys (status_1, status_2, etc.)
+        let parsedUpdates = [];
+        if (updates) {
+            // If sent as JSON array
+            parsedUpdates = updates;
+        } else {
+            // If sent as urlencoded form data
+            for (const key in req.body) {
+                if (key.startsWith('status_')) {
+                    const siswaId = key.replace('status_', '');
+                    parsedUpdates.push({ siswaId, status: req.body[key] });
+                }
+            }
+        }
+        await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/${req.params.id}/bulk-status`, { updates: parsedUpdates });
+        res.redirect(`/enrolment/${req.params.id}`);
+    } catch (error) { 
+        res.redirect(`/enrolment/${req.params.id}?error=Gagal_memproses_mutasi_siswa`); 
+    }
 });
 
 // --- RUTE JADWAL ---

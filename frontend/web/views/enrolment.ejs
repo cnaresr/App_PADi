@@ -83,7 +83,6 @@
                         <th class="px-6 py-4">Nama Kelas</th>
                         <th class="px-6 py-4">Angkatan</th>
                         <th class="px-6 py-4">Tahun Akademik</th>
-                        <th class="px-6 py-4">Keterangan</th>
                         <th class="px-6 py-4">Siswa</th>
                         <th class="px-6 py-4">Wali Kelas</th>
                         <th class="px-6 py-4 text-center">Aksi</th>
@@ -100,13 +99,6 @@
                                         <%= row.enrolment.masterTahunAkademik.tahunAjaran %> 
                                         <span class="text-[10px] bg-slate-200 px-2 py-0.5 rounded-md ml-1"><%= row.enrolment.masterTahunAkademik.semester %></span>
                                     </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-gray-500 italic"><%= row.enrolment.keterangan || '-' %></span>
-                                            <% const kId = row.enrolment.keterangan ? row.enrolment.keterangan.replace(/'/g, "\\'") : ''; %>
-                                            <button onclick="openEditKeteranganModal('<%= row.masterKelas.id %>', '<%= row.masterKelas.namaKelas %>', '<%= kId %>')" class="text-blue-400 hover:text-blue-600 transition" title="Edit Keterangan">✏️</button>
-                                        </div>
-                                    </td>
                                     <td class="px-6 py-4"><span class="bg-blue-100 text-blue-700 font-bold px-3 py-1 rounded-full text-xs"><%= row.enrolment._count.enrolmentSiswa %> Siswa</span></td>
                                     <td class="px-6 py-4">
                                         <% if (row.enrolment.enrolmentGuru && row.enrolment.enrolmentGuru.length > 0) { %>
@@ -118,12 +110,6 @@
                                 <% } else { %>
                                     <td class="px-6 py-4 text-gray-400 italic">Belum diset</td>
                                     <td class="px-6 py-4 text-gray-400 italic">Belum diset</td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-gray-400 italic">-</span>
-                                            <button onclick="openEditKeteranganModal('<%= row.masterKelas.id %>', '<%= row.masterKelas.namaKelas %>', '')" class="text-blue-400 hover:text-blue-600 transition" title="Edit Keterangan">✏️</button>
-                                        </div>
-                                    </td>
                                     <td class="px-6 py-4"><span class="bg-gray-100 text-gray-500 font-bold px-3 py-1 rounded-full text-xs">0 Siswa</span></td>
                                     <td class="px-6 py-4"><span class="bg-gray-100 text-gray-500 font-bold px-3 py-1 rounded-full text-xs">Belum Diatur</span></td>
                                 <% } %>
@@ -137,7 +123,7 @@
                             </tr>
                         <% }); %>
                     <% } else { %>
-                        <tr><td colspan="7" class="px-8 py-8 text-center text-gray-500 font-bold">Belum ada master kelas yang dibuat.</td></tr>
+                        <tr><td colspan="6" class="px-8 py-8 text-center text-gray-500 font-bold">Belum ada master kelas yang dibuat.</td></tr>
                     <% } %>
                 </tbody>
             </table>
@@ -170,21 +156,6 @@
         </div>
     </div>
 
-    <div id="modalEditKeterangan" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex justify-center items-center">
-        <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative">
-            <button onclick="toggleModal('modalEditKeterangan')" class="absolute top-6 right-6 text-gray-400 hover:text-black font-bold">✖</button>
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">Edit Keterangan</h2>
-            <p id="editKetKelasName" class="text-sm font-bold text-blue-600 mb-6 bg-blue-50 px-3 py-1.5 rounded-lg inline-block"></p>
-            <form id="editKetForm" method="POST" class="space-y-4">
-                <div>
-                    <label class="text-xs font-bold text-gray-500 uppercase">Keterangan (Opsional)</label>
-                    <input type="text" name="keterangan" id="editKetValue" placeholder="Keterangan tambahan..." class="w-full mt-1 bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500">
-                </div>
-                <button type="submit" class="w-full bg-blue-600 text-white font-bold rounded-xl py-3.5 mt-4 hover:bg-blue-700">Simpan Keterangan</button>
-            </form>
-        </div>
-    </div>
-
     <script>
         // Tampilkan error dari URL (Validasi Unik)
         const urlParams = new URLSearchParams(window.location.search);
@@ -210,13 +181,6 @@
             document.getElementById('aturPrefix').value = prefix;
             document.getElementById('aturAngkatan').value = angkatanId || '';
             toggleModal('modalAturTingkat');
-        }
-
-        function openEditKeteranganModal(kelasId, namaKelas, keterangan) {
-            document.getElementById('editKetKelasName').innerText = namaKelas;
-            document.getElementById('editKetForm').action = '/enrolment/edit-keterangan/' + kelasId;
-            document.getElementById('editKetValue').value = keterangan || '';
-            toggleModal('modalEditKeterangan');
         }
 
         function confirmResetTingkat(e, form, prefix) {
