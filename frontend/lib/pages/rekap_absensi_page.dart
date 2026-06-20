@@ -28,7 +28,7 @@ class _RekapAbsensiPageState extends State<RekapAbsensiPage> {
     
     final result = await ApiService.getDashboardGuru(user.userId);
     if (result['status'] == 'success') {
-      user.setDashboardGuruData(
+      user.setGuruDashboardData(
         result['data']['jumlahIzinPending'] ?? 0,
         result['data']['persentaseKehadiranKelas'] ?? 0,
         result['data']['rekapAbsensiKelas'] ?? [],

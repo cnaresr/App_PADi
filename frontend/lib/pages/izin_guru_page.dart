@@ -117,21 +117,33 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
       ),
       body: isLoading 
         ? const Center(child: CircularProgressIndicator(color: Color(0xFF006D5B)))
-        : pendingList.isEmpty
-          ? const Center(child: Text("Tidak ada pengajuan izin yang tertunda", style: TextStyle(color: Colors.grey, fontSize: 16)))
-          : ListView.builder(
-              padding: const EdgeInsets.all(24.0),
-              itemCount: pendingList.length,
-              itemBuilder: (context, index) {
-                var izin = pendingList[index];
-                String namaSiswa = izin['siswa']['namaLengkap'];
-                String tglMulai = _formatIsoDateToID(izin['tanggalMulai']);
-                String tglSelesai = _formatIsoDateToID(izin['tanggalSelesai']);
-                String file = izin['fileBukti'] ?? "Tidak ada lampiran";
+        : RefreshIndicator(
+            // Panggil fungsi yang sudah ada untuk memuat ulang data
+            onRefresh: _loadPendingIzin,
+            color: const Color(0xFF006D5B), // Warna ikon loading
+            child: pendingList.isEmpty
+              // [PENTING] Bungkus dengan ListView agar RefreshIndicator tetap bisa ditarik
+              // meskipun kontennya kosong.
+              ? ListView(
+                  children: const [
+                    SizedBox(height: 150), // Beri jarak dari atas
+                    Center(child: Text("Tidak ada pengajuan izin yang tertunda", style: TextStyle(color: Colors.grey, fontSize: 16))),
+                  ],
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(24.0),
+                  itemCount: pendingList.length,
+                  itemBuilder: (context, index) {
+                    var izin = pendingList[index];
+                    String namaSiswa = izin['siswa']['namaLengkap'];
+                    String tglMulai = _formatIsoDateToID(izin['tanggalMulai']);
+                    String tglSelesai = _formatIsoDateToID(izin['tanggalSelesai']);
+                    String file = izin['fileBukti'] ?? "Tidak ada lampiran";
 
-                return _buildApprovalCard(izin['id'], namaSiswa, "${izin['jenisIzin']}: ${izin['alasan']}", "$tglMulai s/d $tglSelesai", file);
-              },
-            ),
+                    return _buildApprovalCard(izin['id'], namaSiswa, "${izin['jenisIzin']}: ${izin['alasan']}", "$tglMulai s/d $tglSelesai", file);
+                  },
+                ),
+          ),
     );
   }
 

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:convert'; // [BARU] Untuk Base64 encoding
 
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
@@ -8,20 +7,13 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:tflite_flutter/tflite_flutter.dart' as tfl;
 import 'package:image/image.dart' as img;
-import 'package:provider/provider.dart'; // [BARU] Import provider
+import 'package:provider/provider.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
-// Asumsi path, sesuaikan jika berbeda
 import '../main.dart'; 
 import '../services/api_service.dart';
-import '../providers/user_provider.dart'; // [BARU] Import UserProvider
+import '../providers/user_provider.dart';
 
-// =======================================================================
-// [PERUBAHAN] - MEMBUAT HALAMAN ABSENSI MENJADI "LAZY"
-// =======================================================================
-
-// 1. Widget AbsensiPage yang asli sekarang menjadi "pembungkus" (wrapper).
-//    Tugasnya adalah menunda pembuatan konten kamera sampai halaman ini benar-benar terlihat.
 class AbsensiPage extends StatefulWidget {
   final int siswaId;
   const AbsensiPage({super.key, required this.siswaId});
@@ -31,35 +23,16 @@ class AbsensiPage extends StatefulWidget {
 }
 
 class _AbsensiPageState extends State<AbsensiPage> with AutomaticKeepAliveClientMixin {
-  // [PERBAIKAN] Gunakan Future yang resolve setelah frame pertama untuk lazy loading.
-  // Ini adalah pola yang lebih stabil daripada setState di addPostFrameCallback.
-  final Future<void> _contentLoader = Future.delayed(Duration.zero);
-
   @override
-  bool get wantKeepAlive => true; // Ini penting untuk menjaga state saat berpindah tab.
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Wajib dipanggil saat menggunakan AutomaticKeepAliveClientMixin.
-
-    return FutureBuilder<void>(
-      future: _contentLoader,
-      builder: (context, snapshot) {
-        // Jika future sudah selesai (setelah frame pertama), bangun konten utama.
-        if (snapshot.connectionState == ConnectionState.done) {
-          return _AbsensiPageContent(siswaId: widget.siswaId);
-        }
-        // Selama future belum selesai, tampilkan loading indicator.
-        return const Scaffold(
-          backgroundColor: Color(0xFFFAFAFA),
-          body: Center(child: CircularProgressIndicator(color: Color(0xFF006D5B))),
-        );
-      },
-    );
+    super.build(context);
+    return _AbsensiPageContent(siswaId: widget.siswaId);
   }
 }
 
-// 2. Logika dan UI AbsensiPage yang asli dipindahkan ke dalam widget dan state baru ini.
 class _AbsensiPageContent extends StatefulWidget {
   final int siswaId;
   const _AbsensiPageContent({required this.siswaId});
@@ -68,7 +41,7 @@ class _AbsensiPageContent extends StatefulWidget {
   State<_AbsensiPageContent> createState() => _AbsensiPageContentState();
 }
 
-class _AbsensiPageContentState extends State<_AbsensiPageContent> {
+class _AbsensiPageContentState extends State<_AbsensiPageContent> with WidgetsBindingObserver {
   CameraController? _controller;
   Future<void>? _initializeControllerFuture;
 
@@ -83,26 +56,62 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
   bool _isProcessing = false;
   String? _cameraError;
 
-  // [DIUBAH] State sekarang menyimpan poligon, bukan titik pusat dan radius.
   late List<Map<String, double>> _schoolPolygon;
+
+  // [BARU] State kontrol untuk mengubah wujud tombol secara dinamis
+  bool _hasCheckedIn = false;
 
   @override
   void initState() {
     super.initState();
+
+    // [BARU] Daftarkan observer untuk mendeteksi siklus hidup aplikasi (misal: kembali dari background)
+    WidgetsBinding.instance.addObserver(this);
     
-    // [DIUBAH] Menarik data poligon dari UserProvider.
     final userProvider = context.read<UserProvider>();
-    
-    // Fallback ke poligon kosong jika data dari provider tidak ada.
     _schoolPolygon = userProvider.schoolPolygon ?? [];
     
-    // [DEBUGGING] Tambahkan print ini untuk memastikan data poligon ter-load.
-    // Jika outputnya "0 vertices", berarti data tidak masuk dari halaman login.
+    // Evaluasi status presensi awal berdasarkan data dashboard yang ada di provider
+    _evaluasiStatusPresensiAwal(userProvider);
+
     debugPrint("AbsensiPage: Memuat poligon sekolah dengan ${_schoolPolygon.length} vertices.");
 
     _initializeCamera();
     _loadModel();
     _startLocationCheck();
+  }
+
+  // [BARU] Fungsi ini akan dipanggil setiap kali state aplikasi berubah
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Jika pengguna kembali ke aplikasi (misal: setelah dari Settings)
+    if (state == AppLifecycleState.resumed) {
+      debugPrint("App resumed. Re-checking location permissions and status.");
+      // Hentikan stream lama jika ada untuk menghindari duplikasi
+      _locationSubscription?.cancel();
+      // Mulai ulang pengecekan lokasi untuk memastikan izin terbaru terbaca
+      _startLocationCheck();
+    }
+  }
+
+  // [BARU] Fungsi mengecek apakah hari ini sudah pernah klik absen masuk (berdasarkan data provider)
+  void _evaluasiStatusPresensiAwal(UserProvider userProvider) {
+    final riwayat = userProvider.riwayatAbsensi; // Asumsi format data berupa List
+    if (riwayat.isNotEmpty) {
+      final String formatHariIni = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      
+      // Jika ada riwayat hari ini yang sudah punya jam masuk tapi belum ada jam pulang
+      final bool sudahMasuk = riwayat.any((absen) => 
+        absen['tanggal'] == formatHariIni && 
+        absen['jam_masuk'] != null && 
+        absen['jam_pulang'] == null
+      );
+
+      setState(() {
+        _hasCheckedIn = sudahMasuk;
+      });
+    }
   }
 
   Future<void> _initializeCamera() async {
@@ -111,7 +120,6 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
         throw Exception('Tidak ada kamera yang ditemukan di perangkat ini.');
       }
 
-      // Menggunakan variabel global 'cameras' dari main.dart
       final frontCamera = cameras.firstWhere(
         (camera) => camera.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
@@ -139,19 +147,18 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
   void dispose() {
     _controller?.dispose();
     _interpreter.close();
+    WidgetsBinding.instance.removeObserver(this); // [BARU] Hapus observer
     _locationSubscription?.cancel();
     super.dispose();
   }
 
   // --- TAHAP 1: GEOLOCATION & GEOFENCING ---
   Future<void> _startLocationCheck() async {
-    // 1. Cek dan minta izin lokasi terlebih dahulu
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
 
-    // Handle berbagai status penolakan izin
     if (permission == LocationPermission.denied) {
       if (!mounted) return;
       setState(() => _locationMessage = "Izin lokasi ditolak.");
@@ -165,11 +172,10 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
       return;
     }
 
-    // 2. Dapatkan lokasi awal dengan cepat untuk feedback instan
     try {
       Position initialPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 10), // Batas waktu agar tidak menunggu selamanya
+        timeLimit: const Duration(seconds: 10),
       );
       if (mounted) _updateLocationStatus(initialPosition);
     } catch (e) {
@@ -177,15 +183,13 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
       if (mounted) setState(() => _locationMessage = "Gagal mendapat lokasi awal. Pastikan GPS aktif.");
     }
 
-    // 3. Lanjutkan dengan stream untuk update real-time
     _locationSubscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10) // Update tiap 10 meter
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10)
     ).listen((Position position) {
       if (mounted) _updateLocationStatus(position);
     });
   }
 
-  // Fungsi baru untuk menampilkan dialog notifikasi
   void _showPermissionDeniedDialog() {
     showDialog(
       context: context,
@@ -200,7 +204,6 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
           TextButton(
             child: const Text("Buka Pengaturan"),
             onPressed: () {
-              // Buka pengaturan aplikasi untuk perangkat ini
               Geolocator.openAppSettings();
               Navigator.of(context).pop();
             },
@@ -210,9 +213,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
     );
   }
 
-  // Fungsi baru untuk memproses update lokasi & UI (menghindari duplikasi)
   void _updateLocationStatus(Position position) {
-    // [DIUBAH] Logika pengecekan diubah dari menghitung jarak menjadi pengecekan di dalam poligon.
     final isInside = _isPointInPolygon(position, _schoolPolygon);
 
     if (!mounted) return;
@@ -228,24 +229,21 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
     });
   }
 
-  // [BARU] Algoritma Ray-Casting untuk mengecek apakah sebuah titik berada di dalam poligon.
-  // Ini adalah pengganti Geolocator.distanceBetween.
-  // [PERBAIKAN] Logika dibuat lebih eksplisit untuk menghindari kebingungan lat/lon.
   bool _isPointInPolygon(Position point, List<Map<String, double>> polygon) {
     if (polygon.isEmpty) {
       debugPrint("Pengecekan gagal: Poligon area sekolah kosong.");
       return false;
     }
 
-    double pointLon = point.longitude; // Anggap Longitude sebagai sumbu X
-    double pointLat = point.latitude;  // Anggap Latitude sebagai sumbu Y
+    double pointLon = point.longitude; 
+    double pointLat = point.latitude;  
     bool isInside = false;
     
     for (int i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-      double vertexLonI = polygon[i]['longitude']!; // X1
-      double vertexLatI = polygon[i]['latitude']!;  // Y1
-      double vertexLonJ = polygon[j]['longitude']!; // X2
-      double vertexLatJ = polygon[j]['latitude']!;  // Y2
+      double vertexLonI = polygon[i]['longitude']!; 
+      double vertexLatI = polygon[i]['latitude']!;  
+      double vertexLonJ = polygon[j]['longitude']!; 
+      double vertexLatJ = polygon[j]['latitude']!;  
 
       bool intersect = ((vertexLatI > pointLat) != (vertexLatJ > pointLat)) && (pointLon < (vertexLonJ - vertexLonI) * (pointLat - vertexLatI) / (vertexLatJ - vertexLatI) + vertexLonI);
       if (intersect) {
@@ -269,45 +267,33 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
   }
 
   Future<List<double>?> _runModelOnImage(File imageFile) async {
-    // 1. INISIALISASI PENDETEKSI WAJAH GOOGLE ML KIT
     final options = FaceDetectorOptions(performanceMode: FaceDetectorMode.fast);
     final faceDetector = FaceDetector(options: options);
     final inputImage = InputImage.fromFilePath(imageFile.path);
 
-    // 2. MENCARI LOKASI WAJAH DI DALAM FOTO
     final List<Face> faces = await faceDetector.processImage(inputImage);
-    faceDetector.close(); // Tutup detector untuk menghemat memori HP
+    faceDetector.close();
 
-    // Jika tidak ada wajah manusia di depan kamera, hentikan proses
     if (faces.isEmpty) {
       throw Exception("Wajah tidak ditemukan. Pastikan wajah terlihat jelas di kamera.");
     }
 
-    // Ambil koordinat wajah pertama/terbesar yang terdeteksi
     final Face firstFace = faces.first;
     final Rect boundingBox = firstFace.boundingBox;
 
-    // 3. MUAT GAMBAR ASLI UNTUK DIPOTONG
     img.Image? rawImage = img.decodeImage(await imageFile.readAsBytes());
     if (rawImage == null) return null;
     
-    // [TAMBAHKAN INI] Memaksa gambar tegak sesuai rotasi EXIF-nya
     img.Image originalImage = img.bakeOrientation(rawImage);
 
-    // 4. POTONG (CROP) GAMBAR TEPAT DI KOTAK WAJAH
-    // Mencegah error jika kotak wajah sedikit keluar dari batas layar
     int x = boundingBox.left.toInt().clamp(0, originalImage.width);
     int y = boundingBox.top.toInt().clamp(0, originalImage.height);
     int w = boundingBox.width.toInt().clamp(0, originalImage.width - x);
     int h = boundingBox.height.toInt().clamp(0, originalImage.height - y);
 
-    // Menggunting gambar agar hanya tersisa bagian wajah (latar belakang dibuang)
     img.Image croppedFace = img.copyCrop(originalImage, x: x, y: y, width: w, height: h);
-
-    // 5. UBAH UKURAN WAJAH YANG SUDAH DIPOTONG MENJADI 112x112
     img.Image resizedImage = img.copyResize(croppedFace, width: 112, height: 112);
 
-    // 6. EKSTRAKSI FITUR MENGGUNAKAN TFLITE (MobileFaceNet)
     var input = List.generate(112, (y) {
       return List.generate(112, (x) {
         final pixel = resizedImage.getPixel(x, y);
@@ -323,7 +309,6 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
   }
 
   // --- TAHAP 3: VALIDASI & PENYIMPANAN ---
-  // [DIUBAH] Nama fungsi diubah agar lebih spesifik
   Future<void> _onAbsenMasukButtonPressed() async {
     if (_controller == null || !_controller!.value.isInitialized || _isProcessing || _currentPosition == null) return;
 
@@ -331,31 +316,18 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
 
     try {
       final XFile imageFile = await _controller!.takePicture();
-
-      // [OPTIMASI] Kompres gambar sebelum dikirim ke server
-      img.Image? originalImage = img.decodeImage(await imageFile.readAsBytes());
-      if (originalImage == null) {
-        throw Exception("Gagal memproses gambar yang diambil.");
-      }
-      // Ubah ukuran gambar agar tidak terlalu besar (misal lebar 800px)
-      img.Image resizedImage = img.copyResize(originalImage, width: 800);
-      // Encode ke format JPG dengan kualitas 85%
-      final imageBytes = img.encodeJpg(resizedImage, quality: 85);
-      final String base64Image = base64Encode(imageBytes);
-
       final faceEmbedding = await _runModelOnImage(File(imageFile.path));
 
       if (faceEmbedding == null) {
         throw Exception("Wajah tidak terdeteksi pada gambar.");
       }
 
-      // Menggunakan ApiService yang sudah ada
       final result = await ApiService.kirimAbsensiMasuk(
-        userId: widget.siswaId, // Akses siswaId dari state widget baru
+        userId: widget.siswaId,
         faceEmbedding: faceEmbedding,
         latitude: _currentPosition!.latitude,
         longitude: _currentPosition!.longitude,
-        fotoMasuk: base64Image, // [BARU] Kirim gambar dalam format Base64
+        fotoMasukPath: imageFile.path,
       );
 
       if (!mounted) return;
@@ -366,8 +338,12 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
       ));
 
       if (result['success'] == true) {
-        // [BARU] Panggil provider untuk refresh data dashboard setelah absen berhasil.
-        // Ini akan membuat halaman riwayat otomatis terupdate.
+        // Berubah wujud ke status sudah absen masuk
+        setState(() {
+          _hasCheckedIn = true;
+        });
+
+        // Refresh data dashboard secara background
         final user = context.read<UserProvider>();
         final dashRes = await ApiService.getDashboardData(user.userId);
         if (dashRes['status'] == 'success') {
@@ -393,7 +369,6 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
     }
   }
 
-  // [BARU] Fungsi untuk menangani tombol Absen Pulang
   Future<void> _onAbsenPulangButtonPressed() async {
     if (_controller == null || !_controller!.value.isInitialized || _isProcessing || _currentPosition == null) return;
 
@@ -401,29 +376,18 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
 
     try {
       final XFile imageFile = await _controller!.takePicture();
-      
-      // [OPTIMASI] Kompres gambar sebelum dikirim ke server (sama seperti absen masuk)
-      img.Image? originalImage = img.decodeImage(await imageFile.readAsBytes());
-      if (originalImage == null) {
-        throw Exception("Gagal memproses gambar yang diambil.");
-      }
-      img.Image resizedImage = img.copyResize(originalImage, width: 800);
-      final imageBytes = img.encodeJpg(resizedImage, quality: 85);
-      final String base64Image = base64Encode(imageBytes);
-
       final faceEmbedding = await _runModelOnImage(File(imageFile.path));
 
       if (faceEmbedding == null) {
         throw Exception("Wajah tidak terdeteksi pada gambar.");
       }
 
-      // Panggil service untuk absen pulang
       final result = await ApiService.kirimAbsensiPulang(
         userId: widget.siswaId,
         faceEmbedding: faceEmbedding,
         latitude: _currentPosition!.latitude,
         longitude: _currentPosition!.longitude,
-        fotoPulang: base64Image,
+        fotoPulangPath: imageFile.path,
       );
 
       if (!mounted) return;
@@ -434,8 +398,11 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
       ));
 
       if (result['success'] == true) {
-        // [BARU] Panggil provider untuk refresh data dashboard setelah absen berhasil.
-        // Ini akan membuat halaman riwayat otomatis terupdate.
+        // Reset status kembali ke awal setelah berhasil absen pulang
+        setState(() {
+          _hasCheckedIn = false;
+        });
+
         final user = context.read<UserProvider>();
         final dashRes = await ApiService.getDashboardData(user.userId);
         if (dashRes['status'] == 'success') {
@@ -463,7 +430,6 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
 
   @override
   Widget build(BuildContext context) {
-    // [BARU] Ambil nama sekolah dari provider jika ada untuk ditampilkan di UI
     final String infoKelas = context.read<UserProvider>().kelasAtauNip;
     final List<String> infoParts = infoKelas.split(' • ');
     final String namaSekolah = infoParts.length > 1 ? infoParts[1] : "Area Presensi Sekolah";
@@ -490,7 +456,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
 
             // 1. Tampilan Kamera (Face Recognition)
             Container(
-              height: 320, // Sedikit dikurangi agar ada ruang untuk kartu lokasi
+              height: 320, 
               width: double.infinity,
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
@@ -504,7 +470,6 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
               child: FutureBuilder<void>(
                 future: _initializeControllerFuture,
                 builder: (context, snapshot) {
-                  // Jika ada error saat inisialisasi kamera
                   if (_cameraError != null) {
                     return Center(
                       child: Padding(
@@ -517,7 +482,6 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
                       ),
                     );
                   }
-                  // Jika kamera berhasil diinisialisasi
                   if (snapshot.connectionState == ConnectionState.done) {
                     return Stack(
                       fit: StackFit.expand,
@@ -530,7 +494,6 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
                             child: CameraPreview(_controller!),
                           ),
                         ),
-                        // Frame Lingkaran Pemindai Wajah
                         Center(
                           child: Container(
                             width: 220,
@@ -544,7 +507,6 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
                       ],
                     );
                   } else {
-                    // Tampilan saat kamera sedang loading
                     return const Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -559,7 +521,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
             ),
             const SizedBox(height: 25),
 
-            // 2. KARTU STATUS GEOFENCING (BARU)
+            // 2. KARTU STATUS GEOFENCING (Dinamis Berdasarkan Lokasi & Sekolah)
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -572,7 +534,6 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
               ),
               child: Row(
                 children: [
-                  // Ikon Lokasi Beranimasi/Menyala
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     padding: const EdgeInsets.all(12),
@@ -582,9 +543,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
                     ),
                     child: Icon(Icons.location_on_rounded, color: _isWithinRadius ? const Color(0xFF006D5B) : Colors.red, size: 28),
                   ),
-
                   const SizedBox(width: 15),
-                  // Informasi Lokasi
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -599,7 +558,6 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
                           ],
                         ),
                         const SizedBox(height: 4),
-                        // [UPDATE] Teks Hardcode dihapus, diganti menggunakan nama Sekolah dari provider
                         Text(namaSekolah, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                       ],
                     ),
@@ -607,91 +565,46 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent> {
                 ],
               ),
             ),
-            const SizedBox(height: 15),
+            
+            // [UX IMPROVEMENT] Jarak disesuaikan setelah penghapusan Card Wi-Fi
+            const SizedBox(height: 40),
 
-            // 3. Info Jaringan (Tetap dipertahankan sebagai opsi)
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: const Color(0xFFFFF3E0), borderRadius: BorderRadius.circular(16)),
-                  child: const Icon(Icons.wifi_rounded, color: Color(0xFFEBC15B)),
+            // 3. TOMBOL UTAMA ABSENSI PINTAR (Smart Single Button)
+            SizedBox(
+              width: double.infinity,
+              height: 65,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  // Jika di luar area, tombol berwarna abu-abu (disabled look). 
+                  // Jika di dalam area, warna disesuaikan: Hijau untuk Masuk, Biru Gelap untuk Pulang.
+                  backgroundColor: _isWithinRadius 
+                      ? (_hasCheckedIn ? const Color(0xFF151B2B) : const Color(0xFF006D5B))
+                      : Colors.grey,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  elevation: _isWithinRadius ? 5 : 0,
+                  shadowColor: (_hasCheckedIn ? const Color(0xFF151B2B) : const Color(0xFF006D5B)).withOpacity(0.3),
                 ),
-                const SizedBox(width: 15),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("School_Main_5G", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E1E1E))),
-                      Text("Verified Network", style: TextStyle(color: Colors.grey, fontSize: 13)),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.withOpacity(0.1))),
-                  child: const Icon(Icons.autorenew_rounded, color: Color(0xFF1E1E1E)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 35),
-
-            // 4. Tombol Utama Ambil Absensi
-            // [DIUBAH] Menjadi dua tombol: Masuk dan Pulang
-            Row(
-              children: [
-                // Tombol Absen Masuk
-                Expanded(
-                  child: SizedBox(
-                    height: 65,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _isWithinRadius ? const Color(0xFF006D5B) : Colors.grey, // Warna hijau
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        elevation: 5,
-                        shadowColor: const Color(0xFF006D5B).withOpacity(0.3),
-                      ),
-                      onPressed: (_isWithinRadius && !_isProcessing) ? _onAbsenMasukButtonPressed : null,
-                      child: _isProcessing 
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Column(
+                // Tombol terkunci otomatis jika berada di luar jangkauan wilayah sekolah
+                onPressed: (_isWithinRadius && !_isProcessing) 
+                    ? (_hasCheckedIn ? _onAbsenPulangButtonPressed : _onAbsenMasukButtonPressed)
+                    : null,
+                child: _isProcessing 
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.login_rounded, color: Colors.white),
-                          SizedBox(height: 4),
-                          Text("Absen Masuk", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          Icon(
+                            _hasCheckedIn ? Icons.logout_rounded : Icons.login_rounded, 
+                            color: Colors.white,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _hasCheckedIn ? "Absen Pulang" : "Absen Masuk", 
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
                         ],
                       ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // Tombol Absen Pulang
-                Expanded(
-                  child: SizedBox(
-                    height: 65,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _isWithinRadius ? const Color(0xFF151B2B) : Colors.grey, // Warna gelap
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        elevation: 5,
-                        shadowColor: const Color(0xFF151B2B).withOpacity(0.3),
-                      ),
-                      onPressed: (_isWithinRadius && !_isProcessing) ? _onAbsenPulangButtonPressed : null,
-                      child: _isProcessing 
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.logout_rounded, color: Colors.white),
-                          SizedBox(height: 4),
-                          Text("Absen Pulang", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
             const SizedBox(height: 30),
           ],

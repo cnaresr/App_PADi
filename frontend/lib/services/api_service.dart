@@ -8,7 +8,7 @@ class ApiService {
   static String get baseUrl {
     String host;
     if (!kIsWeb && Platform.isAndroid) {
-      host = 'http://10.0.2.2:3000';
+      host = 'http://172.16.162.178:3000';
     } else {
       host = 'http://localhost:3000';
     }
@@ -38,35 +38,34 @@ class ApiService {
     required List<double> faceEmbedding,
     required double latitude,
     required double longitude,
-    required String fotoMasuk, // [BARU] Tambahkan foto (sebagai Base64 String)
+    required String fotoMasukPath, // [DIUBAH] Menggunakan path file, bukan Base64
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/absensi/masuk'), 
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'userId': userId, // [DIUBAH] Mengirim userId ke backend
-          'faceEmbedding': faceEmbedding,
-          'latitude': latitude,
-          'longitude': longitude,
-          'fotoMasuk': fotoMasuk, // [BARU] Kirim foto ke backend
-        }),
-      );
+      // [DIUBAH] Menggunakan MultipartRequest untuk mengirim file dan data
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/absensi/masuk'));
+      
+      // Tambahkan field data
+      request.fields['userId'] = userId.toString();
+      request.fields['faceEmbedding'] = jsonEncode(faceEmbedding); // Encode list menjadi string JSON
+      request.fields['latitude'] = latitude.toString();
+      request.fields['longitude'] = longitude.toString();
+
+      // Tambahkan file foto
+      request.files.add(await http.MultipartFile.fromPath('fotoMasuk', fotoMasukPath));
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
 
       // [PERBAIKAN] Cek status code SEBELUM mencoba decode JSON
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final responseBody = jsonDecode(response.body);
         return {'success': true, 'message': responseBody['message'] ?? 'Absensi berhasil.'};
       } else {
-        // Jika response dari server bukan JSON (misal: halaman error HTML)
-        try {
-          final errorBody = jsonDecode(response.body);
-          return {'success': false, 'message': errorBody['message'] ?? 'Gagal: Terjadi kesalahan di server.'};
-        } catch(e) {
-          return {'success': false, 'message': 'Server Error (Kode: ${response.statusCode}). Response tidak valid.'};
-        }
+        final errorBody = jsonDecode(response.body);
+        return {'success': false, 'message': errorBody['message'] ?? 'Gagal: Terjadi kesalahan di server.'};
       }
-    } catch (e) {
+    } catch (e, stacktrace) {
+      debugPrint('Error di ApiService (kirimAbsensiMasuk): $e\n$stacktrace');
       debugPrint('Error di ApiService (kirimAbsensiMasuk): $e');
       return {'success': false, 'message': 'Tidak dapat terhubung ke server.'};
     }
@@ -78,34 +77,32 @@ class ApiService {
     required List<double> faceEmbedding,
     required double latitude,
     required double longitude,
-    required String fotoPulang, // Foto bukti pulang
+    required String fotoPulangPath, // [DIUBAH] Menggunakan path file
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/absensi/pulang'), // Panggil endpoint /pulang
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'userId': userId,
-          'faceEmbedding': faceEmbedding,
-          'latitude': latitude,
-          'longitude': longitude,
-          'fotoPulang': fotoPulang, // Kirim foto pulang
-        }),
-      );
+      // [DIUBAH] Menggunakan MultipartRequest
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/absensi/pulang'));
+
+      request.fields['userId'] = userId.toString();
+      request.fields['faceEmbedding'] = jsonEncode(faceEmbedding);
+      request.fields['latitude'] = latitude.toString();
+      request.fields['longitude'] = longitude.toString();
+
+      request.files.add(await http.MultipartFile.fromPath('fotoPulang', fotoPulangPath));
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final responseBody = jsonDecode(response.body);
         // Berikan pesan sukses yang lebih spesifik untuk pulang
         return {'success': true, 'message': responseBody['message'] ?? 'Absensi pulang berhasil.'};
       } else {
-        try {
-          final errorBody = jsonDecode(response.body);
-          return {'success': false, 'message': errorBody['message'] ?? 'Gagal: Terjadi kesalahan di server.'};
-        } catch(e) {
-          return {'success': false, 'message': 'Server Error (Kode: ${response.statusCode}). Response tidak valid.'};
-        }
+        final errorBody = jsonDecode(response.body);
+        return {'success': false, 'message': errorBody['message'] ?? 'Gagal: Terjadi kesalahan di server.'};
       }
-    } catch (e) {
+    } catch (e, stacktrace) {
+      debugPrint('Error di ApiService (kirimAbsensiPulang): $e\n$stacktrace');
       debugPrint('Error di ApiService (kirimAbsensiPulang): $e');
       return {'success': false, 'message': 'Tidak dapat terhubung ke server.'};
     }

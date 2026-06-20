@@ -103,6 +103,33 @@ class _IzinPageState extends State<IzinPage> {
     }
   }
 
+  // [BARU] Fungsi untuk memuat ulang data riwayat dari server
+  Future<void> _refreshData() async {
+    final user = context.read<UserProvider>();
+    try {
+      final dashRes = await ApiService.getDashboardData(user.userId);
+      if (dashRes['status'] == 'success' && mounted) {
+        user.setDashboardData(
+          dashRes['data']['hadirBulanIni'],
+          dashRes['data']['persentaseKehadiran'],
+          dashRes['data']['riwayatAbsensi'],
+          dashRes['data']['riwayatPerizinan'],
+        );
+      } else {
+        throw Exception('Gagal memuat data dari server');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memperbarui data: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _selectDate(BuildContext context, bool isStart) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -197,9 +224,15 @@ class _IzinPageState extends State<IzinPage> {
             ),
           ),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: isRiwayat ? _buildRiwayatContent(context) : _buildIzinContent(context),
+            // [BARU] Dibungkus dengan RefreshIndicator
+            child: RefreshIndicator(
+              onRefresh: _refreshData,
+              color: const Color(0xFF006D5B),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(), // Agar bisa ditarik meski konten pendek
+                padding: const EdgeInsets.all(24.0),
+                child: isRiwayat ? _buildRiwayatContent(context) : _buildIzinContent(context),
+              ),
             ),
           ),
         ],

@@ -78,7 +78,7 @@ class UserProvider with ChangeNotifier {
   List<dynamic> get jadwalMengajar => _jadwalMengajar;
 
   // Setter untuk menyimpan data Guru
-  void setDashboardGuruData(int izinPending, int persentase, List<dynamic> rekap, List<dynamic> jadwal) {
+  void setGuruDashboardData(int izinPending, int persentase, List<dynamic> rekap, List<dynamic> jadwal) {
     _jumlahIzinPending = izinPending;
     _persentaseKehadiranKelas = persentase;
     _rekapAbsensiKelas = rekap;
