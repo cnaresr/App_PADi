@@ -1,178 +1,482 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:platform_absensi_digital/providers/user_provider.dart';
+import 'package:platform_absensi_digital/services/api_service.dart';
+import 'package:platform_absensi_digital/pages/notifikasi_page.dart';
+import 'package:platform_absensi_digital/pages/profil_guru_page.dart';
+import 'package:intl/intl.dart';
 
-class DashboardGuruPage extends StatelessWidget {
+class DashboardGuruPage extends StatefulWidget {
   const DashboardGuruPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // 1. Ambil data dari Provider
-    final userProvider = context.watch<UserProvider>();
-    
-    // 2. Ambil nama depan saja (misal: "Budi Santoso" jadi "Budi")
-    String namaDepan = userProvider.namaLengkap;
-    if (namaDepan.contains(' ')) {
-      namaDepan = namaDepan.split(' ').first;
+  State<DashboardGuruPage> createState() => _DashboardGuruPageState();
+}
+
+class _DashboardGuruPageState extends State<DashboardGuruPage> {
+  bool _isLoading = true;
+  int _jumlahIzinPending = 0;
+  int _persentaseKehadiran = 0;
+  List<dynamic> _rekapAbsensi = [];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDashboardData();
+    });
+  }
+
+  Future<void> _loadDashboardData() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final response = await ApiService.getDashboardGuru(userProvider.userId);
+
+    if (response['status'] == 'success' && mounted) {
+      final data = response['data'];
+      setState(() {
+        _jumlahIzinPending = data['jumlahIzinPending'] ?? 0;
+        _persentaseKehadiran = data['persentaseKehadiranKelas'] ?? 0;
+        _rekapAbsensi = data['rekapAbsensiKelas'] ?? [];
+        _isLoading = false;
+      });
+
+      userProvider.setDashboardGuruData(
+        _jumlahIzinPending,
+        _persentaseKehadiran,
+        _rekapAbsensi,
+        data['jadwalMengajar'] ?? [],
+      );
+    } else if (mounted) {
+      setState(() => _isLoading = false);
     }
+  }
+
+  // Hitung statistik dari rekap
+  int get _totalSiswa => _rekapAbsensi.length;
+  int get _hadirCount => _rekapAbsensi.where((s) => s['status'] == 'Hadir').length;
+  int get _telatCount => _rekapAbsensi.where((s) => s['status'] == 'Telat').length;
+  int get _izinCount => _rekapAbsensi.where((s) => s['status'] == 'Izin' || s['status'] == 'Sakit').length;
+  int get _alpaCount => _rekapAbsensi.where((s) => s['status'] == 'Alpa').length;
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 10) return "Selamat Pagi";
+    if (hour < 15) return "Selamat Siang";
+    if (hour < 18) return "Selamat Sore";
+    return "Selamat Malam";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final userProvider = context.watch<UserProvider>();
+    final String namaLengkap = userProvider.namaLengkap;
+    final String tanggalHariIni = DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(DateTime.now());
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 15.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Top Bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Icon(Icons.menu_rounded, size: 30, color: Color(0xFF1E1E1E)),
-                  Container(
-                    width: 45, height: 45,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEBC15B),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
-                    ),
-                    child: const Icon(Icons.person, color: Colors.white),
+      backgroundColor: const Color(0xFFF5F7FA),
+      body: RefreshIndicator(
+        onRefresh: _loadDashboardData,
+        color: const Color(0xFF006D5B),
+        child: CustomScrollView(
+          slivers: [
+            // ===== HEADER AREA =====
+            SliverToBoxAdapter(
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF006D5B), Color(0xFF004D40)],
                   ),
-                ],
-              ),
-              const SizedBox(height: 35),
-
-              // 2. Greeting & Ilustrasi (DINAMIS)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(32),
+                    bottomRight: Radius.circular(32),
+                  ),
+                ),
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Selamat Pagi,\nPak/Bu $namaDepan", style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E), letterSpacing: -0.5, height: 1.2)),
-                        const SizedBox(height: 10),
-                        Text("Ada ${userProvider.jumlahIzinPending} pengajuan izin\nyang menunggu konfirmasi.", style: const TextStyle(fontSize: 15, color: Colors.grey, height: 1.4)),
+                        // Top bar
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  tanggalHariIni,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.white.withOpacity(0.75),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "${_getGreeting()},",
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    color: Colors.white.withOpacity(0.9),
+                                  ),
+                                ),
+                                Text(
+                                  namaLengkap,
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: -0.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                _buildHeaderIconButton(
+                                  Icons.notifications_none_rounded,
+                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotifikasiPage())),
+                                ),
+                                const SizedBox(width: 10),
+                                _buildHeaderIconButton(
+                                  Icons.person_outline_rounded,
+                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilGuruPage())),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Summary cards
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildSummaryCard(
+                                icon: Icons.people_alt_rounded,
+                                label: "Total Siswa",
+                                value: "$_totalSiswa",
+                                color: const Color(0xFF80CBC4),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildSummaryCard(
+                                icon: Icons.pending_actions_rounded,
+                                label: "Izin Pending",
+                                value: "$_jumlahIzinPending",
+                                color: const Color(0xFFFFCC80),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildSummaryCard(
+                                icon: Icons.trending_up_rounded,
+                                label: "Kehadiran",
+                                value: "$_persentaseKehadiran%",
+                                color: const Color(0xFFA5D6A7),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
-                  Container(
-                    width: 100, height: 100,
-                    decoration: BoxDecoration(color: const Color(0xFFFFF3E0), borderRadius: BorderRadius.circular(20)),
-                    child: const Icon(Icons.co_present_rounded, size: 50, color: Color(0xFFEBC15B)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 40),
-
-              // 3. Empat Menu Utama
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildCategoryIcon(Icons.people_alt_rounded, "Rekap"),
-                  _buildCategoryIcon(Icons.edit_document, "Perizinan"),
-                  _buildCategoryIcon(Icons.history_edu_rounded, "Log Kelas"),
-                  _buildCategoryIcon(Icons.assessment_rounded, "Laporan"),
-                ],
-              ),
-              const SizedBox(height: 40),
-
-              // 4. Jadwal Mengajar (DINAMIS)
-              const Text("Jadwal Mengajar", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E))),
-              const SizedBox(height: 15),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal, clipBehavior: Clip.none,
-                child: Row(
-                  children: userProvider.jadwalMengajar.map((jadwal) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 15),
-                      child: _buildClassCard(
-                        title: "${jadwal['kelas']}\n${jadwal['waktu']}", 
-                        subtitle: jadwal['mapel'], 
-                        bgColor: jadwal['isDark'] ? const Color(0xFF151B2B) : const Color(0xFFD3EADD), 
-                        textColor: jadwal['isDark'] ? Colors.white : const Color(0xFF1E1E1E), 
-                        isDark: jadwal['isDark']
-                      ),
-                    );
-                  }).toList(),
                 ),
               ),
-              const SizedBox(height: 40),
+            ),
 
-              // 5. Statistik Kelas (DINAMIS)
-              const Text("Kehadiran Kelas", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E))),
-              const SizedBox(height: 15),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20, offset: const Offset(0, 5))]),
-                child: Row(
-                  children: [
-                    Container(padding: const EdgeInsets.all(15), decoration: BoxDecoration(color: const Color(0xFFE8F3F1), borderRadius: BorderRadius.circular(16)), child: const Icon(Icons.bar_chart_rounded, color: Color(0xFF006D5B), size: 30)),
-                    const SizedBox(width: 15),
-                    Expanded(
+            // ===== BODY =====
+            SliverToBoxAdapter(
+              child: _isLoading
+                  ? const Padding(
+                      padding: EdgeInsets.only(top: 80),
+                      child: Center(child: CircularProgressIndicator(color: Color(0xFF006D5B))),
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Hadir ${userProvider.persentaseKehadiranKelas}%", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          const SizedBox(height: 5),
-                          const Text("Kehadiran siswa hari ini", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                          // Statistik Kehadiran Hari Ini
+                          _buildSectionTitle("Statistik Kehadiran Hari Ini"),
+                          const SizedBox(height: 14),
+                          _buildAttendanceStats(),
+                          const SizedBox(height: 28),
+
+                          // Rekap Siswa Hari Ini
+                          _buildSectionTitle("Rekap Absensi Siswa"),
+                          const SizedBox(height: 14),
+                          _buildStudentList(),
+                          const SizedBox(height: 20),
                         ],
                       ),
                     ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF151B2B), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12), elevation: 0),
-                      onPressed: () {}, child: const Text("Detail", style: TextStyle(fontWeight: FontWeight.bold)),
-                    )
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildCategoryIcon(IconData icon, String label) {
+  // ===================== WIDGET BUILDERS =====================
+
+  Widget _buildHeaderIconButton(IconData icon, {required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 42, height: 42,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Icon(icon, color: Colors.white, size: 22),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 26),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.white.withOpacity(0.7),
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 17,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF1E1E1E),
+        letterSpacing: -0.3,
+      ),
+    );
+  }
+
+  Widget _buildAttendanceStats() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Progress bar
+          Row(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: SizedBox(
+                    height: 10,
+                    child: LinearProgressIndicator(
+                      value: _totalSiswa > 0 ? (_hadirCount + _telatCount) / _totalSiswa : 0,
+                      backgroundColor: const Color(0xFFEEEEEE),
+                      valueColor: const AlwaysStoppedAnimation(Color(0xFF006D5B)),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Text(
+                "$_persentaseKehadiran%",
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF006D5B)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // Status row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatItem("Hadir", _hadirCount, const Color(0xFF006D5B)),
+              _buildStatItem("Telat", _telatCount, const Color(0xFFFF9800)),
+              _buildStatItem("Izin/Sakit", _izinCount, const Color(0xFF2196F3)),
+              _buildStatItem("Alpa", _alpaCount, const Color(0xFFF44336)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, int count, Color color) {
     return Column(
       children: [
         Container(
-          width: 65, height: 65,
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.grey.withOpacity(0.15)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))]),
-          child: Icon(icon, color: const Color(0xFF1E1E1E), size: 28),
+          width: 44, height: 44,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Center(
+            child: Text(
+              "$count",
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: color),
+            ),
+          ),
         ),
-        const SizedBox(height: 10),
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E1E1E)))
+        const SizedBox(height: 6),
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500)),
       ],
     );
   }
 
-  Widget _buildClassCard({required String title, required String subtitle, required Color bgColor, required Color textColor, required bool isDark}) {
-    return Container(
-      width: 160, height: 210,
-      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(28)), clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          if (isDark) ...[
-            Positioned(top: -20, right: -30, child: Container(width: 110, height: 110, decoration: const BoxDecoration(color: Color(0xFFEBC15B), shape: BoxShape.circle))),
-            Positioned(bottom: 40, right: -40, child: Container(width: 140, height: 140, decoration: const BoxDecoration(color: Color(0xFF8F306A), shape: BoxShape.circle))),
-          ] else ...[
-            Positioned(top: 30, left: -30, child: Container(width: 120, height: 140, decoration: BoxDecoration(color: const Color(0xFFB9DBC8), borderRadius: BorderRadius.circular(60)))),
+  Widget _buildStudentList() {
+    if (_rekapAbsensi.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 12, offset: const Offset(0, 4)),
           ],
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)), child: Text(subtitle, style: TextStyle(color: textColor, fontSize: 10, fontWeight: FontWeight.bold))),
-                const SizedBox(height: 10),
-                Text(title, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textColor, height: 1.2, letterSpacing: -0.5)),
-              ],
-            ),
-          ),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.inbox_rounded, size: 48, color: Colors.grey.shade300),
+            const SizedBox(height: 12),
+            const Text("Belum ada data absensi hari ini", style: TextStyle(color: Colors.grey, fontSize: 14)),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 4)),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: Column(
+          children: List.generate(_rekapAbsensi.length, (index) {
+            final siswa = _rekapAbsensi[index];
+            final status = siswa['status'] ?? 'Alpa';
+            final nama = siswa['nama'] ?? '-';
+            final nis = siswa['nis'] ?? '-';
+
+            Color statusColor;
+            IconData statusIcon;
+            switch (status) {
+              case 'Hadir':
+                statusColor = const Color(0xFF006D5B);
+                statusIcon = Icons.check_circle_rounded;
+                break;
+              case 'Telat':
+                statusColor = const Color(0xFFFF9800);
+                statusIcon = Icons.access_time_filled_rounded;
+                break;
+              case 'Izin':
+              case 'Sakit':
+                statusColor = const Color(0xFF2196F3);
+                statusIcon = Icons.medical_services_rounded;
+                break;
+              default: // Alpa
+                statusColor = const Color(0xFFF44336);
+                statusIcon = Icons.cancel_rounded;
+            }
+
+            return Container(
+              decoration: BoxDecoration(
+                border: index < _rekapAbsensi.length - 1
+                    ? Border(bottom: BorderSide(color: Colors.grey.shade100))
+                    : null,
+              ),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                leading: CircleAvatar(
+                  radius: 22,
+                  backgroundColor: statusColor.withOpacity(0.1),
+                  child: Text(
+                    nama.isNotEmpty ? nama[0].toUpperCase() : "?",
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  nama,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+                subtitle: Text(
+                  "NIS: $nis",
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                ),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(statusIcon, color: statusColor, size: 16),
+                      const SizedBox(width: 5),
+                      Text(
+                        status,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
       ),
     );
   }

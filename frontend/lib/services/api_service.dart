@@ -202,4 +202,68 @@ class ApiService {
       return {'status': 'error', 'message': 'Gagal memperbarui status.'};
     }
   }
+
+  // --- FUNGSI NOTIFIKASI (BARU) ---
+
+  // 1. Mengambil semua notifikasi siswa
+  static Future<List<dynamic>> getNotifications(int userId) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/notifikasi/$userId'));
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        if (body['status'] == 'success') {
+          return body['data'] ?? [];
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint("Error getNotifications: $e");
+      return [];
+    }
+  }
+
+  // 2. Mengambil notifikasi yang belum terbaca saja
+  static Future<List<dynamic>> getUnreadNotifications(int userId) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/notifikasi/$userId/unread'));
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        if (body['status'] == 'success') {
+          return body['data'] ?? [];
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint("Error getUnreadNotifications: $e");
+      return [];
+    }
+  }
+
+  // 3. Menandai satu notifikasi sebagai terbaca
+  static Future<Map<String, dynamic>> markNotificationAsRead(int id) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/notifikasi/$id/read'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      return json.decode(response.body);
+    } catch (e) {
+      debugPrint("Error markNotificationAsRead: $e");
+      return {'status': 'error', 'message': 'Terjadi kesalahan sistem.'};
+    }
+  }
+
+  // 4. Menandai semua notifikasi siswa sebagai terbaca
+  static Future<Map<String, dynamic>> markAllNotificationsAsRead(int userId) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/notifikasi/$userId/read-all'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      return json.decode(response.body);
+    } catch (e) {
+      debugPrint("Error markAllNotificationsAsRead: $e");
+      return {'status': 'error', 'message': 'Terjadi kesalahan sistem.'};
+    }
+  }
 }
