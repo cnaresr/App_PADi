@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:platform_absensi_digital/pages/login_page.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:platform_absensi_digital/pages/main_page.dart';
+import 'package:platform_absensi_digital/pages/main_guru_page.dart';
+import 'package:platform_absensi_digital/services/storage_service.dart';
+import 'package:platform_absensi_digital/providers/user_provider.dart';
+import 'package:provider/provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -60,17 +66,50 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     
     // 3. Tahan layar gelap sebentar (0.2 detik) sebelum pindah
     await Future.delayed(const Duration(milliseconds: 200));
-    
+
+    if (!mounted) return;
+    final target = await _resolveInitialRoute();
+
     if (mounted) {
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
-          pageBuilder: (context, a, b) => const LoginPage(),
+          pageBuilder: (context, a, b) => target,
           transitionsBuilder: (context, a, b, child) => FadeTransition(opacity: a, child: child),
           transitionDuration: const Duration(milliseconds: 800),
         ),
       );
     }
+  }
+
+  Future<Widget> _resolveInitialRoute() async {
+    final storage = StorageService();
+    final token = await storage.getToken();
+    final userId = await storage.getUserId();
+    final role = await storage.getUserRole();
+    final name = await storage.getUserName();
+    final detail = await storage.getUserDetail();
+
+    if (token != null && token.isNotEmpty) {
+      final bool isTokenExpired = JwtDecoder.isExpired(token);
+      if (isTokenExpired) {
+        await storage.clearSession();
+        return const LoginPage();
+      }
+
+      if (userId != null && userId > 0) {
+        final userProvider = context.read<UserProvider>();
+        userProvider.setUserData(userId, name ?? 'Pengguna', detail ?? '', role ?? '');
+
+        if (role != null && role.toLowerCase() == 'guru') {
+          return const MainGuruPage();
+        }
+        return const MainPage();
+      }
+    }
+
+    await storage.clearSession();
+    return const LoginPage();
   }
 
   @override

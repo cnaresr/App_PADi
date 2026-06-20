@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:platform_absensi_digital/providers/user_provider.dart';
-import 'package:platform_absensi_digital/pages/login_page.dart'; 
+import 'package:platform_absensi_digital/pages/login_page.dart';
+import 'package:platform_absensi_digital/services/api_service.dart';
 
 class ProfilPage extends StatelessWidget {
   const ProfilPage({super.key});
@@ -81,9 +82,10 @@ class ProfilPage extends StatelessWidget {
                   backgroundColor: const Color(0xFFFFF0F0),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
-                onPressed: () {
-                  // Hapus data pengguna yang sedang login dari memori Provider
+                onPressed: () async {
+                  // Hapus data pengguna yang sedang login dari memori Provider dan Secure Storage
                   context.read<UserProvider>().clearData();
+                  await ApiService.clearLocalSession();
                   
                   // Navigasi ke LoginPage dan hancurkan semua rute sebelumnya
                   Navigator.pushAndRemoveUntil(

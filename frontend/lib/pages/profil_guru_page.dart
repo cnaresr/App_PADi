@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // Tambahan Import
 import 'package:platform_absensi_digital/providers/user_provider.dart'; // Tambahan Import
-import 'package:platform_absensi_digital/pages/login_page.dart'; 
+import 'package:platform_absensi_digital/pages/login_page.dart';
+import 'package:platform_absensi_digital/services/api_service.dart';
 
 class ProfilGuruPage extends StatelessWidget {
   const ProfilGuruPage({super.key});
@@ -58,9 +59,10 @@ class ProfilGuruPage extends StatelessWidget {
               width: double.infinity, height: 65,
               child: TextButton(
                 style: TextButton.styleFrom(backgroundColor: const Color(0xFFFFF0F0), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
-                onPressed: () {
+                onPressed: () async {
                   // Hapus memori data saat logout
                   context.read<UserProvider>().clearData();
+                  await ApiService.clearLocalSession();
                   
                   Navigator.pushAndRemoveUntil(
                     context,

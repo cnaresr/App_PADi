@@ -100,12 +100,13 @@ class _LoginGuruPageState extends State<LoginGuruPage> {
                             // 2. AMBIL DATA DASHBOARD KHUSUS GURU
                             var dashResponse = await ApiService.getDashboardGuru(idUser);
                             if (dashResponse['status'] == 'success') {
-                              var dashData = dashResponse['data'];
-                              Provider.of<UserProvider>(context, listen: false).setDashboardGuruData(
-                                dashData['jumlahIzinPending'],
-                                dashData['persentaseKehadiranKelas'],
-                                dashData['rekapAbsensiKelas'],
-                                dashData['jadwalMengajar']
+                              var dashData = dashResponse['data'] as Map<String, dynamic>?;
+                              // [FIX] Nama method diperbaiki & ditambahkan null-safety
+                              Provider.of<UserProvider>(context, listen: false).setGuruDashboardData(
+                                dashData?['jumlahIzinPending'] ?? 0,
+                                dashData?['persentaseKehadiranKelas'] ?? 0,
+                                dashData?['rekapAbsensiKelas'] ?? [],
+                                dashData?['jadwalMengajar'] ?? []
                               );
                             }
 
