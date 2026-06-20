@@ -4,6 +4,9 @@ import 'package:provider/provider.dart'; // Pastikan package provider ter-instal
 import 'package:platform_absensi_digital/pages/splash_screen.dart';
 import 'package:platform_absensi_digital/providers/user_provider.dart'; // Import provider
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:platform_absensi_digital/services/notification_service.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:platform_absensi_digital/services/firebase_messaging_service.dart';
 
 // Variabel global untuk menyimpan daftar kamera yang tersedia
 late List<CameraDescription> cameras;
@@ -11,6 +14,15 @@ late List<CameraDescription> cameras;
 void main() async {
   // Pastikan semua plugin terinisialisasi sebelum menjalankan aplikasi
   WidgetsFlutterBinding.ensureInitialized();
+  // Inisialisasi Firebase Core terlebih dahulu
+  await Firebase.initializeApp();
+
+  // Inisialisasi Firebase Messaging Service untuk push notification
+  await FirebaseMessagingService.init();
+
+  // Inisialisasi Notification Service untuk notifikasi lokal (jika masih digunakan)
+  await NotificationService.init();
+
   // Ambil daftar kamera yang tersedia di perangkat
   cameras = await availableCameras();
   await initializeDateFormatting('id_ID', null);
