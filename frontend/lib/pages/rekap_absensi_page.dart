@@ -89,94 +89,101 @@ class _RekapAbsensiPageState extends State<RekapAbsensiPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent, elevation: 0, automaticallyImplyLeading: false,
         title: const Text("Rekap Kelas", style: TextStyle(color: Color(0xFF1E1E1E), fontWeight: FontWeight.bold, fontSize: 24, letterSpacing: -0.5)),
-        actions: [
-          // TOMBOL UNDUH SUDAH DIHAPUS, HANYA TERSISA TOMBOL REFRESH
-          IconButton(icon: const Icon(Icons.refresh_rounded, color: Color(0xFF1E1E1E)), onPressed: _refreshData),
-        ],
       ),
       body: isLoading 
         ? const Center(child: CircularProgressIndicator(color: Color(0xFF006D5B)))
-        : Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-            child: Container(
-              decoration: BoxDecoration(boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20, offset: const Offset(0, 5))]),
-              child: TextField(
-                onChanged: (value) => setState(() => searchQuery = value),
-                decoration: InputDecoration(
-                  filled: true, fillColor: Colors.white, hintText: "Cari nama atau NIS siswa...", 
-                  hintStyle: const TextStyle(color: Colors.black26, fontSize: 14), prefixIcon: const Icon(Icons.search_rounded, color: Colors.grey),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none), contentPadding: const EdgeInsets.symmetric(vertical: 18),
-                ),
-              ),
-            ),
-          ),
-          
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              children: List.generate(_filters.length, (index) {
-                bool isSelected = _selectedFilterIndex == index;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedFilterIndex = index),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200), margin: const EdgeInsets.only(right: 12), padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFF151B2B) : Colors.white, borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: isSelected ? const Color(0xFF151B2B) : Colors.grey.withOpacity(0.2)),
-                      boxShadow: isSelected ? [BoxShadow(color: const Color(0xFF151B2B).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
-                    ),
-                    child: Text(_filters[index], style: TextStyle(color: isSelected ? Colors.white : Colors.grey.shade600, fontWeight: FontWeight.bold, fontSize: 13)),
-                  ),
-                );
-              }),
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        : RefreshIndicator(
+            color: const Color(0xFF006D5B),
+            onRefresh: _refreshData,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
               children: [
-                Text(_getTodayDate(), style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold)),
-                Text("Ditampilkan: ${filteredData.length} Siswa", style: TextStyle(color: Colors.grey.shade400, fontSize: 12, fontWeight: FontWeight.bold)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                  child: Container(
+                    decoration: BoxDecoration(boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20, offset: const Offset(0, 5))]),
+                    child: TextField(
+                      onChanged: (value) => setState(() => searchQuery = value),
+                      decoration: InputDecoration(
+                        filled: true, fillColor: Colors.white, hintText: "Cari nama atau NIS siswa...", 
+                        hintStyle: const TextStyle(color: Colors.black26, fontSize: 14), prefixIcon: const Icon(Icons.search_rounded, color: Colors.grey),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none), contentPadding: const EdgeInsets.symmetric(vertical: 18),
+                      ),
+                    ),
+                  ),
+                ),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    children: List.generate(_filters.length, (index) {
+                      bool isSelected = _selectedFilterIndex == index;
+                      return GestureDetector(
+                        onTap: () => setState(() => _selectedFilterIndex = index),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200), margin: const EdgeInsets.only(right: 12), padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isSelected ? const Color(0xFF151B2B) : Colors.white, borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: isSelected ? const Color(0xFF151B2B) : Colors.grey.withOpacity(0.2)),
+                            boxShadow: isSelected ? [BoxShadow(color: const Color(0xFF151B2B).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
+                          ),
+                          child: Text(_filters[index], style: TextStyle(color: isSelected ? Colors.white : Colors.grey.shade600, fontWeight: FontWeight.bold, fontSize: 13)),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(_getTodayDate(), style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold)),
+                      Text("Ditampilkan: ${filteredData.length} Siswa", style: TextStyle(color: Colors.grey.shade400, fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+                if (filteredData.isEmpty)
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.55,
+                    child: const Center(child: Text("Tidak ada data siswa", style: TextStyle(color: Colors.grey))),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
+                    child: Column(
+                      children: filteredData.map((dataSiswa) {
+                        String namaSiswa = dataSiswa['nama'] ?? 'Tanpa Nama';
+                        String status = dataSiswa['status'] ?? 'Alpa';
+                        String waktuMasuk = _formatIsoTime(dataSiswa['jamMasuk']);
+                        String subtitle = "$status • $waktuMasuk";
+                        if (status == 'Izin' || status == 'Sakit' || status == 'Alpha' || status == 'Alpa') {
+                          subtitle = dataSiswa['keterangan'] ?? "Tidak ada keterangan";
+                        } else if (status == 'Telat') {
+                          status = 'Terlambat';
+                        }
+
+                        Color statusBg;
+                        Color statusCol;
+                        if (status == 'Hadir') {
+                          statusBg = const Color(0xFFD3EADD);
+                          statusCol = const Color(0xFF006D5B);
+                        } else if (status == 'Terlambat' || status == 'Izin' || status == 'Sakit') {
+                          statusBg = const Color(0xFFFFF3E0);
+                          statusCol = const Color(0xFFEBC15B);
+                        } else {
+                          statusBg = const Color(0xFFFDE8E8);
+                          statusCol = Colors.redAccent;
+                        }
+
+                        return _buildStudentRow(_getInitials(namaSiswa), namaSiswa, subtitle, status, statusBg, statusCol);
+                      }).toList(),
+                    ),
+                  ),
               ],
             ),
           ),
-
-          Expanded(
-            child: filteredData.isEmpty
-              ? const Center(child: Text("Tidak ada data siswa", style: TextStyle(color: Colors.grey)))
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
-                  itemCount: filteredData.length,
-                  itemBuilder: (context, index) {
-                    var dataSiswa = filteredData[index];
-                    String namaSiswa = dataSiswa['nama'] ?? 'Tanpa Nama';
-                    String status = dataSiswa['status'] ?? 'Alpa';
-                    String waktuMasuk = _formatIsoTime(dataSiswa['jamMasuk']);
-                    
-                    String subtitle = "$status • $waktuMasuk";
-                    if (status == 'Izin' || status == 'Sakit' || status == 'Alpha' || status == 'Alpa') {
-                      subtitle = dataSiswa['keterangan'] ?? "Tidak ada keterangan";
-                    } else if (status == 'Telat') {
-                      status = 'Terlambat'; 
-                    }
-
-                    Color statusBg; Color statusCol;
-                    if (status == 'Hadir') { statusBg = const Color(0xFFD3EADD); statusCol = const Color(0xFF006D5B); } 
-                    else if (status == 'Terlambat' || status == 'Izin' || status == 'Sakit') { statusBg = const Color(0xFFFFF3E0); statusCol = const Color(0xFFEBC15B); } 
-                    else { statusBg = const Color(0xFFFDE8E8); statusCol = Colors.redAccent; }
-
-                    return _buildStudentRow(_getInitials(namaSiswa), namaSiswa, subtitle, status, statusBg, statusCol);
-                  },
-                ),
-          ),
-        ],
-      ),
     );
   }
 

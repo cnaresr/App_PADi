@@ -113,7 +113,6 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent, elevation: 0, automaticallyImplyLeading: false,
         title: const Text("Persetujuan Izin", style: TextStyle(color: Color(0xFF1E1E1E), fontWeight: FontWeight.bold, fontSize: 24)),
-        actions: [IconButton(icon: const Icon(Icons.refresh_rounded, color: Colors.black), onPressed: _loadPendingIzin)],
       ),
       body: isLoading 
         ? const Center(child: CircularProgressIndicator(color: Color(0xFF006D5B)))
