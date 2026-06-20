@@ -7,6 +7,7 @@ import 'package:platform_absensi_digital/pages/main_page.dart';
 import 'package:platform_absensi_digital/pages/forgot_password_page.dart';
 import 'package:platform_absensi_digital/pages/login_guru_page.dart';
 import 'package:platform_absensi_digital/services/api_service.dart';
+import 'package:platform_absensi_digital/services/firebase_messaging_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -104,6 +105,11 @@ class _LoginPageState extends State<LoginPage> {
                           // 1. SIMPAN DATA PROFIL KE PROVIDER
                           final userProvider = Provider.of<UserProvider>(context, listen: false);
                           userProvider.setUserData(idUser, namaLengkap, infoKelas, roleUser);
+
+                          // Update FCM Token ke Server
+                          if (response['token'] != null) {
+                            FirebaseMessagingService.updateFCMTokenToServer(idUser, response['token']);
+                          }
 
                           // [BARU] 1.5 SIMPAN DATA GEOFENCE KE PROVIDER
                           // [DIUBAH] Sekarang menyimpan data poligon, bukan radius.

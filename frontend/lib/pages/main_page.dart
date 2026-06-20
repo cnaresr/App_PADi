@@ -5,6 +5,9 @@ import 'package:platform_absensi_digital/pages/absensi_page.dart';
 import 'package:platform_absensi_digital/pages/izin_page.dart';
 import 'package:platform_absensi_digital/pages/profil_page.dart';
 import 'package:platform_absensi_digital/providers/user_provider.dart';
+import 'package:platform_absensi_digital/services/api_service.dart';
+
+import 'package:platform_absensi_digital/services/notification_service.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -31,6 +34,10 @@ class _MainPageState extends State<MainPage> {
       const IzinPage(openRiwayatTab: true), // Halaman riwayat
       const ProfilPage(), // Halaman profil
     ];
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkNotifications(userProvider.userId);
+    });
   }
 
   @override
@@ -76,6 +83,130 @@ class _MainPageState extends State<MainPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _checkNotifications(int userId) async {
+    if (userId <= 0) return;
+    try {
+      final unread = await ApiService.getUnreadNotifications(userId);
+      if (!mounted) return;
+      if (unread.isNotEmpty) {
+        // Tampilkan popup & notifikasi bar satu per satu
+        for (var notif in unread) {
+          if (!mounted) return;
+
+          // Pemicu notifikasi sistem luar aplikasi (Notification Bar)
+          await NotificationService.showNotification(
+            id: notif['id_notifikasi'] ?? notif['id'] ?? DateTime.now().millisecondsSinceEpoch ~/ 1000,
+            title: notif['judul'] ?? "Notifikasi PADI",
+            body: notif['isiPesan'] ?? notif['isi_pesan'] ?? "",
+          );
+
+          // Tampilkan pop-up dialog dalam aplikasi
+          await _showNotifPopup(notif);
+        }
+      }
+    } catch (e) {
+      debugPrint("Error checking notifications: $e");
+    }
+  }
+
+  Future<void> _showNotifPopup(Map<String, dynamic> notif) {
+    IconData icon;
+    Color iconBgColor;
+    Color iconColor;
+
+    final tipe = notif['tipe'] ?? 'Sistem';
+    if (tipe == 'Peringatan') {
+      icon = Icons.warning_amber_rounded;
+      iconBgColor = const Color(0xFFFFEBEE);
+      iconColor = const Color(0xFFC62828);
+    } else if (tipe == 'Pengingat') {
+      icon = Icons.notifications_active_rounded;
+      iconBgColor = const Color(0xFFFFF3E0);
+      iconColor = const Color(0xFFEF6C00);
+    } else {
+      icon = Icons.info_outline_rounded;
+      iconBgColor = const Color(0xFFE8F3F1);
+      iconColor = const Color(0xFF006D5B);
+    }
+
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          elevation: 10,
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: iconBgColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: iconColor, size: 40),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  notif['judul'] ?? "Notifikasi Baru",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E1E1E),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  notif['isiPesan'] ?? "",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF151B2B),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                    onPressed: () async {
+                      // Tandai sebagai terbaca
+                      await ApiService.markNotificationAsRead(notif['id_notifikasi'] ?? notif['id']);
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: const Text(
+                      "Mengerti",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
