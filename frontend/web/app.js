@@ -180,29 +180,52 @@ app.get('/master-data', cekAdmin, async (req, res) => {
             axios.get('http://127.0.0.1:3000/api/admin/master/pengaturan')
         ]);
         
-        let bulanGanjil = 7; let bulanSelesaiGanjil = 12;
-        let bulanGenap = 1; let bulanSelesaiGenap = 6;
+        let tanggalGanjil = 15; let bulanGanjil = 7;
+        let tanggalGenap = 10; let bulanGenap = 1;
         if(resPengaturan.data && resPengaturan.data.data) {
             const p = resPengaturan.data.data;
-            const ganjil = p.find(x => x.kunci === 'bulan_mulai_ganjil');
-            const ganjilSelesai = p.find(x => x.kunci === 'bulan_selesai_ganjil');
-            const genap = p.find(x => x.kunci === 'bulan_mulai_genap');
-            const genapSelesai = p.find(x => x.kunci === 'bulan_selesai_genap');
-            if(ganjil) bulanGanjil = parseInt(ganjil.nilai);
-            if(ganjilSelesai) bulanSelesaiGanjil = parseInt(ganjilSelesai.nilai);
-            if(genap) bulanGenap = parseInt(genap.nilai);
-            if(genapSelesai) bulanSelesaiGenap = parseInt(genapSelesai.nilai);
+            const tGanjil = p.find(x => x.kunci === 'tanggal_mulai_ganjil');
+            const tGenap = p.find(x => x.kunci === 'tanggal_mulai_genap');
+            if (tGanjil && tGanjil.nilai) {
+                const parts = tGanjil.nilai.split('-');
+                if (parts.length === 2) {
+                    bulanGanjil = parseInt(parts[0]);
+                    tanggalGanjil = parseInt(parts[1]);
+                }
+            }
+            if (tGenap && tGenap.nilai) {
+                const parts = tGenap.nilai.split('-');
+                if (parts.length === 2) {
+                    bulanGenap = parseInt(parts[0]);
+                    tanggalGenap = parseInt(parts[1]);
+                }
+            }
+        }
+
+        // Group kelas by suffix for display
+        const groupedKelas = [];
+        const suffixes = new Set();
+        if (resKelas.data && resKelas.data.data) {
+            resKelas.data.data.forEach(k => {
+                if (!suffixes.has(k.namaKelasSuffix)) {
+                    suffixes.add(k.namaKelasSuffix);
+                    groupedKelas.push({
+                        id: k.id,
+                        namaGroup: k.namaKelasSuffix
+                    });
+                }
+            });
         }
 
         res.render('master_data', { 
-            kelas: resKelas.data.data,
+            kelas: groupedKelas,
             angkatan: resAngkatan.data.data,
             tahunAkademik: resTa.data.data,
-            pengaturan: { bulanGanjil, bulanSelesaiGanjil, bulanGenap, bulanSelesaiGenap }
+            pengaturan: { tanggalGanjil, bulanGanjil, tanggalGenap, bulanGenap }
         });
     } catch (error) {
         console.error("Gagal mengambil master data:", error.message);
-        res.render('master_data', { kelas: [], angkatan: [], tahunAkademik: [], pengaturan: { bulanGanjil: 7, bulanSelesaiGanjil: 12, bulanGenap: 1, bulanSelesaiGenap: 6 } });
+        res.render('master_data', { kelas: [], angkatan: [], tahunAkademik: [], pengaturan: { tanggalGanjil: 15, bulanGanjil: 7, tanggalGenap: 10, bulanGenap: 1 } });
     }
 });
 
@@ -211,7 +234,10 @@ app.post('/master-data/pengaturan', cekAdmin, async (req, res) => {
     try {
         await axios.post('http://127.0.0.1:3000/api/admin/master/pengaturan', req.body);
         res.redirect('/master-data');
-    } catch (error) { res.redirect('/master-data?error=Gagal_simpan_pengaturan'); }
+    } catch (error) { 
+        console.error("Gagal simpan pengaturan:", error.message);
+        res.redirect('/master-data?error=' + encodeURIComponent(error.response?.data?.message || 'Gagal_simpan_pengaturan')); 
+    }
 });
 
 // Master Kelas
@@ -223,6 +249,18 @@ app.post('/master-data/kelas', cekAdmin, async (req, res) => {
         res.redirect('/master-data?error=' + encodeURIComponent(error.response?.data?.message || 'Gagal_tambah_kelas')); 
     }
 });
+
+// Edit Kelas
+app.post('/master-data/kelas/delete-group/:suffix', cekAdmin, async (req, res) => {
+    try {
+        await axios.delete(`http://127.0.0.1:3000/api/admin/master/kelas/group/${encodeURIComponent(req.params.suffix)}`);
+        res.redirect('/master-data');
+    } catch (error) {
+        console.error("Gagal hapus group kelas:", error.message);
+        res.redirect('/master-data?error=Gagal_hapus_group');
+    }
+});
+
 app.post('/master-data/kelas/delete/:id', cekAdmin, async (req, res) => {
     try {
         await axios.delete(`http://127.0.0.1:3000/api/admin/master/kelas/${req.params.id}`);
@@ -333,7 +371,45 @@ app.post('/enrolment/edit-keterangan/:kelasId', cekAdmin, async (req, res) => {
     }
 });
 
+// GET Template Excel
+app.get('/enrolment/template-excel', cekAdmin, async (req, res) => {
+    try {
+        const response = await axios.get('http://127.0.0.1:3000/api/admin/enrolment/template-excel', { responseType: 'arraybuffer' });
+        res.setHeader('Content-Disposition', 'attachment; filename="Template_Upload_Siswa.xlsx"');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.send(response.data);
+    } catch (error) {
+        console.error("Gagal unduh template:", error.message);
+        res.redirect('/enrolment?error=Gagal_mengunduh_template');
+    }
+});
 
+// Upload Excel Siswa
+app.post('/enrolment/:id/siswa/upload', cekAdmin, upload.single('fileExcel'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.redirect(`/enrolment/${req.params.id}?error=File_tidak_ditemukan`);
+        }
+        const formData = new FormData();
+        formData.append('fileExcel', fs.createReadStream(req.file.path), {
+            filename: req.file.originalname,
+            contentType: req.file.mimetype
+        });
+
+        await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/${req.params.id}/siswa/upload`, formData, {
+            headers: {
+                ...formData.getHeaders()
+            }
+        });
+        
+        fs.unlinkSync(req.file.path);
+        res.redirect(`/enrolment/${req.params.id}`);
+    } catch (error) {
+        if(req.file) fs.unlinkSync(req.file.path);
+        console.error("Gagal upload excel:", error.message);
+        res.redirect(`/enrolment/${req.params.id}?error=Gagal_upload_excel`);
+    }
+});
 
 // Detail Enrolment (Siswa & Guru)
 app.get('/enrolment/:id', cekAdmin, async (req, res) => {
@@ -372,30 +448,6 @@ app.post('/enrolment/:id/guru/delete/:guruId', cekAdmin, async (req, res) => {
         await axios.delete(`http://127.0.0.1:3000/api/admin/enrolment/${req.params.id}/guru/${req.params.guruId}`);
         res.redirect(`/enrolment/${req.params.id}`);
     } catch (error) { res.redirect(`/enrolment/${req.params.id}?error=Gagal_hapus_guru`); }
-});
-
-app.post('/enrolment/:id/bulk-status', cekAdmin, async (req, res) => {
-    try {
-        const { updates } = req.body;
-        // Parsing form data since it sends dynamic keys (status_1, status_2, etc.)
-        let parsedUpdates = [];
-        if (updates) {
-            // If sent as JSON array
-            parsedUpdates = updates;
-        } else {
-            // If sent as urlencoded form data
-            for (const key in req.body) {
-                if (key.startsWith('status_')) {
-                    const siswaId = key.replace('status_', '');
-                    parsedUpdates.push({ siswaId, status: req.body[key] });
-                }
-            }
-        }
-        await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/${req.params.id}/bulk-status`, { updates: parsedUpdates });
-        res.redirect(`/enrolment/${req.params.id}`);
-    } catch (error) { 
-        res.redirect(`/enrolment/${req.params.id}?error=Gagal_memproses_mutasi_siswa`); 
-    }
 });
 
 // --- RUTE JADWAL ---
