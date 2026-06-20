@@ -99,16 +99,17 @@
                     <p class="text-sm text-gray-500"><%= detail.enrolment.enrolmentSiswa.length %> Siswa tergabung</p>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="toggleModal('modalUploadExcel')" class="bg-green-100 text-green-700 px-4 py-2 rounded-full text-xs font-bold shadow-md hover:bg-green-200 transition">📂 Upload Excel</button>
+                    <button type="submit" form="formKenaikanKelas" class="bg-indigo-600 text-white px-4 py-2 rounded-full text-xs font-bold shadow-md hover:bg-indigo-700 transition">💾 Simpan Status Kenaikan</button>
                     <button onclick="toggleModal('modalTambahSiswa')" class="bg-blue-600 text-white px-4 py-2 rounded-full text-xs font-bold shadow-md hover:bg-blue-700 transition">+ Tambah Siswa</button>
                 </div>
             </div>
-            <div class="overflow-y-auto flex-1 border rounded-xl">
+            <form id="formKenaikanKelas" action="/enrolment/<%= detail.enrolment.id %>/proses-kenaikan" method="POST" class="overflow-y-auto flex-1 border rounded-xl" onsubmit="return confirmProses(event, this);">
                 <table class="w-full text-left" id="tableSiswa">
                     <thead class="bg-slate-50 text-[10px] text-gray-400 uppercase tracking-wider font-bold sticky top-0">
                         <tr>
                             <th class="px-4 py-3">Nama Siswa</th>
                             <th class="px-4 py-3">NIS</th>
+                            <th class="px-4 py-3 text-center">Status Kenaikan</th>
                             <th class="px-4 py-3 text-center">Aksi</th>
                         </tr>
                     </thead>
@@ -119,18 +120,27 @@
                                     <td class="px-4 py-3 font-bold text-gray-700"><%= es.siswa.namaLengkap %></td>
                                     <td class="px-4 py-3 font-mono text-xs text-gray-500"><%= es.siswa.nis %></td>
                                     <td class="px-4 py-3 text-center">
-                                        <form action="/enrolment/<%= detail.enrolment.id %>/siswa/delete/<%= es.siswa.id %>" method="POST" onsubmit="return confirmDelete(event, this, 'Keluarkan siswa ini dari kelas?');">
-                                            <button type="submit" class="bg-red-100 text-red-600 px-2 py-1 rounded-md text-xs font-bold hover:bg-red-200">Keluarkan</button>
-                                        </form>
+                                        <select name="status_<%= es.siswa.id %>" class="bg-slate-50 border border-gray-200 rounded-md px-2 py-1 text-xs outline-none focus:border-blue-500">
+                                            <option value="" <%= (!es.statusKenaikan || es.statusKenaikan === 'Belum Diproses') ? 'selected' : '' %>>Belum Diproses</option>
+                                            <% if (detail.enrolment.masterKelas.tingkat && detail.enrolment.masterKelas.tingkat.namaTingkat === 'XII') { %>
+                                                <option value="lulus" <%= es.statusKenaikan === 'Lulus' ? 'selected' : '' %>>Lulus</option>
+                                            <% } else { %>
+                                                <option value="naik" <%= es.statusKenaikan === 'Naik Kelas' ? 'selected' : '' %>>Naik Kelas</option>
+                                            <% } %>
+                                            <option value="cuti" <%= es.statusKenaikan === 'Tidak Naik / Cuti' ? 'selected' : '' %>>Tidak Naik / Cuti</option>
+                                        </select>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <button type="button" onclick="confirmDeleteIndividual('<%= detail.enrolment.id %>', '<%= es.siswa.id %>')" class="bg-red-100 text-red-600 px-2 py-1 rounded-md text-xs font-bold hover:bg-red-200">Keluarkan</button>
                                     </td>
                                 </tr>
                             <% }); %>
                         <% } else { %>
-                            <tr><td colspan="3" class="px-4 py-8 text-center text-gray-500 font-bold text-sm">Belum ada siswa di kelas ini.</td></tr>
+                            <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500 font-bold text-sm">Belum ada siswa di kelas ini.</td></tr>
                         <% } %>
                     </tbody>
                 </table>
-            </div>
+            </form>
         </div>
     </main>
 
@@ -174,35 +184,6 @@
         </div>
     </div>
 
-    <!-- MODAL UPLOAD EXCEL -->
-    <div id="modalUploadExcel" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex justify-center items-center">
-        <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative">
-            <button onclick="toggleModal('modalUploadExcel')" class="absolute top-6 right-6 text-gray-400 hover:text-black font-bold">✖</button>
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">Upload Excel Siswa</h2>
-            <p class="text-sm text-gray-500 mb-6">Tambahkan banyak siswa sekaligus.</p>
-            
-            <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6">
-                <div class="flex justify-between items-start mb-2">
-                    <p class="text-xs text-blue-700 font-bold">Penting:</p>
-                    <a href="/enrolment/template-excel" class="text-xs bg-blue-600 text-white px-3 py-1 rounded-md font-bold hover:bg-blue-700 transition">⬇️ Download Template</a>
-                </div>
-                <ul class="text-xs text-blue-600 list-disc pl-4 space-y-1">
-                    <li>Gunakan format file .xlsx atau .xls</li>
-                    <li>Pastikan terdapat kolom header <b>NIS</b> dan <b>NAMA LENGKAP</b></li>
-                    <li>Siswa yang belum ada di sistem akan ditambahkan otomatis.</li>
-                </ul>
-            </div>
-
-            <form action="/enrolment/<%= detail.enrolment.id %>/siswa/upload" method="POST" enctype="multipart/form-data" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Pilih File Excel</label>
-                    <input type="file" name="fileExcel" accept=".xlsx, .xls" required class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 outline-none">
-                </div>
-                <button type="submit" class="w-full bg-green-600 text-white font-bold rounded-xl py-3.5 mt-4 hover:bg-green-700">Upload Data</button>
-            </form>
-        </div>
-    </div>
-
     <script>
         function toggleModal(modalID) {
             const modal = document.getElementById(modalID);
@@ -216,6 +197,31 @@
                 showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#64748b', confirmButtonText: 'Ya, Lanjutkan!'
             }).then((result) => {
                 if (result.isConfirmed) form.submit();
+            });
+        }
+        function confirmProses(e, form) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Proses Status Kenaikan?',
+                text: 'Siswa yang terpilih Naik Kelas atau Lulus akan dipindahkan, sedangkan yang Cuti/Tidak Naik akan dinonaktifkan dari kelas ini.',
+                icon: 'question',
+                showCancelButton: true, confirmButtonColor: '#4f46e5', cancelButtonColor: '#64748b', confirmButtonText: 'Ya, Proses Sekarang!'
+            }).then((result) => {
+                if (result.isConfirmed) form.submit();
+            });
+        }
+        function confirmDeleteIndividual(kelasId, siswaId) {
+            Swal.fire({
+                title: 'Konfirmasi', text: 'Keluarkan siswa ini dari kelas?', icon: 'warning',
+                showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#64748b', confirmButtonText: 'Ya, Keluarkan!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `/enrolment/${kelasId}/siswa/delete/${siswaId}`;
+                    document.body.appendChild(form);
+                    form.submit();
+                }
             });
         }
         function filterSiswa() {
@@ -235,10 +241,5 @@
         }
     </script>
 
-    
-
-    
-
-
-    </body>
+</body>
 </html>

@@ -315,12 +315,23 @@ app.post('/master-data/tahun-akademik/delete/:id', cekAdmin, async (req, res) =>
 // --- RUTE ENROLMENT KELAS ---
 app.get('/enrolment', cekAdmin, async (req, res) => {
     try {
+        const taId = req.query.taId || '';
+        const url = taId ? `http://127.0.0.1:3000/api/admin/enrolment?taId=${taId}` : 'http://127.0.0.1:3000/api/admin/enrolment';
+        
         const [resEnrolment, resMaster] = await Promise.all([
-            axios.get('http://127.0.0.1:3000/api/admin/enrolment'),
+            axios.get(url),
             axios.get('http://127.0.0.1:3000/api/admin/enrolment/master-data')
         ]);
         const enrolmentData = resEnrolment.data.data;
-        const masterKelasList = resMaster.data.data.kelas;
+        const masterData = resMaster.data.data;
+        const masterKelasList = masterData.kelas;
+
+        // Tentukan selectedTaId dari query atau TA aktif
+        let selectedTaId = taId;
+        if (!selectedTaId && masterData.ta) {
+            const activeTa = masterData.ta.find(t => t.isActive);
+            if (activeTa) selectedTaId = activeTa.id.toString();
+        }
 
         // Hitung prefixData (Tingkat Kelas)
         const prefixes = [...new Set(masterKelasList.map(k => k.namaKelas.split(' ')[0].toUpperCase()))].sort();
@@ -337,12 +348,13 @@ app.get('/enrolment', cekAdmin, async (req, res) => {
 
         res.render('enrolment', { 
             enrolmentData: enrolmentData,
-            masterData: resMaster.data.data,
-            prefixData: prefixData
+            masterData: masterData,
+            prefixData: prefixData,
+            selectedTaId: selectedTaId
         });
     } catch (error) {
         console.error("Gagal mengambil data enrolment:", error.message);
-        res.render('enrolment', { enrolmentData: [], masterData: { kelas: [], angkatan: [], ta: [] }, prefixData: [] });
+        res.render('enrolment', { enrolmentData: [], masterData: { kelas: [], angkatan: [], ta: [] }, prefixData: [], selectedTaId: '' });
     }
 });
 
@@ -427,6 +439,16 @@ app.post('/enrolment/:id/siswa', cekAdmin, async (req, res) => {
         await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/${req.params.id}/siswa`, req.body);
         res.redirect(`/enrolment/${req.params.id}`);
     } catch (error) { res.redirect(`/enrolment/${req.params.id}?error=Gagal_tambah_siswa`); }
+});
+
+app.post('/enrolment/:id/proses-kenaikan', cekAdmin, async (req, res) => {
+    try {
+        await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/${req.params.id}/proses-kenaikan`, req.body);
+        res.redirect(`/enrolment/${req.params.id}`);
+    } catch (error) {
+        console.error("Gagal proses kenaikan:", error.message);
+        res.redirect(`/enrolment/${req.params.id}?error=Gagal_proses_kenaikan`);
+    }
 });
 
 app.post('/enrolment/:id/siswa/delete/:siswaId', cekAdmin, async (req, res) => {
