@@ -103,6 +103,33 @@ class _IzinPageState extends State<IzinPage> {
     }
   }
 
+  // [BARU] Fungsi untuk memuat ulang data riwayat dari server
+  Future<void> _refreshData() async {
+    final user = context.read<UserProvider>();
+    try {
+      final dashRes = await ApiService.getDashboardData(user.userId);
+      if (dashRes['status'] == 'success' && mounted) {
+        user.setDashboardData(
+          dashRes['data']['hadirBulanIni'],
+          dashRes['data']['persentaseKehadiran'],
+          dashRes['data']['riwayatAbsensi'],
+          dashRes['data']['riwayatPerizinan'],
+        );
+      } else {
+        throw Exception('Gagal memuat data dari server');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memperbarui data: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _selectDate(BuildContext context, bool isStart) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -157,10 +184,12 @@ class _IzinPageState extends State<IzinPage> {
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
         backgroundColor: Colors.transparent, elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E1E1E)),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E1E1E)),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         title: Text(isRiwayat ? "Riwayat Absensi" : "Perizinan", 
           style: const TextStyle(color: Color(0xFF1E1E1E), fontWeight: FontWeight.bold, fontSize: 22)),
       ),
@@ -197,9 +226,15 @@ class _IzinPageState extends State<IzinPage> {
             ),
           ),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: isRiwayat ? _buildRiwayatContent(context) : _buildIzinContent(context),
+            // [BARU] Dibungkus dengan RefreshIndicator
+            child: RefreshIndicator(
+              onRefresh: _refreshData,
+              color: const Color(0xFF006D5B),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(), // Agar bisa ditarik meski konten pendek
+                padding: const EdgeInsets.all(24.0),
+                child: isRiwayat ? _buildRiwayatContent(context) : _buildIzinContent(context),
+              ),
             ),
           ),
         ],
