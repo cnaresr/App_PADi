@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <title>Pengaturan Waktu - App_PADi</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .drag-over { border: 2px dashed #2563eb; background-color: #eff6ff; }
-    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
 <body class="bg-slate-100 flex font-sans">
     
@@ -42,13 +41,9 @@
     <main class="flex-1 ml-64 p-8 flex gap-8">
         <div class="flex-1 space-y-8">
             
-            <div class="bg-blue-600 rounded-3xl p-4 flex justify-between items-center text-white shadow-lg shadow-blue-600/20">
-                <div class="relative w-96 ml-2">
-                    <span class="absolute left-4 top-2.5 opacity-50">🔍</span>
-                    <input type="text" placeholder="Search..." class="w-full bg-blue-700/50 text-white placeholder-blue-200 border border-blue-500/50 rounded-full pl-12 pr-4 py-2 outline-none focus:ring-2 focus:ring-white/50 text-sm transition">
-                </div>
+            <div class="bg-blue-600 rounded-3xl p-4 flex justify-end items-center text-white shadow-lg shadow-blue-600/20">
                 <div class="flex items-center gap-6 pr-4">
-                    <div class="flex items-center gap-3 border-l border-blue-400/50 pl-6 cursor-pointer">
+                    <div class="flex items-center gap-3 pl-6 cursor-pointer">
                         <span class="text-sm font-bold tracking-wide uppercase">Admin PADI</span>
                         <div class="w-9 h-9 bg-white rounded-full flex items-center justify-center text-blue-600 font-bold text-xs">AD</div>
                     </div>
@@ -66,42 +61,57 @@
             </div>
 
             <div class="space-y-4">
-                <h3 class="text-gray-800 font-bold text-sm tracking-wide uppercase ml-2">Jadwal Aktif</h3>
-
-                <% if (typeof jadwalList !== 'undefined' && jadwalList && jadwalList.length > 0) { %>
-                    <% jadwalList.forEach(jadwal => { 
-                        const formatTime = (isoString) => {
-                            if(!isoString) return '';
-                            const d = new Date(isoString);
-                            return d.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit', timeZone: 'UTC'});
-                        };
-                    %>
-                    <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex justify-between items-center hover:shadow-md transition drop-zone cursor-pointer" data-jadwal-id="<%= jadwal.id %>" onclick="showParams('<%= formatTime(jadwal.jamMasukStart) %>', '<%= formatTime(jadwal.jamMasukFinish) %>', '<%= formatTime(jadwal.jamPulang) %>')">
-                        <div class="flex items-center gap-5">
-                            <div class="bg-blue-50 border border-blue-100 p-4 rounded-full text-blue-600 font-bold text-sm">JS</div>
-                            <div>
-                                <h4 class="font-bold text-gray-800"><%= jadwal.namaJadwal %></h4>
-                                <p class="text-xs text-gray-500 mt-1 font-semibold">
-                                    <% if(jadwal.tanggal) { %>📅 <%= jadwal.tanggal.split('T')[0] %> | <% } %>
-                                    🕒 <%= formatTime(jadwal.jamMasukStart) %> - <%= formatTime(jadwal.jamPulang) %> &nbsp;•&nbsp; 👥 <%= jadwal.kelas ? jadwal.kelas.length : 0 %> Kelas
-                                </p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <div class="flex flex-wrap max-w-[150px] gap-2 justify-end">
-                                <% if (jadwal.kelas && jadwal.kelas.length > 0) { %>
-                                    <% jadwal.kelas.forEach(k => { %>
-                                        <div class="bg-slate-100 border text-gray-600 px-2.5 py-1 rounded-lg text-[10px] font-bold"><%= k.namaKelas %></div>
-                                    <% }) %>
-                                <% } %>
-                            </div>
-                            <button onclick="editJadwal('<%= jadwal.id %>', '<%= jadwal.namaJadwal %>', '<%= jadwal.hari %>', '<%= jadwal.tanggal ? jadwal.tanggal.split('T')[0] : '' %>', '<%= jadwal.jamMasukStart ? jadwal.jamMasukStart.substring(11, 16) : '' %>', '<%= jadwal.jamMasukFinish ? jadwal.jamMasukFinish.substring(11, 16) : '' %>', '<%= jadwal.jamPulang ? jadwal.jamPulang.substring(11, 16) : '' %>')" class="text-blue-500 hover:text-blue-700 ml-3" title="Edit">✏️</button>
-                            <button onclick="hapusJadwal('<%= jadwal.id %>')" class="text-red-500 hover:text-red-700" title="Hapus">🗑️</button>
+                <% function renderJadwalCard(jadwal) { 
+                    const formatTime = (isoString) => {
+                        if(!isoString) return '';
+                        const d = new Date(isoString);
+                        return d.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit', timeZone: 'UTC'});
+                    };
+                %>
+                <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex justify-between items-center hover:shadow-md transition cursor-pointer mb-4" onclick="showParams('<%= formatTime(jadwal.jamMasukStart) %>', '<%= formatTime(jadwal.jamMasukFinish) %>', '<%= formatTime(jadwal.jamPulang) %>')">
+                    <div class="flex items-center gap-5">
+                        <div class="bg-blue-50 border border-blue-100 p-4 rounded-full text-blue-600 font-bold text-sm">JS</div>
+                        <div>
+                            <h4 class="font-bold text-gray-800 capitalize"><%= jadwal.namaJadwal %></h4>
+                            <p class="text-xs text-gray-500 mt-1 font-semibold">
+                                <% if(jadwal.tanggal && jadwal.tanggal.length > 0) { %>📅 <%= jadwal.tanggal.map(d => d.substring(0, 10)).join(', ') %> | <% } %>
+                                🕒 <%= formatTime(jadwal.jamMasukStart) %> - <%= formatTime(jadwal.jamPulang) %>
+                            </p>
                         </div>
                     </div>
-                    <% }) %>
+                    <div class="flex items-center gap-4">
+                        <% if(jadwal.isActive) { %>
+                            <button onclick="nonaktifkanJadwal('<%= jadwal.id %>')" class="bg-green-100 hover:bg-green-200 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-200 shadow-sm transition" title="Nonaktifkan Jadwal">✅ Aktif</button>
+                        <% } else { %>
+                            <button onclick="aktifkanJadwal('<%= jadwal.id %>')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-1.5 rounded-full text-xs font-bold border border-gray-200 transition shadow-sm" title="Aktifkan Jadwal">Aktifkan</button>
+                        <% } %>
+                        <button onclick="editJadwal('<%= jadwal.id %>', '<%= jadwal.namaJadwal %>', '<%= jadwal.tanggal && jadwal.tanggal.length > 0 ? jadwal.tanggal.map(d => d.substring(0, 10)).join(',') : '' %>', '<%= jadwal.jamMasukStart ? jadwal.jamMasukStart.substring(11, 16) : '' %>', '<%= jadwal.jamMasukFinish ? jadwal.jamMasukFinish.substring(11, 16) : '' %>', '<%= jadwal.jamPulang ? jadwal.jamPulang.substring(11, 16) : '' %>')" class="text-blue-500 hover:text-blue-700 ml-3" title="Edit">✏️</button>
+                        <button onclick="hapusJadwal('<%= jadwal.id %>')" class="text-red-500 hover:text-red-700" title="Hapus">🗑️</button>
+                    </div>
+                </div>
+                <% } %>
+
+                <% 
+                   let jadwalReguler = [];
+                   let jadwalKhusus = [];
+                   if (typeof jadwalList !== 'undefined' && jadwalList) {
+                       jadwalReguler = jadwalList.filter(j => !j.tanggal || j.tanggal.length === 0);
+                       jadwalKhusus = jadwalList.filter(j => j.tanggal && j.tanggal.length > 0);
+                   }
+                %>
+
+                <h3 class="text-gray-800 font-bold text-sm tracking-wide uppercase ml-2 mb-4">Jadwal Reguler</h3>
+                <% if (jadwalReguler.length > 0) { %>
+                    <% jadwalReguler.forEach(jadwal => { renderJadwalCard(jadwal); }) %>
                 <% } else { %>
-                    <p class="text-sm text-gray-500 bg-white p-6 rounded-3xl border border-gray-100 text-center font-semibold">Belum ada jadwal. Silakan buat jadwal baru.</p>
+                    <p class="text-sm text-gray-500 bg-white p-6 rounded-3xl border border-gray-100 text-center font-semibold mb-6">Belum ada jadwal reguler.</p>
+                <% } %>
+
+                <h3 class="text-gray-800 font-bold text-sm tracking-wide uppercase ml-2 mt-8 mb-4">Jadwal Khusus</h3>
+                <% if (jadwalKhusus.length > 0) { %>
+                    <% jadwalKhusus.forEach(jadwal => { renderJadwalCard(jadwal); }) %>
+                <% } else { %>
+                    <p class="text-sm text-gray-500 bg-white p-6 rounded-3xl border border-gray-100 text-center font-semibold mb-6">Belum ada jadwal khusus.</p>
                 <% } %>
             </div>
 
@@ -128,25 +138,6 @@
             </div>
         </div>
 
-        <div class="w-80 space-y-6 pt-24">
-            <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm h-[500px] overflow-y-auto">
-                <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wide">Belum Terjadwal</h3>
-                <p class="text-xs text-gray-400 mt-1 mb-6 font-semibold">Drag & drop kelas ke jadwal aktif</p>
-                
-                <% const unassignedKelas = (typeof kelasList !== 'undefined' && kelasList) ? kelasList.filter(k => !k.jadwalAbsensi || k.jadwalAbsensi.length === 0) : []; %>
-                
-                <% unassignedKelas.forEach(k => { %>
-                <div class="draggable mb-3 border rounded-2xl p-4 flex justify-between items-center bg-slate-50 hover:bg-white hover:border-blue-300 transition cursor-grab shadow-sm" draggable="true" data-kelas-id="<%= k.id %>">
-                    <div class="flex items-center gap-3">
-                        <span class="text-blue-500 bg-blue-50 p-2 rounded-xl text-xs">🏫</span>
-                        <p class="font-bold text-gray-700 text-sm"><%= k.namaKelas %></p>
-                    </div>
-                    <span class="text-gray-300 text-xs">⣿</span>
-                </div>
-                <% }) %>
-            </div>
-        </div>
-
         <div id="jadwalModal" class="fixed inset-0 bg-black/60 hidden flex justify-center items-center z-50 backdrop-blur-sm">
             <div class="bg-white p-8 rounded-3xl w-[500px] shadow-2xl">
                 <h3 id="modalTitle" class="text-2xl font-bold mb-6 text-gray-800">Buat Jadwal Baru</h3>
@@ -156,24 +147,37 @@
                         <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Nama Jadwal / Shift</label>
                         <input type="text" id="inputNama" name="namaJadwal" required placeholder="Contoh: Waktu Pembelajaran Pagi" class="w-full bg-slate-50 border border-gray-200 p-3.5 rounded-xl text-sm font-semibold outline-none focus:border-blue-600 focus:bg-white transition">
                     </div>
-                    <div class="flex gap-5">
-                        <div class="flex-1">
-                            <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Hari Beroperasi</label>
-                            <select id="inputHari" name="hari" class="w-full bg-slate-50 border border-gray-200 p-3.5 rounded-xl text-sm font-semibold outline-none focus:border-blue-600 focus:bg-white transition">
-                                <option value="Senin-Jumat">Senin - Jumat</option>
-                                <option value="Senin">Senin</option>
-                                <option value="Selasa">Selasa</option>
-                                <option value="Rabu">Rabu</option>
-                                <option value="Kamis">Kamis</option>
-                                <option value="Jumat">Jumat</option>
-                                <option value="Sabtu">Sabtu</option>
-                                <option value="Minggu">Minggu</option>
-                            </select>
+                    <div class="mb-4 border-b border-gray-100 pb-4">
+                        <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Tipe Jadwal</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer bg-slate-50 border border-gray-200 px-4 py-2 rounded-xl">
+                                <input type="radio" name="tipeJadwal" value="Reguler" class="w-4 h-4 text-blue-600 focus:ring-blue-500" checked onchange="toggleTipeJadwal()">
+                                <span class="text-sm font-semibold text-gray-700">Reguler</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer bg-slate-50 border border-gray-200 px-4 py-2 rounded-xl">
+                                <input type="radio" name="tipeJadwal" value="Khusus" class="w-4 h-4 text-blue-600 focus:ring-blue-500" onchange="toggleTipeJadwal()">
+                                <span class="text-sm font-semibold text-gray-700">Khusus</span>
+                            </label>
                         </div>
-                        <div class="flex-1">
-                            <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Tanggal</label>
-                            <input type="date" id="inputTanggal" name="tanggal" class="w-full bg-slate-50 border border-gray-200 p-3.5 rounded-xl text-sm font-semibold outline-none focus:border-blue-600 focus:bg-white transition">
+                    </div>
+
+                    <div id="containerTanggal" class="hidden flex-col gap-4">
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer bg-slate-50 border border-gray-200 px-4 py-2 rounded-xl text-sm font-semibold text-gray-700">
+                                <input type="radio" name="opsiTanggal" value="range" class="w-4 h-4 text-blue-600 focus:ring-blue-500" checked onchange="toggleOpsiTanggal()"> Rentang Tanggal Khusus
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer bg-slate-50 border border-gray-200 px-4 py-2 rounded-xl text-sm font-semibold text-gray-700">
+                                <input type="radio" name="opsiTanggal" value="multiple" class="w-4 h-4 text-blue-600 focus:ring-blue-500" onchange="toggleOpsiTanggal()"> Tanggal Terpisah Tambahan
+                            </label>
                         </div>
+                        
+                        <div id="containerTanggalRange">
+                            <input type="text" id="inputTanggalRange" class="w-full bg-slate-50 border border-gray-200 p-3.5 rounded-xl text-sm font-semibold outline-none focus:border-blue-600 focus:bg-white transition" placeholder="Pilih Rentang Tanggal (Contoh: 1 Jan ke 10 Jan)">
+                        </div>
+                        <div id="containerTanggalMultiple" class="hidden">
+                            <input type="text" id="inputTanggalMultiple" class="w-full bg-slate-50 border border-gray-200 p-3.5 rounded-xl text-sm font-semibold outline-none focus:border-blue-600 focus:bg-white transition" placeholder="Pilih Tanggal Terpisah">
+                        </div>
+                        <input type="hidden" name="tanggal" id="inputTanggalMerged">
                     </div>
                     <div class="flex gap-5">
                         <div class="flex-1">
@@ -190,27 +194,6 @@
                         <input type="time" id="inputJamPulang" name="jamPulang" required class="w-full bg-slate-50 border border-gray-200 p-3.5 rounded-xl text-sm font-semibold outline-none focus:border-blue-600 focus:bg-white transition">
                     </div>
                     
-                    <div id="kelolaKelasContainer" class="hidden border-t border-gray-100 pt-6 mt-6">
-                        <h4 class="text-sm font-bold text-gray-800 mb-4 uppercase tracking-wide">Kelola Kelas (Khusus Edit)</h4>
-                        
-                        <div class="mb-4">
-                            <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Kelas Terdaftar</label>
-                            <div id="kelasTerdaftarList" class="flex flex-wrap gap-2">
-                                <!-- Diisi lewat JS -->
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Tambah Kelas</label>
-                            <div class="flex gap-3">
-                                <select id="selectKelasBaru" class="flex-1 bg-slate-50 border border-gray-200 p-3 rounded-xl text-sm font-semibold outline-none focus:border-blue-600 focus:bg-white transition">
-                                    <option value="">-- Pilih Kelas Belum Terjadwal --</option>
-                                </select>
-                                <button type="button" onclick="assignKelasModal()" class="bg-blue-600 text-white px-5 py-3 rounded-xl text-sm font-bold shadow-md hover:bg-blue-700 transition cursor-pointer">Tambah</button>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="flex justify-end gap-3 pt-6 border-t mt-6">
                         <button type="button" onclick="closeModal()" class="px-6 py-3 text-sm text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition cursor-pointer">Batal</button>
                         <button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded-xl text-sm font-bold shadow-lg hover:bg-blue-700 transition cursor-pointer">Simpan Jadwal</button>
@@ -234,82 +217,75 @@
             form.reset();
             document.getElementById('jadwalId').value = '';
             modalTitle.textContent = 'Buat Jadwal Baru';
-            document.getElementById('kelolaKelasContainer').classList.add('hidden');
+            
+            // Reset UI state to match default form values
+            toggleTipeJadwal();
+            toggleOpsiTanggal();
+            if (typeof fpRange !== 'undefined') fpRange.clear();
+            if (typeof fpMultiple !== 'undefined') fpMultiple.clear();
+
             modal.classList.remove('hidden'); 
         }
 
         function closeModal() { modal.classList.add('hidden'); }
 
-        function editJadwal(id, nama, hari, tanggal, masuk, batas, pulang) {
+        function toggleTipeJadwal() {
+            const isKhusus = document.querySelector('input[name="tipeJadwal"]:checked').value === 'Khusus';
+            const containerTanggal = document.getElementById('containerTanggal');
+            if (isKhusus) {
+                containerTanggal.classList.remove('hidden');
+                containerTanggal.classList.add('flex');
+            } else {
+                containerTanggal.classList.add('hidden');
+                containerTanggal.classList.remove('flex');
+            }
+        }
+
+        function toggleOpsiTanggal() {
+            const opsi = document.querySelector('input[name="opsiTanggal"]:checked').value;
+            if (opsi === 'range') {
+                document.getElementById('containerTanggalRange').classList.remove('hidden');
+                document.getElementById('containerTanggalMultiple').classList.add('hidden');
+            } else {
+                document.getElementById('containerTanggalRange').classList.add('hidden');
+                document.getElementById('containerTanggalMultiple').classList.remove('hidden');
+            }
+        }
+
+        const fpRange = flatpickr("#inputTanggalRange", {
+            mode: "range",
+            dateFormat: "Y-m-d"
+        });
+
+        const fpMultiple = flatpickr("#inputTanggalMultiple", {
+            mode: "multiple",
+            dateFormat: "Y-m-d"
+        });
+
+        function editJadwal(id, nama, tanggalListStr, masuk, batas, pulang) {
             event.stopPropagation();
             document.getElementById('jadwalId').value = id;
             document.getElementById('inputNama').value = nama;
-            document.getElementById('inputHari').value = hari;
-            document.getElementById('inputTanggal').value = tanggal;
+            
+            // if it has dates, it's Khusus
+            let dates = [];
+            if (tanggalListStr) {
+                dates = tanggalListStr.split(',');
+                document.querySelector('input[name="tipeJadwal"][value="Khusus"]').checked = true;
+                fpMultiple.setDate(dates);
+            } else {
+                document.querySelector('input[name="tipeJadwal"][value="Reguler"]').checked = true;
+                fpMultiple.clear();
+            }
+            fpRange.clear();
+            toggleTipeJadwal();
+
             document.getElementById('inputJamMasukStart').value = masuk;
             document.getElementById('inputJamMasukFinish').value = batas;
             document.getElementById('inputJamPulang').value = pulang;
             modalTitle.textContent = 'Edit Jadwal';
-            
-            document.getElementById('kelolaKelasContainer').classList.remove('hidden');
-            
-            const jadwalData = dataServer.jadwalList.find(j => j.id == id);
-            const containerTerdaftar = document.getElementById('kelasTerdaftarList');
-            containerTerdaftar.innerHTML = '';
-            if(jadwalData && jadwalData.kelas && jadwalData.kelas.length > 0) {
-                jadwalData.kelas.forEach(k => {
-                    containerTerdaftar.innerHTML += `
-                        <div class="bg-slate-100 border text-gray-600 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2">
-                            ${k.namaKelas}
-                            <button type="button" onclick="unassignKelasModal('${jadwalData.id}', '${k.id}')" class="text-red-500 hover:text-red-700 font-bold ml-1 text-sm" title="Hapus Kelas">×</button>
-                        </div>
-                    `;
-                });
-            } else {
-                containerTerdaftar.innerHTML = '<span class="text-xs text-gray-400 font-semibold">Belum ada kelas yang terdaftar</span>';
-            }
-            
-            const selectBaru = document.getElementById('selectKelasBaru');
-            selectBaru.innerHTML = '<option value="">-- Pilih Kelas Belum Terjadwal --</option>';
-            const unassigned = dataServer.kelasList.filter(k => !k.jadwalAbsensi || k.jadwalAbsensi.length === 0);
-            unassigned.forEach(k => {
-                selectBaru.innerHTML += `<option value="${k.id}">${k.namaKelas}</option>`;
-            });
 
             modal.classList.remove('hidden');
-        }
-
-        async function unassignKelasModal(jadwalId, kelasId) {
-            if(!confirm("Hapus kelas ini dari jadwal?")) return;
-            try {
-                const res = await fetch(`http://localhost:3000/api/jadwal/${jadwalId}/unassign`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ kelasId })
-                });
-                if(res.ok) window.location.reload();
-                else alert('Gagal membatalkan kelas dari jadwal');
-            } catch(err) {
-                alert('Kesalahan jaringan');
-            }
-        }
-
-        async function assignKelasModal() {
-            const jadwalId = document.getElementById('jadwalId').value;
-            const kelasId = document.getElementById('selectKelasBaru').value;
-            if(!jadwalId || !kelasId) return alert('Silakan pilih jadwal dan kelas terlebih dahulu!');
-            
-            try {
-                const res = await fetch(`http://localhost:3000/api/jadwal/${jadwalId}/assign`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ kelasId })
-                });
-                if(res.ok) window.location.reload();
-                else alert('Gagal menambahkan kelas ke jadwal');
-            } catch(err) {
-                alert('Kesalahan jaringan');
-            }
         }
 
         async function hapusJadwal(id) {
@@ -317,14 +293,73 @@
             if(confirm('Apakah Anda yakin ingin menghapus jadwal ini?')) {
                 try {
                     const res = await fetch(`http://localhost:3000/api/jadwal/${id}`, { method: 'DELETE' });
+                    if(res.ok) {
+                        window.location.reload();
+                    } else {
+                        const errData = await res.json();
+                        alert(errData.message || 'Gagal menghapus jadwal');
+                    }
+                } catch(err) { alert('Kesalahan jaringan'); }
+            }
+        }
+
+        async function aktifkanJadwal(id) {
+            event.stopPropagation();
+            if(confirm('Apakah Anda yakin ingin mengaktifkan jadwal ini? Jadwal lain akan otomatis dinonaktifkan.')) {
+                try {
+                    const res = await fetch(`http://localhost:3000/api/jadwal/${id}/activate`, { method: 'PUT' });
                     if(res.ok) window.location.reload();
-                    else alert('Gagal menghapus jadwal');
+                    else alert('Gagal mengaktifkan jadwal');
+                } catch(err) { alert('Kesalahan jaringan'); }
+            }
+        }
+
+        async function nonaktifkanJadwal(id) {
+            event.stopPropagation();
+            if(confirm('Apakah Anda yakin ingin menonaktifkan jadwal ini?')) {
+                try {
+                    const res = await fetch(`http://localhost:3000/api/jadwal/${id}/deactivate`, { method: 'PUT' });
+                    if(res.ok) window.location.reload();
+                    else alert('Gagal menonaktifkan jadwal');
                 } catch(err) { alert('Kesalahan jaringan'); }
             }
         }
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // Extract dates from flatpickr
+            const tipe = document.querySelector('input[name="tipeJadwal"]:checked').value;
+            let mergedDates = [];
+            
+            if (tipe === 'Khusus') {
+                const opsi = document.querySelector('input[name="opsiTanggal"]:checked').value;
+                if (opsi === 'range') {
+                    const rangeDates = fpRange.selectedDates;
+                    if (rangeDates.length === 2) {
+                        let start = new Date(rangeDates[0]);
+                        let end = new Date(rangeDates[1]);
+                        for (let dt = start; dt <= end; dt.setDate(dt.getDate() + 1)) {
+                            mergedDates.push(dt.toISOString().split('T')[0]);
+                        }
+                    } else if (rangeDates.length === 1) {
+                        mergedDates.push(rangeDates[0].toISOString().split('T')[0]);
+                    }
+                } else {
+                    const multipleDates = fpMultiple.selectedDates;
+                    multipleDates.forEach(d => {
+                        const dStr = d.toISOString().split('T')[0];
+                        if(!mergedDates.includes(dStr)) mergedDates.push(dStr);
+                    });
+                }
+                
+                if (mergedDates.length === 0) {
+                    return alert('Silakan pilih minimal 1 tanggal untuk jadwal khusus!');
+                }
+            }
+            
+            document.getElementById('inputTanggalMerged').value = mergedDates.join(',');
+
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
             const id = data.id;
@@ -349,49 +384,6 @@
             document.getElementById('param-late').value = late || '--';
             document.getElementById('param-checkout').value = checkout || '--';
         }
-
-        const draggables = document.querySelectorAll('.draggable');
-        const dropZones = document.querySelectorAll('.drop-zone');
-
-        draggables.forEach(draggable => {
-            draggable.addEventListener('dragstart', () => {
-                draggable.classList.add('opacity-50');
-                draggable.dataset.dragging = 'true';
-            });
-            draggable.addEventListener('dragend', () => {
-                draggable.classList.remove('opacity-50');
-                delete draggable.dataset.dragging;
-            });
-        });
-
-        dropZones.forEach(zone => {
-            zone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                zone.classList.add('drag-over');
-            });
-            zone.addEventListener('dragleave', () => {
-                zone.classList.remove('drag-over');
-            });
-            zone.addEventListener('drop', async (e) => {
-                e.preventDefault();
-                zone.classList.remove('drag-over');
-                const draggedItem = document.querySelector('[data-dragging="true"]');
-                if (draggedItem) {
-                    const kelasId = draggedItem.getAttribute('data-kelas-id');
-                    const jadwalId = zone.getAttribute('data-jadwal-id');
-
-                    try {
-                        const res = await fetch(`http://localhost:3000/api/jadwal/${jadwalId}/assign`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ kelasId })
-                        });
-                        if (res.ok) window.location.reload();
-                        else alert('Gagal menetapkan kelas ke jadwal');
-                    } catch (err) { alert('Terjadi kesalahan jaringan'); }
-                }
-            });
-        });
     </script>
 </body>
 </html>
