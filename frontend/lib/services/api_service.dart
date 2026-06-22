@@ -1,7 +1,7 @@
 // lib/services/api_service.dart
 import 'dart:convert';
-import 'dart:io' show Platform; 
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint; 
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:http/http.dart' as http;
 import 'package:platform_absensi_digital/services/storage_service.dart';
 
@@ -25,7 +25,9 @@ class ApiService {
     return headers;
   }
 
-  static Future<void> _handleUnauthorizedResponse(http.Response response) async {
+  static Future<void> _handleUnauthorizedResponse(
+    http.Response response,
+  ) async {
     if (response.statusCode == 401 || response.statusCode == 403) {
       await clearLocalSession();
       throw SessionExpiredException();
@@ -35,19 +37,23 @@ class ApiService {
   static Future<void> clearLocalSession() async {
     await _storageService.clearSession();
   }
+
   static String get baseUrl {
     String host;
     if (!kIsWeb && Platform.isAndroid) {
-      host = 'http://192.168.110.33:3000';
+      host = 'http://10.0.2.2:3000';
     } else {
       host = 'http://localhost:3000';
     }
-    return '$host/api'; 
+    return '$host/api';
   }
 
   // --- FUNGSI OTENTIKASI ---
   // [UPDATE]: Parameter pertama diubah namanya menjadi 'identifier' agar bisa untuk email atau username
-  static Future<Map<String, dynamic>> login(String identifier, String password) async {
+  static Future<Map<String, dynamic>> login(
+    String identifier,
+    String password,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login'),
@@ -72,7 +78,10 @@ class ApiService {
       return result;
     } catch (e) {
       debugPrint("ERROR API (login): $e");
-      return {'status': 'error', 'message': 'Terjadi kesalahan koneksi ke server'};
+      return {
+        'status': 'error',
+        'message': 'Terjadi kesalahan koneksi ke server',
+      };
     }
   }
 
@@ -82,21 +91,29 @@ class ApiService {
     required List<double> faceEmbedding,
     required double latitude,
     required double longitude,
-    required String fotoMasukPath, // [DIUBAH] Menggunakan path file, bukan Base64
+    required String
+    fotoMasukPath, // [DIUBAH] Menggunakan path file, bukan Base64
   }) async {
     try {
       // [DIUBAH] Menggunakan MultipartRequest untuk mengirim file dan data
-      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/absensi/masuk'));
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/absensi/masuk'),
+      );
       request.headers.addAll(await _authHeaders());
 
       // Tambahkan field data
       request.fields['userId'] = userId.toString();
-      request.fields['faceEmbedding'] = jsonEncode(faceEmbedding); // Encode list menjadi string JSON
+      request.fields['faceEmbedding'] = jsonEncode(
+        faceEmbedding,
+      ); // Encode list menjadi string JSON
       request.fields['latitude'] = latitude.toString();
       request.fields['longitude'] = longitude.toString();
 
       // Tambahkan file foto
-      request.files.add(await http.MultipartFile.fromPath('fotoMasuk', fotoMasukPath));
+      request.files.add(
+        await http.MultipartFile.fromPath('fotoMasuk', fotoMasukPath),
+      );
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
@@ -104,11 +121,18 @@ class ApiService {
       // [PERBAIKAN] Cek status code SEBELUM mencoba decode JSON
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final responseBody = jsonDecode(response.body);
-        return {'success': true, 'message': responseBody['message'] ?? 'Absensi berhasil.'};
+        return {
+          'success': true,
+          'message': responseBody['message'] ?? 'Absensi berhasil.',
+        };
       } else {
         await _handleUnauthorizedResponse(response);
         final errorBody = jsonDecode(response.body);
-        return {'success': false, 'message': errorBody['message'] ?? 'Gagal: Terjadi kesalahan di server.'};
+        return {
+          'success': false,
+          'message':
+              errorBody['message'] ?? 'Gagal: Terjadi kesalahan di server.',
+        };
       }
     } catch (e, stacktrace) {
       debugPrint('Error di ApiService (kirimAbsensiMasuk): $e\n$stacktrace');
@@ -127,7 +151,10 @@ class ApiService {
   }) async {
     try {
       // [DIUBAH] Menggunakan MultipartRequest
-      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/absensi/pulang'));
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/absensi/pulang'),
+      );
       request.headers.addAll(await _authHeaders());
 
       request.fields['userId'] = userId.toString();
@@ -135,7 +162,9 @@ class ApiService {
       request.fields['latitude'] = latitude.toString();
       request.fields['longitude'] = longitude.toString();
 
-      request.files.add(await http.MultipartFile.fromPath('fotoPulang', fotoPulangPath));
+      request.files.add(
+        await http.MultipartFile.fromPath('fotoPulang', fotoPulangPath),
+      );
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
@@ -143,11 +172,18 @@ class ApiService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final responseBody = jsonDecode(response.body);
         // Berikan pesan sukses yang lebih spesifik untuk pulang
-        return {'success': true, 'message': responseBody['message'] ?? 'Absensi pulang berhasil.'};
+        return {
+          'success': true,
+          'message': responseBody['message'] ?? 'Absensi pulang berhasil.',
+        };
       } else {
         await _handleUnauthorizedResponse(response);
         final errorBody = jsonDecode(response.body);
-        return {'success': false, 'message': errorBody['message'] ?? 'Gagal: Terjadi kesalahan di server.'};
+        return {
+          'success': false,
+          'message':
+              errorBody['message'] ?? 'Gagal: Terjadi kesalahan di server.',
+        };
       }
     } catch (e, stacktrace) {
       debugPrint('Error di ApiService (kirimAbsensiPulang): $e\n$stacktrace');
@@ -187,14 +223,17 @@ class ApiService {
         return json.decode(response.body);
       } else {
         await _handleUnauthorizedResponse(response);
-        return {'status': 'error', 'message': 'Gagal mengambil data dashboard guru'};
+        return {
+          'status': 'error',
+          'message': 'Gagal mengambil data dashboard guru',
+        };
       }
     } catch (e) {
       return {'status': 'error', 'message': e.toString()};
     }
   }
   // --- FUNGSI PERIZINAN (DINAMIS) ---
-  
+
   // 1. Fungsi Siswa Mengirim Izin (Multipart untuk File)
   static Future<Map<String, dynamic>> ajukanIzin({
     required int userId,
@@ -205,7 +244,10 @@ class ApiService {
     String? filePath,
   }) async {
     try {
-      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/perizinan'));
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/perizinan'),
+      );
       request.headers.addAll(await _authHeaders());
       request.fields['userId'] = userId.toString();
       request.fields['tanggalMulai'] = tanggalMulai;
@@ -214,7 +256,9 @@ class ApiService {
       request.fields['alasan'] = alasan;
 
       if (filePath != null) {
-        request.files.add(await http.MultipartFile.fromPath('fileBukti', filePath));
+        request.files.add(
+          await http.MultipartFile.fromPath('fileBukti', filePath),
+        );
       }
 
       var streamedResponse = await request.send();
@@ -224,7 +268,10 @@ class ApiService {
       }
       return json.decode(response.body);
     } catch (e) {
-      return {'status': 'error', 'message': 'Terjadi kesalahan sistem saat mengirim file.'};
+      return {
+        'status': 'error',
+        'message': 'Terjadi kesalahan sistem saat mengirim file.',
+      };
     }
   }
 
@@ -246,7 +293,11 @@ class ApiService {
   }
 
   // 3. Fungsi Guru Menyetujui/Menolak
-  static Future<Map<String, dynamic>> updateStatusIzin(int izinId, String status, int guruUserId) async {
+  static Future<Map<String, dynamic>> updateStatusIzin(
+    int izinId,
+    String status,
+    int guruUserId,
+  ) async {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/perizinan/$izinId/status'),
@@ -282,7 +333,9 @@ class ApiService {
   // 2. Mengambil notifikasi yang belum terbaca saja
   static Future<List<dynamic>> getUnreadNotifications(int userId) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/notifikasi/$userId/unread'));
+      final response = await http.get(
+        Uri.parse('$baseUrl/notifikasi/$userId/unread'),
+      );
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
         if (body['status'] == 'success') {
@@ -311,7 +364,9 @@ class ApiService {
   }
 
   // 4. Menandai semua notifikasi siswa sebagai terbaca
-  static Future<Map<String, dynamic>> markAllNotificationsAsRead(int userId) async {
+  static Future<Map<String, dynamic>> markAllNotificationsAsRead(
+    int userId,
+  ) async {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/notifikasi/$userId/read-all'),

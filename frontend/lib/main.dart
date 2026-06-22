@@ -1,5 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart'; // Pastikan package provider ter-install
 import 'package:platform_absensi_digital/pages/splash_screen.dart';
 import 'package:platform_absensi_digital/providers/user_provider.dart'; // Import provider
@@ -47,6 +48,27 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: const Color(0xFF006D5B),
+        // Plus Jakarta Sans: font Indonesia buatan, lebih bold & premium dari Poppins
+        textTheme: GoogleFonts.plusJakartaSansTextTheme().copyWith(
+          // Judul besar - lebih bold & tegas
+          displayLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+          displayMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+          displaySmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+          headlineLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+          headlineMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+          headlineSmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+          titleLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+          titleMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+          titleSmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+          // Body text - sedikit lebih bold dari default
+          bodyLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w500),
+          bodyMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w500),
+          bodySmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w400),
+          // Label (tombol, navigasi)
+          labelLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+          labelMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+          labelSmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+        ),
       ),
       // Halaman pertama adalah Splash Screen
       home: const SplashScreen(), 

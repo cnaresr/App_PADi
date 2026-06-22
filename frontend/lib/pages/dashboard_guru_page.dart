@@ -40,7 +40,7 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
         _isLoading = false;
       });
 
-      userProvider.setDashboardGuruData(
+      userProvider.setGuruDashboardData(
         _jumlahIzinPending,
         _persentaseKehadiran,
         _rekapAbsensi,
@@ -54,9 +54,10 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
   // Hitung statistik dari rekap
   int get _totalSiswa => _rekapAbsensi.length;
   int get _hadirCount => _rekapAbsensi.where((s) => s['status'] == 'Hadir').length;
-  int get _telatCount => _rekapAbsensi.where((s) => s['status'] == 'Telat').length;
+  int get _telatCount => _rekapAbsensi.where((s) => s['status'] == 'Telat' || s['status'] == 'Terlambat').length;
   int get _izinCount => _rekapAbsensi.where((s) => s['status'] == 'Izin' || s['status'] == 'Sakit').length;
   int get _alpaCount => _rekapAbsensi.where((s) => s['status'] == 'Alpa').length;
+  int get _computedPersentase => _totalSiswa > 0 ? (((_hadirCount + _telatCount) / _totalSiswa) * 100).round() : 0;
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
@@ -89,14 +90,14 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
                     colors: [Color(0xFF006D5B), Color(0xFF004D40)],
                   ),
                   borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(32),
-                    bottomRight: Radius.circular(32),
+                    bottomLeft: Radius.circular(36),
+                    bottomRight: Radius.circular(36),
                   ),
                 ),
                 child: SafeArea(
                   bottom: false,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -104,32 +105,26 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            // Logo & App name
+                            Row(
                               children: [
-                                Text(
-                                  tanggalHariIni,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.white.withOpacity(0.75),
-                                    fontWeight: FontWeight.w500,
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.18),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
+                                  child: const Icon(Icons.school_rounded, color: Colors.white, size: 20),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  "${_getGreeting()},",
+                                const SizedBox(width: 10),
+                                const Text(
+                                  "PADI",
                                   style: TextStyle(
-                                    fontSize: 15,
-                                    color: Colors.white.withOpacity(0.9),
-                                  ),
-                                ),
-                                Text(
-                                  namaLengkap,
-                                  style: const TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
                                     color: Colors.white,
-                                    letterSpacing: -0.3,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 18,
+                                    letterSpacing: 1.5,
                                   ),
                                 ),
                               ],
@@ -148,6 +143,26 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
                               ],
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 28),
+                        // Greeting
+                        Text(
+                          tanggalHariIni,
+                          style: TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 13, fontWeight: FontWeight.w500),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "${_getGreeting()},",
+                          style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 15),
+                        ),
+                        Text(
+                          namaLengkap,
+                          style: const TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
+                          ),
                         ),
                         const SizedBox(height: 24),
 
@@ -176,7 +191,7 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
                               child: _buildSummaryCard(
                                 icon: Icons.trending_up_rounded,
                                 label: "Kehadiran",
-                                value: "$_persentaseKehadiran%",
+                                value: "$_computedPersentase%",
                                 color: const Color(0xFFA5D6A7),
                               ),
                             ),
@@ -197,7 +212,8 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
                       child: Center(child: CircularProgressIndicator(color: Color(0xFF006D5B))),
                     )
                   : Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                      // Extra bottom padding for floating navbar
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -320,7 +336,7 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
               ),
               const SizedBox(width: 14),
               Text(
-                "$_persentaseKehadiran%",
+                "$_computedPersentase%",
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF006D5B)),
               ),
             ],
