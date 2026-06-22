@@ -11,6 +11,7 @@ class UserProvider with ChangeNotifier {
   int _persentaseKehadiran = 0;
   List<dynamic> _riwayatAbsensi = [];
   List<dynamic> _riwayatPerizinan = [];
+  List<dynamic> _jadwalAktif = [];
 
   // [DIUBAH] Variabel geofencing sekarang menyimpan poligon, bukan radius.
   List<Map<String, double>>? _schoolPolygon;
@@ -23,6 +24,7 @@ class UserProvider with ChangeNotifier {
   int get persentaseKehadiran => _persentaseKehadiran;
   List<dynamic> get riwayatAbsensi => _riwayatAbsensi;
   List<dynamic> get riwayatPerizinan => _riwayatPerizinan;
+  List<dynamic> get jadwalAktif => _jadwalAktif;
 
   // [BARU] Getter untuk data poligon.
   List<Map<String, double>>? get schoolPolygon => _schoolPolygon;
@@ -42,11 +44,14 @@ class UserProvider with ChangeNotifier {
   }
 
   // Menyimpan data Statistik & Riwayat dari API Dashboard
-  void setDashboardData(int hadir, int persentase, List<dynamic> absensi, List<dynamic> perizinan) {
+  void setDashboardData(int hadir, int persentase, List<dynamic> absensi, List<dynamic> perizinan, {List<dynamic> jadwal = const []}) {
     _hadirBulanIni = hadir;
     _persentaseKehadiran = persentase;
     _riwayatAbsensi = absensi;
     _riwayatPerizinan = perizinan;
+    if (jadwal.isNotEmpty) {
+      _jadwalAktif = jadwal;
+    }
     notifyListeners(); // Memicu UI untuk reload otomatis dengan data asli
   }
 
@@ -59,6 +64,7 @@ class UserProvider with ChangeNotifier {
     _persentaseKehadiran = 0;
     _riwayatAbsensi = [];
     _riwayatPerizinan = [];
+    _jadwalAktif = [];
     
     // [DIUBAH] Bersihkan data poligon saat logout.
     _schoolPolygon = null;
@@ -83,6 +89,7 @@ class UserProvider with ChangeNotifier {
     _persentaseKehadiranKelas = persentase;
     _rekapAbsensiKelas = rekap;
     _jadwalMengajar = jadwal;
+    _jadwalAktif = jadwal;
     notifyListeners();
   }
 }

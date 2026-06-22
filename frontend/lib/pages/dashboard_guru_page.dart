@@ -44,7 +44,7 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
         _jumlahIzinPending,
         _persentaseKehadiran,
         _rekapAbsensi,
-        data['jadwalMengajar'] ?? [],
+        data['jadwalAktif'] ?? [],
       );
     } else if (mounted) {
       setState(() => _isLoading = false);

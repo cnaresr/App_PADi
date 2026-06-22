@@ -330,6 +330,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
             dashRes['data']['persentaseKehadiran'],
             dashRes['data']['riwayatAbsensi'],
             dashRes['data']['riwayatPerizinan'],
+            jadwal: dashRes['data']['jadwalAktif'] ?? [],
           );
         }
       }
@@ -386,6 +387,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
             dashRes['data']['persentaseKehadiran'],
             dashRes['data']['riwayatAbsensi'],
             dashRes['data']['riwayatPerizinan'],
+            jadwal: dashRes['data']['jadwalAktif'] ?? [],
           );
         }
       }

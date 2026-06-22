@@ -26,6 +26,7 @@ class _HomePageState extends State<HomePage> {
           response['data']['persentaseKehadiran'],
           response['data']['riwayatAbsensi'],
           response['data']['riwayatPerizinan'],
+          jadwal: response['data']['jadwalAktif'] ?? [],
         );
       }
     } catch (e) {

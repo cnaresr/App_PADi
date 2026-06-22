@@ -105,6 +105,7 @@ class _IzinPageState extends State<IzinPage>
           dashRes['data']['persentaseKehadiran'],
           dashRes['data']['riwayatAbsensi'],
           dashRes['data']['riwayatPerizinan'],
+          jadwal: dashRes['data']['jadwalAktif'] ?? [],
         );
       }
       setState(() {
@@ -136,6 +137,7 @@ class _IzinPageState extends State<IzinPage>
           dashRes['data']['persentaseKehadiran'],
           dashRes['data']['riwayatAbsensi'],
           dashRes['data']['riwayatPerizinan'],
+          jadwal: dashRes['data']['jadwalAktif'] ?? [],
         );
       } else {
         throw Exception('Gagal memuat data dari server');

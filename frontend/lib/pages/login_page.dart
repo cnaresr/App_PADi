@@ -154,6 +154,7 @@ class _LoginPageState extends State<LoginPage> {
                               dashData['persentaseKehadiran'] ?? 0,
                               dashData['riwayatAbsensi'] ?? [],
                               dashData['riwayatPerizinan'] ?? [],
+                              jadwal: dashData['jadwalAktif'] ?? [],
                             );
                           }
 
