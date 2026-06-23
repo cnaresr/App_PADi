@@ -95,14 +95,72 @@ app.get('/daftar-siswa', cekAdmin, async (req, res) => {
             axios.get(`http://127.0.0.1:3000/api/admin/siswa?search=${search}`),
             axios.get('http://127.0.0.1:3000/api/admin/master/angkatan')
         ]);
+
+        const importErrors = req.session.importErrors || null;
+        delete req.session.importErrors;
+
         res.render('daftar_siswa', { 
             siswas: siswaRes.data.data, 
             masterAngkatan: angkatanRes.data.data,
-            search: search 
+            search: search,
+            importErrors: importErrors
         });
     } catch (error) {
         console.error("Gagal mengambil daftar siswa:", error.message);
-        res.render('daftar_siswa', { siswas: [], masterAngkatan: [], search: '' });
+        res.render('daftar_siswa', { siswas: [], masterAngkatan: [], search: '', importErrors: null });
+    }
+});
+
+app.post('/daftar-siswa/upload', cekAdmin, upload.single('file'), async (req, res) => {
+    if (!req.file) {
+        return res.redirect('/daftar-siswa?error=Tidak_ada_file_yang_diunggah');
+    }
+
+    try {
+        const FormData = require('form-data');
+        const fs = require('fs');
+
+        const form = new FormData();
+        form.append('file', fs.createReadStream(req.file.path), {
+            filename: req.file.originalname,
+            contentType: req.file.mimetype
+        });
+
+        const response = await axios.post('http://127.0.0.1:3000/api/admin/siswa/upload', form, {
+            headers: {
+                ...form.getHeaders()
+            }
+        });
+
+        // Clean up temp file
+        fs.unlinkSync(req.file.path);
+
+        if (response.data.status === 'success') {
+            const successMsg = encodeURIComponent(response.data.message);
+            
+            if (response.data.errorCount > 0) {
+                req.session.importErrors = response.data.errors;
+                res.redirect(`/daftar-siswa?success=${successMsg}&warning=true`);
+            } else {
+                res.redirect(`/daftar-siswa?success=${successMsg}`);
+            }
+        } else {
+            res.redirect(`/daftar-siswa?error=${encodeURIComponent(response.data.message || 'Gagal_impor')}`);
+        }
+
+    } catch (error) {
+        console.error("Gagal upload siswa:", error.message);
+        
+        // Clean up temp file in case of failure
+        const fs = require('fs');
+        if (req.file && fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
+
+        const errMsg = error.response && error.response.data && error.response.data.message
+            ? error.response.data.message
+            : 'Terjadi_kesalahan_saat_mengirim_file';
+        res.redirect(`/daftar-siswa?error=${encodeURIComponent(errMsg)}`);
     }
 });
 

@@ -69,7 +69,8 @@
                 <input type="text" name="search" value="<%= typeof search !== 'undefined' ? search : '' %>" placeholder="Cari siswa, NIS, atau email..." class="w-full bg-primary-dark/50 text-white placeholder-blue-200 border border-primary-light/50 rounded-full pl-12 pr-4 py-2 outline-none focus:ring-2 focus:ring-white/50 text-sm transition">
             </form>
 
-            <div class="flex items-center gap-6 pr-4">
+            <div class="flex items-center gap-4 pr-4">
+                <button onclick="toggleModal('modalImportSiswa')" class="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-5 py-2 rounded-full text-xs font-bold shadow-md transition">📥 Import CSV/Excel</button>
                 <button onclick="toggleModal('modalTambahSiswa')" class="bg-white text-primary px-5 py-2 rounded-full text-xs font-bold shadow-md hover:bg-gray-100 transition">+ Tambah Siswa</button>
                 <div class="flex items-center gap-3 border-l border-primary-light/50 pl-6 cursor-pointer">
                     <span class="text-sm font-bold tracking-wide uppercase">Admin PADI</span>
@@ -129,7 +130,21 @@
                                 </td>
                                 <td class="px-6 py-4 text-gray-500 font-mono text-xs"><%= user.siswa ? user.siswa.nis : '-' %></td>
                                 <td class="px-6 py-4 font-bold text-gray-700"><%= user.siswa && user.siswa.masterAngkatan ? user.siswa.masterAngkatan.nomorAngkatan : '-' %></td>
-                                <td class="px-6 py-4"><span class="bg-slate-100 border text-gray-600 px-3 py-1.5 rounded-lg text-[10px] font-bold">Menunggu...</span></td>
+                                <td class="px-6 py-4">
+                                    <% 
+                                        let namaKelas = '-';
+                                        if (user.siswa && user.siswa.enrolmentSiswa && user.siswa.enrolmentSiswa.length > 0) {
+                                            const activeEnrol = user.siswa.enrolmentSiswa.find(e => e.isActive);
+                                            if (activeEnrol && activeEnrol.enrolmentKelas && activeEnrol.enrolmentKelas.masterKelas) {
+                                                const mk = activeEnrol.enrolmentKelas.masterKelas;
+                                                namaKelas = mk.tingkat ? `${mk.tingkat.namaTingkat} ${mk.namaKelas}` : mk.namaKelas;
+                                            }
+                                        }
+                                    %>
+                                    <span class="bg-slate-100 border text-gray-600 px-3 py-1.5 rounded-lg text-[10px] font-bold">
+                                        <%= namaKelas %>
+                                    </span>
+                                </td>
                                 <td class="px-6 py-4"><span class="text-green-500 font-bold text-xs flex items-center gap-1">🔴 Aktif</span></td>
                                 <td class="px-6 py-4 flex justify-center gap-2">
 <button onclick="bukaEditSiswa('<%= user.id %>', '<%= user.siswa ? user.siswa.namaLengkap : '' %>', '<%= user.siswa ? user.siswa.nis : '' %>', '<%= user.username %>', '<%= user.email %>', '<%= user.siswa ? user.siswa.angkatanId : '' %>')" class="bg-primary/20 text-primary px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-primary/30 transition">Edit</button>
@@ -199,10 +214,59 @@
         </div>
     </div>
 
+    <!-- MODAL IMPORT SISWA -->
+    <div id="modalImportSiswa" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex justify-center items-center">
+        <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative">
+            <button onclick="toggleModal('modalImportSiswa')" class="absolute top-6 right-6 text-gray-400 hover:text-black font-bold">✖</button>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Import Masal Siswa</h2>
+            <p class="text-xs text-gray-500 mb-4">Unggah file Excel (.xlsx, .xls) atau CSV dengan urutan/header kolom:<br><strong class="text-primary font-mono bg-slate-50 px-1.5 py-1 rounded block mt-2 text-center text-[11px]">nama, nis, angkatan, kelas, email, password</strong></p>
+            
+            <div class="mb-6 text-center">
+                <a href="/template_import_siswa.csv" download class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-gray-700 hover:text-gray-900 px-4 py-2 rounded-xl text-xs font-bold transition">
+                    📥 Download Template CSV Contoh
+                </a>
+            </div>
+            
+            <form action="/daftar-siswa/upload" method="POST" enctype="multipart/form-data" class="space-y-6">
+                <div class="border-2 border-dashed border-gray-200 hover:border-primary rounded-2xl p-6 text-center cursor-pointer transition relative">
+                    <input type="file" name="file" accept=".xlsx, .xls, .csv" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="updateFileName(this)">
+                    <div id="uploadPlaceholder" class="space-y-2">
+                        <div class="text-4xl text-gray-300">📊</div>
+                        <p class="text-sm font-semibold text-gray-600">Pilih file untuk diunggah</p>
+                        <p class="text-xs text-gray-400">Mendukung format .xlsx, .xls, .csv</p>
+                    </div>
+                    <div id="uploadFileInfo" class="hidden space-y-2">
+                        <div class="text-4xl text-primary">📄</div>
+                        <p id="uploadFileName" class="text-sm font-bold text-gray-800 truncate px-4"></p>
+                        <p class="text-xs text-primary-light hover:underline">Ganti file</p>
+                    </div>
+                </div>
+                
+                <button type="submit" class="w-full bg-primary text-white font-bold rounded-xl py-3.5 hover:bg-primary-dark shadow-lg shadow-primary/30 transition">Mulai Impor</button>
+            </form>
+        </div>
+    </div>
+
     <script>
         function toggleModal(modalID) {
             const modal = document.getElementById(modalID);
             modal.classList.toggle('hidden');
+        }
+
+        function updateFileName(input) {
+            const placeholder = document.getElementById('uploadPlaceholder');
+            const fileInfo = document.getElementById('uploadFileInfo');
+            const fileName = document.getElementById('uploadFileName');
+            
+            if (input.files && input.files.length > 0) {
+                placeholder.classList.add('hidden');
+                fileInfo.classList.remove('hidden');
+                fileName.textContent = input.files[0].name;
+            } else {
+                placeholder.classList.remove('hidden');
+                fileInfo.classList.add('hidden');
+                fileName.textContent = '';
+            }
         }
 
         function bukaEditSiswa(id, nama, nis, username, email, angkatanId) {
@@ -224,6 +288,61 @@
                 if (result.isConfirmed) form.submit();
             });
         }
+
+        // Handle Query Parameters and Session Import Errors on Page Load
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const successMsg = urlParams.get('success');
+            const errorMsg = urlParams.get('error');
+            const hasWarning = urlParams.get('warning');
+
+            // EJS injects importErrors here
+            const importErrors = <%- importErrors ? JSON.stringify(importErrors) : 'null' %>;
+
+            if (successMsg) {
+                if (hasWarning && importErrors && importErrors.length > 0) {
+                    let errorListHtml = '<div class="text-left max-h-40 overflow-y-auto text-xs space-y-1 bg-slate-50 p-3 rounded-lg border border-yellow-200 mt-2">';
+                    importErrors.forEach(err => {
+                        if (typeof err === 'string') {
+                            errorListHtml += `<p class="text-yellow-700 font-semibold">• ${err}</p>`;
+                        } else {
+                            errorListHtml += `<p class="text-yellow-700 font-semibold">• Baris ${err.row}: ${err.reason} (${err.details || ''})</p>`;
+                        }
+                    });
+                    errorListHtml += '</div>';
+
+                    Swal.fire({
+                        title: 'Impor Selesai dengan Peringatan',
+                        html: `<p class="text-sm text-gray-600 mb-2">${successMsg}</p><p class="text-xs font-bold text-gray-500 mb-1">Daftar baris yang dilewati / bermasalah:</p>${errorListHtml}`,
+                        icon: 'warning',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#006D5B'
+                    }).then(() => {
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Berhasil!',
+                        text: successMsg,
+                        icon: 'success',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#006D5B'
+                    }).then(() => {
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    });
+                }
+            } else if (errorMsg) {
+                Swal.fire({
+                    title: 'Gagal!',
+                    text: errorMsg.replace(/_/g, ' '),
+                    icon: 'error',
+                    confirmButtonText: 'Tutup',
+                    confirmButtonColor: '#ef4444'
+                }).then(() => {
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                });
+            }
+        });
     </script>
 
     
