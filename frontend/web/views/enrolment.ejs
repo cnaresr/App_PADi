@@ -1,13 +1,12 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Enrolment Kelas - App_PADi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<<<<<<< Updated upstream
 <link rel="icon" type="image/png" href="/favicon.png">
-=======
+
 
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
@@ -26,7 +25,7 @@
             }
         }
     </script>
->>>>>>> Stashed changes
+
 </head>
 <body class="bg-slate-100 flex font-sans">
     
@@ -75,31 +74,7 @@
             </div>
         </div>
 
-        <div class="mb-8">
-            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">⚙️ Pengaturan Tingkat Kelas</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <% if (typeof prefixData !== 'undefined') { %>
-                    <% prefixData.forEach(p => { %>
-                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between">
-                            <div>
-                                <h3 class="text-lg font-bold text-primary mb-3">Tingkat <%= p.prefix %></h3>
-                                <p class="text-sm text-gray-500 mb-1">Angkatan: <span class="font-bold text-gray-800"><%= p.angkatanName %></span></p>
-                                <p class="text-sm text-gray-500">Tahun Akademik: <span class="font-bold text-gray-800"><%= p.taName %></span></p>
-                            </div>
-                            <div class="mt-5 flex gap-3">
-                                <button onclick="openAturTingkatModal('<%= p.prefix %>', '<%= p.angkatanId %>')" class="flex-1 bg-yellow-100 text-yellow-600 py-2.5 rounded-xl text-xs font-bold hover:bg-yellow-200 transition">Atur Tingkat</button>
-                                <% if (p.angkatanId) { %>
-                                    <form action="/enrolment/reset-tingkat" method="POST" class="flex-1" onsubmit="return confirmResetTingkat(event, this, '<%= p.prefix %>');">
-                                        <input type="hidden" name="prefix" value="<%= p.prefix %>">
-                                        <button type="submit" class="w-full bg-red-100 text-red-600 py-2.5 rounded-xl text-xs font-bold hover:bg-red-200 transition">Kosongkan</button>
-                                    </form>
-                                <% } %>
-                            </div>
-                        </div>
-                    <% }) %>
-                <% } %>
-            </div>
-        </div>
+
 
         <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
             <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">🏫 Daftar Kelas</h2>
@@ -122,7 +97,6 @@
                 <thead class="bg-slate-50 text-[10px] text-gray-400 uppercase tracking-wider font-bold">
                     <tr>
                         <th class="px-6 py-4">Nama Kelas</th>
-                        <th class="px-6 py-4">Angkatan</th>
                         <th class="px-6 py-4">Tahun Akademik</th>
                         <th class="px-6 py-4">Siswa</th>
                         <th class="px-6 py-4">Wali Kelas</th>
@@ -135,7 +109,6 @@
                             <tr class="hover:bg-slate-50 transition">
                                 <td class="px-6 py-4 font-bold text-primary"><%= row.masterKelas.namaKelas %></td>
                                 <% if (row.enrolment) { %>
-                                    <td class="px-6 py-4 font-bold text-gray-700"><%= row.enrolment.masterAngkatan.nomorAngkatan %></td>
                                     <td class="px-6 py-4 text-gray-600">
                                         <%= row.enrolment.masterTahunAkademik.tahunAjaran %> 
                                         <span class="text-[10px] bg-slate-200 px-2 py-0.5 rounded-md ml-1"><%= row.enrolment.masterTahunAkademik.semester %></span>
@@ -150,7 +123,6 @@
                                     </td>
                                 <% } else { %>
                                     <td class="px-6 py-4 text-gray-400 italic">Belum diset</td>
-                                    <td class="px-6 py-4 text-gray-400 italic">Belum diset</td>
                                     <td class="px-6 py-4"><span class="bg-gray-100 text-gray-500 font-bold px-3 py-1 rounded-full text-xs">0 Siswa</span></td>
                                     <td class="px-6 py-4"><span class="bg-gray-100 text-gray-500 font-bold px-3 py-1 rounded-full text-xs">Belum Diatur</span></td>
                                 <% } %>
@@ -158,7 +130,11 @@
                                     <% if (row.enrolment) { %>
                                         <a href="/enrolment/<%= row.enrolment.id %>" class="bg-primary/20 text-primary px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-primary/30 transition">Detail Siswa & Guru</a>
                                     <% } else { %>
-                                        <span class="text-xs text-gray-400 italic">Atur tingkat dulu</span>
+                                        <form action="/enrolment/activate-kelas" method="POST" class="inline">
+                                            <input type="hidden" name="kelasId" value="<%= row.masterKelas.id %>">
+                                            <input type="hidden" name="sekolahId" value="1">
+                                            <button type="submit" class="bg-yellow-100 text-yellow-600 px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-yellow-200 transition">Buka Kelas</button>
+                                        </form>
                                     <% } %>
                                 </td>
                             </tr>
@@ -171,31 +147,6 @@
         </div>
     </main>
 
-    <div id="modalAturTingkat" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex justify-center items-center">
-        <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative">
-            <button onclick="toggleModal('modalAturTingkat')" class="absolute top-6 right-6 text-gray-400 hover:text-black font-bold">✖</button>
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">Atur Tingkat <span id="aturPrefixName"></span></h2>
-            <p class="text-sm text-gray-500 mb-6">Pengaturan ini akan diterapkan ke semua kelas di tingkat ini secara otomatis.</p>
-            <form action="/enrolment/edit-tingkat" method="POST" class="space-y-4">
-                <input type="hidden" name="prefix" id="aturPrefix">
-                <div>
-                    <label class="text-xs font-bold text-gray-500 uppercase">Pilih Master Angkatan</label>
-                    <select name="angkatanId" id="aturAngkatan" required class="w-full mt-1 bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-primary-light">
-                        <option value="">-- Pilih Angkatan --</option>
-                        <% masterData.angkatan.forEach(a => { %>
-                            <option value="<%= a.id %>"><%= a.nomorAngkatan %></option>
-                        <% }) %>
-                    </select>
-                    <div class="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-xl flex items-start gap-2">
-                        <span class="text-primary-light mt-0.5">ℹ️</span>
-                        <p class="text-xs text-primary-dark leading-relaxed">Kelas ini akan otomatis dipasangkan dengan <b>Tahun Akademik</b> yang saat ini sedang aktif di pengaturan Master Data.</p>
-                    </div>
-                </div>
-                <input type="hidden" name="sekolahId" value="1">
-                <button type="submit" class="w-full bg-primary text-white font-bold rounded-xl py-3.5 mt-4 hover:bg-primary-dark">Terapkan</button>
-            </form>
-        </div>
-    </div>
 
     <script>
         // Tampilkan error dari URL (Validasi Unik)
@@ -216,27 +167,7 @@
             const modal = document.getElementById(modalID);
             modal.classList.toggle('hidden');
         }
-
-        function openAturTingkatModal(prefix, angkatanId) {
-            document.getElementById('aturPrefixName').innerText = prefix;
-            document.getElementById('aturPrefix').value = prefix;
-            document.getElementById('aturAngkatan').value = angkatanId || '';
-            toggleModal('modalAturTingkat');
-        }
-
-        function confirmResetTingkat(e, form, prefix) {
-            e.preventDefault();
-            Swal.fire({
-                title: `Kosongkan Tingkat ${prefix}?`, 
-                text: "Semua kelas di tingkat ini akan dilepas angkatan, TA, beserta seluruh siswa dan gurunya. Yakin?", 
-                icon: 'warning',
-                showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#64748b', confirmButtonText: 'Ya, Kosongkan!'
-            }).then((result) => {
-                if (result.isConfirmed) form.submit();
-            });
-        }
     </script>
 
 </body>
 </html>
-

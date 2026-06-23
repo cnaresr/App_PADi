@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="en">
 
@@ -14,10 +14,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<<<<<<< Updated upstream
 <link rel="icon" type="image/png" href="/favicon.png">
-=======
-
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
@@ -35,7 +32,6 @@
             }
         }
     </script>
->>>>>>> Stashed changes
 </head>
 
 <body class="bg-slate-50 font-sans overflow-hidden">
@@ -163,6 +159,19 @@
 
 
     <script>
+        // Tampilkan error dari URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const errorMsg = urlParams.get('error');
+        if (errorMsg) {
+            Swal.fire({
+                title: 'Gagal Masuk',
+                text: decodeURIComponent(errorMsg).replace(/_/g, ' '),
+                icon: 'error',
+                confirmButtonColor: '#000000',
+                confirmButtonText: 'Tutup'
+            });
+            window.history.replaceState(null, null, window.location.pathname);
+        }
 
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
 

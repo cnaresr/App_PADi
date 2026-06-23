@@ -1,13 +1,12 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Daftar Siswa - App_PADi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<<<<<<< Updated upstream
 <link rel="icon" type="image/png" href="/favicon.png">
-=======
+
 
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
@@ -26,7 +25,7 @@
             }
         }
     </script>
->>>>>>> Stashed changes
+
 </head>
 <body class="bg-slate-100 flex font-sans">
     
@@ -109,6 +108,7 @@
                     <tr>
                         <th class="px-8 py-4">Siswa</th>
                         <th class="px-6 py-4">NIS</th>
+                        <th class="px-6 py-4">Angkatan</th>
                         <th class="px-6 py-4">Kelas</th>
                         <th class="px-6 py-4">Status</th>
                         <th class="px-6 py-4 text-center">Aksi</th>
@@ -128,10 +128,11 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-gray-500 font-mono text-xs"><%= user.siswa ? user.siswa.nis : '-' %></td>
+                                <td class="px-6 py-4 font-bold text-gray-700"><%= user.siswa && user.siswa.masterAngkatan ? user.siswa.masterAngkatan.nomorAngkatan : '-' %></td>
                                 <td class="px-6 py-4"><span class="bg-slate-100 border text-gray-600 px-3 py-1.5 rounded-lg text-[10px] font-bold">Menunggu...</span></td>
                                 <td class="px-6 py-4"><span class="text-green-500 font-bold text-xs flex items-center gap-1">🔴 Aktif</span></td>
                                 <td class="px-6 py-4 flex justify-center gap-2">
-                                    <button onclick="bukaEditSiswa('<%= user.id %>', '<%= user.siswa ? user.siswa.namaLengkap : '' %>', '<%= user.siswa ? user.siswa.nis : '' %>', '<%= user.username %>', '<%= user.email %>')" class="bg-primary/20 text-primary px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-primary/30 transition">Edit</button>
+<button onclick="bukaEditSiswa('<%= user.id %>', '<%= user.siswa ? user.siswa.namaLengkap : '' %>', '<%= user.siswa ? user.siswa.nis : '' %>', '<%= user.username %>', '<%= user.email %>', '<%= user.siswa ? user.siswa.angkatanId : '' %>')" class="bg-primary/20 text-primary px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-primary/30 transition">Edit</button>
                                     
                                     <form action="/daftar-siswa/delete/<%= user.id %>" method="POST" class="inline" onsubmit="return confirmDelete(event, this);">
                                         <button type="submit" class="bg-red-100 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-200 transition">Hapus</button>
@@ -157,8 +158,16 @@
                     <input type="text" name="nis" placeholder="NIS" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-primary-light">
                     <input type="text" name="username" placeholder="Username" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-primary-light">
                 </div>
-                <input type="email" name="email" placeholder="Email" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-primary-light">
+<input type="email" name="email" placeholder="Email" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-primary-light">
                 <input type="password" name="password" placeholder="Password" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-primary-light">
+                <select name="angkatanId" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-primary-light">
+                    <option value="">-- Pilih Angkatan --</option>
+                    <% if (typeof masterAngkatan !== 'undefined') { %>
+                        <% masterAngkatan.forEach(a => { %>
+                            <option value="<%= a.id %>"><%= a.nomorAngkatan %></option>
+                        <% }) %>
+                    <% } %>
+                </select>
                 <input type="hidden" name="sekolahId" value="1">
                 <button type="submit" class="w-full bg-primary text-white font-bold rounded-xl py-3.5 mt-4 hover:bg-primary-dark">Simpan Data</button>
             </form>
@@ -175,8 +184,16 @@
                     <input type="text" id="editNis" name="nis" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-primary-light">
                     <input type="text" id="editUsername" name="username" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-primary-light">
                 </div>
-                <input type="email" id="editEmail" name="email" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-primary-light">
+<input type="email" id="editEmail" name="email" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-primary-light">
                 <input type="password" name="password" placeholder="Kosongkan jika tidak ingin ganti sandi" class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-primary-light">
+                <select name="angkatanId" id="editAngkatanId" required class="w-full bg-slate-50 border rounded-xl px-4 py-3 text-sm outline-none focus:border-primary-light">
+                    <option value="">-- Pilih Angkatan --</option>
+                    <% if (typeof masterAngkatan !== 'undefined') { %>
+                        <% masterAngkatan.forEach(a => { %>
+                            <option value="<%= a.id %>"><%= a.nomorAngkatan %></option>
+                        <% }) %>
+                    <% } %>
+                </select>
                 <button type="submit" class="w-full bg-primary text-white font-bold rounded-xl py-3.5 mt-4 hover:bg-primary-dark">Update Data</button>
             </form>
         </div>
@@ -188,12 +205,13 @@
             modal.classList.toggle('hidden');
         }
 
-        function bukaEditSiswa(id, nama, nis, username, email) {
+        function bukaEditSiswa(id, nama, nis, username, email, angkatanId) {
             document.getElementById('formEditSiswa').action = '/daftar-siswa/edit/' + id;
             document.getElementById('editNama').value = nama;
             document.getElementById('editNis').value = nis;
             document.getElementById('editUsername').value = username;
             document.getElementById('editEmail').value = email;
+            document.getElementById('editAngkatanId').value = angkatanId || '';
             toggleModal('modalEditSiswa');
         }
 

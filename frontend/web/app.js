@@ -12,6 +12,7 @@ const upload = multer({ dest: os.tmpdir() });
 app.set('view engine', 'ejs');
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 // --- SETUP SESSION ---
 app.use(session({
@@ -90,11 +91,18 @@ app.get('/dashboard', cekAdmin, async (req, res) => {
 app.get('/daftar-siswa', cekAdmin, async (req, res) => {
     try {
         const search = req.query.search || '';
-        const response = await axios.get(`http://127.0.0.1:3000/api/admin/siswa?search=${search}`);
-        res.render('daftar_siswa', { siswas: response.data.data, search: search });
+        const [siswaRes, angkatanRes] = await Promise.all([
+            axios.get(`http://127.0.0.1:3000/api/admin/siswa?search=${search}`),
+            axios.get('http://127.0.0.1:3000/api/admin/master/angkatan')
+        ]);
+        res.render('daftar_siswa', { 
+            siswas: siswaRes.data.data, 
+            masterAngkatan: angkatanRes.data.data,
+            search: search 
+        });
     } catch (error) {
         console.error("Gagal mengambil daftar siswa:", error.message);
-        res.render('daftar_siswa', { siswas: [], search: '' });
+        res.render('daftar_siswa', { siswas: [], masterAngkatan: [], search: '' });
     }
 });
 
@@ -132,11 +140,18 @@ app.post('/daftar-siswa/delete/:id', cekAdmin, async (req, res) => {
 app.get('/daftar-guru', cekAdmin, async (req, res) => {
     try {
         const search = req.query.search || '';
-        const response = await axios.get(`http://127.0.0.1:3000/api/admin/guru?search=${search}`);
-        res.render('daftar_guru', { gurus: response.data.data, search: search });
+        const [guruResponse, enrolmentResponse] = await Promise.all([
+            axios.get(`http://127.0.0.1:3000/api/admin/guru?search=${search}`),
+            axios.get('http://127.0.0.1:3000/api/admin/enrolment')
+        ]);
+        res.render('daftar_guru', { 
+            gurus: guruResponse.data.data, 
+            enrolments: enrolmentResponse.data.data,
+            search: search 
+        });
     } catch (error) {
         console.error("Gagal mengambil daftar guru:", error.message);
-        res.render('daftar_guru', { gurus: [], search: '' });
+        res.render('daftar_guru', { gurus: [], enrolments: [], search: '' });
     }
 });
 
@@ -167,6 +182,16 @@ app.post('/daftar-guru/delete/:id', cekAdmin, async (req, res) => {
     } catch (error) {
         console.error("Gagal hapus guru:", error.message);
         res.redirect('/daftar-guru?error=Gagal_hapus');
+    }
+});
+
+app.post('/daftar-guru/:id/kelas', cekAdmin, async (req, res) => {
+    try {
+        await axios.post(`http://127.0.0.1:3000/api/admin/guru/${req.params.id}/kelas`, req.body);
+        res.redirect('/daftar-guru');
+    } catch (error) {
+        console.error("Gagal atur kelas guru:", error.message);
+        res.redirect('/daftar-guru?error=Gagal_atur_kelas');
     }
 });
 
@@ -333,45 +358,24 @@ app.get('/enrolment', cekAdmin, async (req, res) => {
             if (activeTa) selectedTaId = activeTa.id.toString();
         }
 
-        // Hitung prefixData (Tingkat Kelas)
-        const prefixes = [...new Set(masterKelasList.map(k => k.namaKelas.split(' ')[0].toUpperCase()))].sort();
-        const prefixData = prefixes.map(pref => {
-            const enr = enrolmentData.find(row => row.masterKelas.namaKelas.startsWith(pref + ' ') && row.enrolment);
-            return {
-                prefix: pref,
-                angkatanId: enr ? enr.enrolment.angkatanId : '',
-                tahunAkademikId: enr ? enr.enrolment.tahunAkademikId : '',
-                angkatanName: enr ? enr.enrolment.masterAngkatan.nomorAngkatan : '-',
-                taName: enr ? `${enr.enrolment.masterTahunAkademik.tahunAjaran} (${enr.enrolment.masterTahunAkademik.semester})` : '-'
-            };
-        });
-
         res.render('enrolment', { 
             enrolmentData: enrolmentData,
             masterData: masterData,
-            prefixData: prefixData,
             selectedTaId: selectedTaId
         });
     } catch (error) {
         console.error("Gagal mengambil data enrolment:", error.message);
-        res.render('enrolment', { enrolmentData: [], masterData: { kelas: [], angkatan: [], ta: [] }, prefixData: [], selectedTaId: '' });
+        res.render('enrolment', { enrolmentData: [], masterData: { kelas: [], angkatan: [], ta: [] }, selectedTaId: '' });
     }
 });
 
-app.post('/enrolment/edit-tingkat', cekAdmin, async (req, res) => {
+app.post('/enrolment/activate-kelas', cekAdmin, async (req, res) => {
     try {
-        await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/edit-tingkat`, req.body);
+        await axios.post('http://127.0.0.1:3000/api/admin/enrolment/activate-kelas', req.body);
         res.redirect('/enrolment');
     } catch (error) { 
-        res.redirect('/enrolment?error=' + encodeURIComponent(error.response?.data?.message || 'Gagal_mengatur_tingkat')); 
+        res.redirect('/enrolment?error=' + encodeURIComponent(error.response?.data?.message || 'Gagal_mengaktifkan_kelas')); 
     }
-});
-
-app.post('/enrolment/reset-tingkat', cekAdmin, async (req, res) => {
-    try {
-        await axios.post(`http://127.0.0.1:3000/api/admin/enrolment/reset-tingkat`, req.body);
-        res.redirect('/enrolment');
-    } catch (error) { res.redirect('/enrolment?error=Gagal_mereset_tingkat'); }
 });
 
 app.post('/enrolment/edit-keterangan/:kelasId', cekAdmin, async (req, res) => {
