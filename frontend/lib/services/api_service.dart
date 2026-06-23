@@ -41,7 +41,7 @@ class ApiService {
   static String get baseUrl {
     String host;
     if (!kIsWeb && Platform.isAndroid) {
-      host = 'http://10.0.2.2:3000';
+      host = 'http://10.91.133.238:3000';
     } else {
       host = 'http://localhost:3000';
     }
