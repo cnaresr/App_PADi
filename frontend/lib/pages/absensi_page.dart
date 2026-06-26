@@ -58,6 +58,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
 
   late List<Map<String, double>> _schoolPolygon;
   bool _hasCheckedIn = false;
+  bool _isIzinHariIni = false;
 
   @override
   void initState() {
@@ -91,9 +92,16 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
       final bool sudahMasuk = riwayat.any((absen) =>
           absen['tanggal'] == formatHariIni &&
           absen['jam_masuk'] != null &&
-          absen['jam_pulang'] == null);
+          absen['jam_pulang'] == null && 
+          absen['status'] != 'Izin' && absen['status'] != 'Sakit');
+          
+      final bool izinSakitHariIni = riwayat.any((absen) =>
+          absen['tanggal'] == formatHariIni &&
+          (absen['status'] == 'Izin' || absen['status'] == 'Sakit'));
+
       setState(() {
         _hasCheckedIn = sudahMasuk;
+        _isIzinHariIni = izinSakitHariIni;
       });
     }
   }
@@ -412,12 +420,21 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     final String namaSekolah =
         infoParts.length > 1 ? infoParts[1] : "Area Presensi Sekolah";
 
-    // Status warna & label berdasarkan state
-    final Color btnColor = _isWithinRadius
-        ? (_hasCheckedIn ? const Color(0xFF1C2B2A) : const Color(0xFF006D5B))
-        : Colors.grey.shade400;
-    final String btnLabel = _hasCheckedIn ? "Absen Pulang" : "Absen Masuk";
-    final IconData btnIcon = _hasCheckedIn ? Icons.logout_rounded : Icons.login_rounded;
+    // UI Colors and states
+    final bool isButtonDisabled = (!_isWithinRadius && !_hasCheckedIn) || _isIzinHariIni;
+    final Color btnColor = isButtonDisabled
+        ? Colors.grey.shade400
+        : (_hasCheckedIn ? const Color(0xFF1C2B2A) : const Color(0xFF006D5B));
+    final Color btnTextColor = isButtonDisabled ? const Color(0xFFA0AEC0) : Colors.white;
+    
+    String btnLabel;
+    if (_isIzinHariIni) {
+        btnLabel = "Sedang Izin/Sakit";
+    } else {
+        btnLabel = _hasCheckedIn ? "Absen Pulang" : "Absen Masuk";
+    }
+    
+    final IconData btnIcon = _isIzinHariIni ? Icons.check_circle_outline : (_hasCheckedIn ? Icons.logout_rounded : Icons.login_rounded);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -731,7 +748,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                       elevation: _isWithinRadius ? 6 : 0,
                       shadowColor: const Color(0xFF006D5B).withOpacity(0.3),
                     ),
-                    onPressed: (_isWithinRadius && !_isProcessing)
+                    onPressed: (_isWithinRadius && !_isProcessing && !_isIzinHariIni)
                         ? (_hasCheckedIn
                             ? _onAbsenPulangButtonPressed
                             : _onAbsenMasukButtonPressed)
@@ -746,12 +763,12 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                         : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(btnIcon, color: Colors.white, size: 22),
+                              Icon(btnIcon, color: btnTextColor, size: 22),
                               const SizedBox(width: 10),
                               Text(
                                 btnLabel,
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: btnTextColor,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 17,
                                 ),
