@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -13,6 +14,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 class FirebaseMessagingService {
+  static final StreamController<RemoteMessage> _messageStreamController = StreamController.broadcast();
+  static Stream<RemoteMessage> get onMessageStream => _messageStreamController.stream;
+
   static final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   static final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -70,6 +74,7 @@ class FirebaseMessagingService {
         print('Message also contained a notification: ${message.notification}');
         _showLocalNotification(message, channel);
       }
+      _messageStreamController.add(message);
     });
 
     String? token = await _firebaseMessaging.getToken();

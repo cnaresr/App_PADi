@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:platform_absensi_digital/services/api_service.dart';
 import 'package:platform_absensi_digital/providers/user_provider.dart';
+import 'package:platform_absensi_digital/services/firebase_messaging_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:async';
 import 'package:platform_absensi_digital/widgets/custom_popup.dart';
 
 class IzinGuruPage extends StatefulWidget {
@@ -15,11 +18,23 @@ class IzinGuruPage extends StatefulWidget {
 class _IzinGuruPageState extends State<IzinGuruPage> {
   List<dynamic> pendingList = [];
   bool isLoading = true;
+  StreamSubscription<RemoteMessage>? _notifSubscription;
 
   @override
   void initState() {
     super.initState();
     _loadPendingIzin();
+    _notifSubscription = FirebaseMessagingService.onMessageStream.listen((message) {
+      if (mounted) {
+        _loadPendingIzin();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _notifSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadPendingIzin() async {
