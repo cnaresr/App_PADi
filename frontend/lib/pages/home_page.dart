@@ -303,7 +303,7 @@ class _HomePageState extends State<HomePage> {
                                         ),
                                         const SizedBox(height: 10),
                                         const Text(
-                                          "Absen\nSekarang",
+                                          "Presensi\nSekarang",
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontSize: 26,

@@ -66,7 +66,7 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
   Widget _buildFloatingNavBar() {
     final items = [
       _NavItem(icon: Icons.grid_view_rounded, activeIcon: Icons.grid_view_rounded, label: "Beranda"),
-      _NavItem(icon: Icons.calendar_month_outlined, activeIcon: Icons.calendar_month_rounded, label: "Absensi"),
+      _NavItem(icon: Icons.calendar_month_outlined, activeIcon: Icons.calendar_month_rounded, label: "Presensi"),
       _NavItem(icon: Icons.receipt_long_outlined, activeIcon: Icons.receipt_long_rounded, label: "Riwayat"),
       _NavItem(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: "Profil"),
     ];

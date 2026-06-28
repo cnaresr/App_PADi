@@ -445,7 +445,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     if (_isIzinHariIni) {
         btnLabel = "Sedang Izin/Sakit";
     } else {
-        btnLabel = _hasCheckedIn ? "Absen Pulang" : "Absen Masuk";
+        btnLabel = _hasCheckedIn ? "Presensi Pulang" : "Presensi Masuk";
     }
     
     final IconData btnIcon = _isIzinHariIni ? Icons.check_circle_outline : (_hasCheckedIn ? Icons.logout_rounded : Icons.login_rounded);
