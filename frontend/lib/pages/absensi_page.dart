@@ -297,15 +297,6 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     img.Image? rawImage = img.decodeImage(await imageFile.readAsBytes());
     if (rawImage == null) return null;
     img.Image originalImage = img.bakeOrientation(rawImage);
-    // [PERBAIKAN FATAL ORIENTASI ML KIT VS PACKAGE:IMAGE]
-    // Kamera HP menyimpan foto selfie secara rotasi Landscape (width > height) di tingkat sensor.
-    // Google ML Kit otomatis merotasi ke Portrait (height > width) saat mendeteksi boundingBox.
-    // Jika originalImage dari package:image masih berstatus width > height, kita rotasi sesuai sensorOrientation.
-    // Front camera Android biasanya 270 derajat. Jika di-hardcode 90, foto akan terbalik dan wajah tidak akan pernah cocok!
-    if (originalImage.width > originalImage.height) {
-      final int sensorOrientation = _controller?.description.sensorOrientation ?? 90;
-      originalImage = img.copyRotate(originalImage, angle: sensorOrientation);
-    }
 
     int origX = boundingBox.left.toInt();
     int origY = boundingBox.top.toInt();
@@ -331,6 +322,23 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
       width: finalDimension,
       height: finalDimension,
     );
+
+    // [PERBAIKAN ORIENTASI MANDIRI]
+    // Jika image belum berorientasi portrait (misal karena EXIF data absen pada kamera beberapa tipe Android),
+    // maka crop dilakukan langsung pada citra landscape (agar koordinat bounding box cocok), 
+    // barulah setelah itu crop face yang berbentuk bujur sangkar dirotasi sesuai sensorOrientation.
+    if (originalImage.width > originalImage.height) {
+      final int sensorOrientation = _controller?.description.sensorOrientation ?? 90;
+      croppedFace = img.copyRotate(croppedFace, angle: sensorOrientation);
+    }
+
+    // [PERBAIKAN CERMIN (FLIP HORIZONTAL) UNTUK KAMERA DEPAN]
+    // Kamera depan biasanya menyimpan gambar secara tercermin (mirrored).
+    // Kita lakukan flip horizontal agar wajah menghadap ke posisi normal (non-mirrored) seperti data di database.
+    if (_controller?.description.lensDirection == CameraLensDirection.front) {
+      croppedFace = img.copyFlip(croppedFace, direction: img.FlipDirection.horizontal);
+    }
+
     img.Image resizedImage =
         img.copyResize(croppedFace, width: 112, height: 112);
     var input = List.generate(112, (y) {
