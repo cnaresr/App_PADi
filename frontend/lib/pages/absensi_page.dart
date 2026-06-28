@@ -297,6 +297,14 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     img.Image? rawImage = img.decodeImage(await imageFile.readAsBytes());
     if (rawImage == null) return null;
     img.Image originalImage = img.bakeOrientation(rawImage);
+    // [PERBAIKAN FATAL ORIENTASI ML KIT VS PACKAGE:IMAGE]
+    // Kamera HP menyimpan foto selfie secara rotasi Landscape (width > height) di tingkat sensor.
+    // Google ML Kit otomatis merotasi ke Portrait (height > width) saat mendeteksi boundingBox.
+    // Jika originalImage dari package:image masih berstatus width > height, kita wajib merotasinya 90 derajat agar koordinat crop tidak meleset ke latar belakang!
+    if (originalImage.width > originalImage.height) {
+      originalImage = img.copyRotate(originalImage, angle: 90);
+    }
+
     int origX = boundingBox.left.toInt();
     int origY = boundingBox.top.toInt();
     int origW = boundingBox.width.toInt();
