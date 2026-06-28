@@ -39,6 +39,17 @@ class ApiService {
   }
 
   static String get baseUrl {
+    // TODO: GANTI string di bawah ini dengan URL ngrok Anda.
+    // Contoh: 'https://abcd-12-34-56.ngrok-free.app'
+    // Pastikan tidak ada slash '/' di akhir URL.
+    String ngrokUrl = 'https://float-passing-washroom.ngrok-free.dev';
+
+    // Jika ngrokUrl tidak kosong, gunakan URL tersebut
+    if (ngrokUrl.isNotEmpty) {
+      return '$ngrokUrl/api';
+    }
+
+    // Konfigurasi bawaan (localhost)
     String host;
     if (!kIsWeb && Platform.isAndroid) {
       host = 'http://10.0.2.2:3000';
