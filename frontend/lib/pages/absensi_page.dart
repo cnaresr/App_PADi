@@ -333,6 +333,21 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
       if (faceEmbedding == null) {
         throw Exception("Wajah tidak terdeteksi pada gambar.");
       }
+
+      // [PERBAIKAN] Kompresi gambar secara background agar tidak terjadi timeout di Ngrok (berkurang dari 15MB ke ~200KB)
+      final rawBytes = await File(imageFile.path).readAsBytes();
+      final decodedImage = img.decodeImage(rawBytes);
+      if (decodedImage != null) {
+        img.Image resized = decodedImage;
+        // Resize jika resolusi terlalu besar (lebih dari 1080p)
+        if (decodedImage.width > 1080 || decodedImage.height > 1080) {
+           final bool isLandscape = decodedImage.width > decodedImage.height;
+           resized = img.copyResize(decodedImage, width: isLandscape ? 1080 : null, height: isLandscape ? null : 1080);
+        }
+        final compressedJpg = img.encodeJpg(resized, quality: 60);
+        await File(imageFile.path).writeAsBytes(compressedJpg);
+      }
+
       final result = await ApiService.kirimAbsensiMasuk(
         userId: widget.siswaId,
         faceEmbedding: faceEmbedding,
@@ -386,6 +401,21 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
       if (faceEmbedding == null) {
         throw Exception("Wajah tidak terdeteksi pada gambar.");
       }
+
+      // [PERBAIKAN] Kompresi gambar secara background agar tidak terjadi timeout di Ngrok (berkurang dari 15MB ke ~200KB)
+      final rawBytes = await File(imageFile.path).readAsBytes();
+      final decodedImage = img.decodeImage(rawBytes);
+      if (decodedImage != null) {
+        img.Image resized = decodedImage;
+        // Resize jika resolusi terlalu besar (lebih dari 1080p)
+        if (decodedImage.width > 1080 || decodedImage.height > 1080) {
+           final bool isLandscape = decodedImage.width > decodedImage.height;
+           resized = img.copyResize(decodedImage, width: isLandscape ? 1080 : null, height: isLandscape ? null : 1080);
+        }
+        final compressedJpg = img.encodeJpg(resized, quality: 60);
+        await File(imageFile.path).writeAsBytes(compressedJpg);
+      }
+
       final result = await ApiService.kirimAbsensiPulang(
         userId: widget.siswaId,
         faceEmbedding: faceEmbedding,

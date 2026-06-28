@@ -16,9 +16,14 @@ class SessionExpiredException implements Exception {
 class ApiService {
   static final StorageService _storageService = StorageService();
 
-  static Future<Map<String, String>> _authHeaders() async {
+  static Future<Map<String, String>> _authHeaders({bool isJson = false}) async {
     final token = await _storageService.getToken();
-    final headers = <String, String>{'Content-Type': 'application/json'};
+    final headers = <String, String>{
+      'ngrok-skip-browser-warning': 'true',
+    };
+    if (isJson) {
+      headers['Content-Type'] = 'application/json';
+    }
     if (token != null) {
       headers['Authorization'] = 'Bearer $token';
     }
@@ -77,7 +82,10 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
         body: json.encode({'username': identifier, 'password': password}),
       );
 
@@ -137,6 +145,9 @@ class ApiService {
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
+      
+      debugPrint("API Absensi Masuk Status: ${response.statusCode}");
+      debugPrint("API Absensi Masuk Body: ${response.body}");
 
       // [PERBAIKAN] Cek status code SEBELUM mencoba decode JSON
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -193,6 +204,9 @@ class ApiService {
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
+      
+      debugPrint("API Absensi Pulang Status: ${response.statusCode}");
+      debugPrint("API Absensi Pulang Body: ${response.body}");
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final responseBody = jsonDecode(response.body);
@@ -331,7 +345,7 @@ class ApiService {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/perizinan/$izinId/status'),
-        headers: await _authHeaders(),
+        headers: await _authHeaders(isJson: true),
         body: json.encode({'statusUpdate': status, 'guruUserId': guruUserId}),
       );
       await _handleUnauthorizedResponse(response);
@@ -346,7 +360,10 @@ class ApiService {
   // 1. Mengambil semua notifikasi siswa
   static Future<List<dynamic>> getNotifications(int userId) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/notifikasi/$userId'));
+      final response = await http.get(
+        Uri.parse('$baseUrl/notifikasi/$userId'),
+        headers: await _authHeaders(),
+      );
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
         if (body['status'] == 'success') {
@@ -365,6 +382,7 @@ class ApiService {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/notifikasi/$userId/unread'),
+        headers: await _authHeaders(),
       );
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -384,7 +402,7 @@ class ApiService {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/notifikasi/$id/read'),
-        headers: {'Content-Type': 'application/json'},
+        headers: await _authHeaders(isJson: true),
       );
       return json.decode(response.body);
     } catch (e) {
@@ -400,7 +418,7 @@ class ApiService {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/notifikasi/$userId/read-all'),
-        headers: {'Content-Type': 'application/json'},
+        headers: await _authHeaders(isJson: true),
       );
       return json.decode(response.body);
     } catch (e) {
