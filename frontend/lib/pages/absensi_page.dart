@@ -87,24 +87,44 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
 
   void _evaluasiStatusPresensiAwal(UserProvider userProvider) {
     final riwayat = userProvider.riwayatAbsensi;
+    final perizinan = userProvider.riwayatPerizinan;
+    
+    final String formatHariIni = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    
+    bool sudahMasuk = false;
+    bool izinSakitHariIni = false;
+
     if (riwayat.isNotEmpty) {
-      final String formatHariIni =
-          DateFormat('yyyy-MM-dd').format(DateTime.now());
-      final bool sudahMasuk = riwayat.any((absen) =>
+      sudahMasuk = riwayat.any((absen) =>
           absen['tanggal'] == formatHariIni &&
           absen['jam_masuk'] != null &&
           absen['jam_pulang'] == null && 
           absen['status'] != 'Izin' && absen['status'] != 'Sakit');
           
-      final bool izinSakitHariIni = riwayat.any((absen) =>
+      izinSakitHariIni = riwayat.any((absen) =>
           absen['tanggal'] == formatHariIni &&
           (absen['status'] == 'Izin' || absen['status'] == 'Sakit'));
-
-      setState(() {
-        _hasCheckedIn = sudahMasuk;
-        _isIzinHariIni = izinSakitHariIni;
-      });
     }
+
+    bool izinDiSetujuiHariIni = perizinan.any((izin) {
+      if (izin['status'] != 'Disetujui') return false;
+      try {
+        DateTime mulai = DateTime.parse(izin['tanggalMulai']).toLocal();
+        DateTime selesai = DateTime.parse(izin['tanggalSelesai']).toLocal();
+        DateTime hariIni = DateTime.now();
+        DateTime mulaiDate = DateTime(mulai.year, mulai.month, mulai.day);
+        DateTime selesaiDate = DateTime(selesai.year, selesai.month, selesai.day);
+        DateTime hariIniDate = DateTime(hariIni.year, hariIni.month, hariIni.day);
+        return !hariIniDate.isBefore(mulaiDate) && !hariIniDate.isAfter(selesaiDate);
+      } catch (e) {
+        return false;
+      }
+    });
+
+    setState(() {
+      _hasCheckedIn = sudahMasuk;
+      _isIzinHariIni = izinSakitHariIni || izinDiSetujuiHariIni;
+    });
   }
 
   Future<void> _initializeCamera() async {
@@ -558,6 +578,55 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 110),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
+                if (_isIzinHariIni)
+                  Container(
+                    margin: const EdgeInsets.only(top: 20),
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFE65100).withOpacity(0.1),
+                          blurRadius: 24,
+                          offset: const Offset(0, 10),
+                        )
+                      ],
+                      border: Border.all(color: const Color(0xFFFFCC80), width: 1.5),
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFFFF3E0),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.beach_access_rounded, size: 64, color: Color(0xFFE65100)),
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          "Anda Sedang Izin",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFE65100),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          "Pengajuan izin Anda telah disetujui. Silakan beristirahat dan tidak perlu melakukan presensi absensi hari ini.",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.black54,
+                            fontSize: 14,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else ...[
                 // KAMERA
                 Container(
                   height: 320,
@@ -791,6 +860,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                       ],
                     ),
                   ),
+              ]
               ]),
             ),
           ),
