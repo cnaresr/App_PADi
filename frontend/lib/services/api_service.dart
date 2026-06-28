@@ -32,7 +32,9 @@ class ApiService {
 
   static Future<Map<String, String>> _authHeadersMultipart() async {
     final token = await _storageService.getToken();
-    final headers = <String, String>{}; // Tanpa 'Content-Type' default
+    final headers = <String, String>{
+      'ngrok-skip-browser-warning': 'true',
+    }; // Tanpa 'Content-Type' default
     if (token != null) {
       headers['Authorization'] = 'Bearer $token';
     }

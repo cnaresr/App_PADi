@@ -297,12 +297,30 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     img.Image? rawImage = img.decodeImage(await imageFile.readAsBytes());
     if (rawImage == null) return null;
     img.Image originalImage = img.bakeOrientation(rawImage);
-    int x = boundingBox.left.toInt().clamp(0, originalImage.width);
-    int y = boundingBox.top.toInt().clamp(0, originalImage.height);
-    int w = boundingBox.width.toInt().clamp(0, originalImage.width - x);
-    int h = boundingBox.height.toInt().clamp(0, originalImage.height - y);
-    img.Image croppedFace =
-        img.copyCrop(originalImage, x: x, y: y, width: w, height: h);
+    int origX = boundingBox.left.toInt();
+    int origY = boundingBox.top.toInt();
+    int origW = boundingBox.width.toInt();
+    int origH = boundingBox.height.toInt();
+
+    // Terapkan Square Crop agar wajah tidak gepeng/terdistorsi saat di-resize ke 112x112
+    int maxDimension = origW > origH ? origW : origH;
+    int centerX = origX + (origW ~/ 2);
+    int centerY = origY + (origH ~/ 2);
+
+    int x = (centerX - (maxDimension ~/ 2)).clamp(0, originalImage.width);
+    int y = (centerY - (maxDimension ~/ 2)).clamp(0, originalImage.height);
+    int w = maxDimension.clamp(0, originalImage.width - x);
+    int h = maxDimension.clamp(0, originalImage.height - y);
+    // Jika di batas gambar tepi w dan h bisa sedikit berbeda, ambil nilai minimum agar tetap bujur sangkar sempurna
+    int finalDimension = w < h ? w : h;
+
+    img.Image croppedFace = img.copyCrop(
+      originalImage,
+      x: x,
+      y: y,
+      width: finalDimension,
+      height: finalDimension,
+    );
     img.Image resizedImage =
         img.copyResize(croppedFace, width: 112, height: 112);
     var input = List.generate(112, (y) {
