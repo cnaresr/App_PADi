@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
-import 'dart:io';
 import 'package:platform_absensi_digital/services/storage_service.dart';
+import 'package:platform_absensi_digital/services/api_service.dart';
 
 // Setup background handler (harus di top level)
 @pragma('vm:entry-point')
@@ -129,11 +129,11 @@ class FirebaseMessagingService {
       String? fcmToken = await _firebaseMessaging.getToken();
       if (fcmToken == null) return;
 
-      // Sesuaikan URL Backend Anda (jangan lupa ganti localhost dengan IP jika pakai physical device)
-      final String baseUrl = Platform.isAndroid ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+      // [PERBAIKAN] Gunakan ApiService.baseUrl (Ngrok URL) alih-alih hardcoded localhost/10.0.2.2
+      final String baseUrl = ApiService.baseUrl;
 
       final response = await http.put(
-        Uri.parse('$baseUrl/api/auth/fcm-token'),
+        Uri.parse('$baseUrl/auth/fcm-token'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $jwtToken',
