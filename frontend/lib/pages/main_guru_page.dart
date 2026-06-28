@@ -8,6 +8,9 @@ import 'package:platform_absensi_digital/pages/profil_guru_page.dart';
 import 'package:platform_absensi_digital/providers/user_provider.dart';
 import 'package:platform_absensi_digital/services/api_service.dart';
 import 'package:platform_absensi_digital/services/notification_service.dart';
+import 'package:platform_absensi_digital/services/firebase_messaging_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:async';
 
 class MainGuruPage extends StatefulWidget {
   const MainGuruPage({super.key});
@@ -23,6 +26,7 @@ class _MainGuruPageState extends State<MainGuruPage> with TickerProviderStateMix
     IzinGuruPage(),
     ProfilGuruPage(),
   ];
+  StreamSubscription<RemoteMessage>? _notifSubscription;
 
   @override
   void initState() {
@@ -31,6 +35,27 @@ class _MainGuruPageState extends State<MainGuruPage> with TickerProviderStateMix
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkNotifications(userProvider.userId);
     });
+
+    _notifSubscription = FirebaseMessagingService.onMessageStream.listen((message) {
+      if (mounted) {
+        ApiService.getDashboardGuru(userProvider.userId).then((dashRes) {
+          if (dashRes['status'] == 'success') {
+            userProvider.setGuruDashboardData(
+              dashRes['data']['izinPending'] ?? 0,
+              dashRes['data']['persentaseKehadiranKelas'] ?? 0,
+              dashRes['data']['rekapAbsensiKelas'] ?? [],
+              dashRes['data']['jadwalAktif'] ?? [],
+            );
+          }
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _notifSubscription?.cancel();
+    super.dispose();
   }
 
   void _onNavTap(int index) {

@@ -9,6 +9,9 @@ import 'package:platform_absensi_digital/providers/user_provider.dart';
 import 'package:platform_absensi_digital/services/api_service.dart';
 
 import 'package:platform_absensi_digital/services/notification_service.dart';
+import 'package:platform_absensi_digital/services/firebase_messaging_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:async';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -21,6 +24,7 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
   int _selectedIndex = 0;
   late final List<Widget> _pages;
   late AnimationController _animController;
+  StreamSubscription<RemoteMessage>? _notifSubscription;
 
   @override
   void initState() {
@@ -39,10 +43,27 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkNotifications(userProvider.userId);
     });
+
+    _notifSubscription = FirebaseMessagingService.onMessageStream.listen((message) {
+      if (mounted) {
+        ApiService.getDashboardData(userProvider.userId).then((dashRes) {
+          if (dashRes['status'] == 'success') {
+            userProvider.setDashboardData(
+              dashRes['data']['hadirBulanIni'],
+              dashRes['data']['persentaseKehadiran'],
+              dashRes['data']['riwayatAbsensi'],
+              dashRes['data']['riwayatPerizinan'],
+              jadwal: dashRes['data']['jadwalAktif'] ?? [],
+            );
+          }
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
+    _notifSubscription?.cancel();
     _animController.dispose();
     super.dispose();
   }
