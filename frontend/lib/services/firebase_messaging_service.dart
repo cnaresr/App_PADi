@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
+import 'package:platform_absensi_digital/services/storage_service.dart';
 
 // Setup background handler (harus di top level)
 @pragma('vm:entry-point')
@@ -82,10 +83,18 @@ class FirebaseMessagingService {
     // Token akan dikirim ke server saat user login, atau bisa dikirim di sini jika login dipertahankan
     
     // Dengarkan perubahan token
-    _firebaseMessaging.onTokenRefresh.listen((newToken) {
+    _firebaseMessaging.onTokenRefresh.listen((newToken) async {
       print("FCM Token refreshed: $newToken");
-      // Kita bisa update token, tapi butuh userId dan jwtToken yang sedang aktif.
-      // Bisa disimpan di memory state.
+      try {
+        final storage = StorageService();
+        final jwtToken = await storage.getToken();
+        final userId = await storage.getUserId();
+        if (jwtToken != null && jwtToken.isNotEmpty && userId != null && userId > 0) {
+          await updateFCMTokenToServer(userId, jwtToken);
+        }
+      } catch (e) {
+        print("Error auto-updating refreshed FCM Token: $e");
+      }
     });
   }
 

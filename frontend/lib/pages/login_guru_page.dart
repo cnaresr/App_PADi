@@ -4,6 +4,7 @@ import 'package:platform_absensi_digital/providers/user_provider.dart'; // Wajib
 import 'package:platform_absensi_digital/pages/main_guru_page.dart';
 import 'package:platform_absensi_digital/pages/login_page.dart';
 import 'package:platform_absensi_digital/services/api_service.dart';
+import 'package:platform_absensi_digital/services/firebase_messaging_service.dart';
 import 'package:platform_absensi_digital/widgets/custom_popup.dart';
 
 class LoginGuruPage extends StatefulWidget {
@@ -124,6 +125,10 @@ class _LoginGuruPageState extends State<LoginGuruPage> {
                                 dashData?['rekapAbsensiKelas'] ?? [],
                                 dashData?['jadwalMengajar'] ?? []
                               );
+                            }
+                            // Update FCM Token ke Server
+                            if (response['token'] != null) {
+                              FirebaseMessagingService.updateFCMTokenToServer(idUser, response['token']);
                             }
 
                             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainGuruPage()));
