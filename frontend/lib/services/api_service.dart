@@ -25,6 +25,15 @@ class ApiService {
     return headers;
   }
 
+  static Future<Map<String, String>> _authHeadersMultipart() async {
+    final token = await _storageService.getToken();
+    final headers = <String, String>{}; // Tanpa 'Content-Type' default
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
+  }
+
   static Future<void> _handleUnauthorizedResponse(
     http.Response response,
   ) async {
@@ -111,7 +120,7 @@ class ApiService {
         'POST',
         Uri.parse('$baseUrl/absensi/masuk'),
       );
-      request.headers.addAll(await _authHeaders());
+      request.headers.addAll(await _authHeadersMultipart());
 
       // Tambahkan field data
       request.fields['userId'] = userId.toString();
@@ -137,13 +146,18 @@ class ApiService {
           'message': responseBody['message'] ?? 'Absensi berhasil.',
         };
       } else {
-        await _handleUnauthorizedResponse(response);
-        final errorBody = jsonDecode(response.body);
-        return {
-          'success': false,
-          'message':
-              errorBody['message'] ?? 'Gagal: Terjadi kesalahan di server.',
-        };
+        try {
+          final errorBody = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': errorBody['message'] ?? 'Gagal: Terjadi kesalahan di server.',
+          };
+        } catch (_) {
+          return {
+            'success': false,
+            'message': 'Gagal merespons server (Status: ${response.statusCode}).',
+          };
+        }
       }
     } catch (e, stacktrace) {
       debugPrint('Error di ApiService (kirimAbsensiMasuk): $e\n$stacktrace');
@@ -166,7 +180,7 @@ class ApiService {
         'POST',
         Uri.parse('$baseUrl/absensi/pulang'),
       );
-      request.headers.addAll(await _authHeaders());
+      request.headers.addAll(await _authHeadersMultipart());
 
       request.fields['userId'] = userId.toString();
       request.fields['faceEmbedding'] = jsonEncode(faceEmbedding);
@@ -188,13 +202,18 @@ class ApiService {
           'message': responseBody['message'] ?? 'Absensi pulang berhasil.',
         };
       } else {
-        await _handleUnauthorizedResponse(response);
-        final errorBody = jsonDecode(response.body);
-        return {
-          'success': false,
-          'message':
-              errorBody['message'] ?? 'Gagal: Terjadi kesalahan di server.',
-        };
+        try {
+          final errorBody = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': errorBody['message'] ?? 'Gagal: Terjadi kesalahan di server.',
+          };
+        } catch (_) {
+          return {
+            'success': false,
+            'message': 'Gagal merespons server (Status: ${response.statusCode}).',
+          };
+        }
       }
     } catch (e, stacktrace) {
       debugPrint('Error di ApiService (kirimAbsensiPulang): $e\n$stacktrace');
