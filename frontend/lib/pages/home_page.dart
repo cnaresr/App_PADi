@@ -6,6 +6,7 @@ import 'package:platform_absensi_digital/pages/absensi_page.dart';
 import 'package:platform_absensi_digital/pages/profil_page.dart';
 import 'package:platform_absensi_digital/pages/izin_page.dart';
 import 'package:platform_absensi_digital/pages/notifikasi_page.dart';
+import 'package:platform_absensi_digital/widgets/custom_popup.dart';
 import 'package:intl/intl.dart';
 
 class HomePage extends StatefulWidget {
@@ -31,12 +32,7 @@ class _HomePageState extends State<HomePage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Gagal memperbarui data: ${e.toString()}'),
-          backgroundColor: const Color(0xFF006D5B),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
+        CustomPopup.show(context, message: 'Gagal memperbarui data: ${e.toString()}', type: PopupType.error);
       }
     }
   }
@@ -485,18 +481,22 @@ class _HomePageState extends State<HomePage> {
         children: [
           Icon(icon, color: iconColor, size: 22),
           const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                label,
-                style: TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 10, fontWeight: FontWeight.w500),
-              ),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  label,
+                  style: TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 10, fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ],
       ),

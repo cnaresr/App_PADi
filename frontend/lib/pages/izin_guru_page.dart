@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:platform_absensi_digital/services/api_service.dart';
 import 'package:platform_absensi_digital/providers/user_provider.dart';
+import 'package:platform_absensi_digital/widgets/custom_popup.dart';
 
 class IzinGuruPage extends StatefulWidget {
   const IzinGuruPage({super.key});
@@ -42,27 +43,17 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
         await ApiService.updateStatusIzin(izinId, statusUpdate, user.userId);
     Navigator.pop(context);
     if (result['status'] == 'success') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Izin berhasil $statusUpdate'),
-          backgroundColor: statusUpdate == 'Disetujui'
-              ? const Color(0xFF006D5B)
-              : Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
+      CustomPopup.show(
+        context,
+        message: 'Izin berhasil $statusUpdate',
+        type: statusUpdate == 'Disetujui' ? PopupType.success : PopupType.info,
       );
       _loadPendingIzin();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal: ${result['message']}'),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
+      CustomPopup.show(
+        context,
+        message: 'Gagal: ${result['message']}',
+        type: PopupType.error,
       );
     }
   }
@@ -142,8 +133,11 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.inAppBrowserView);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Tidak dapat membuka file.')));
+        CustomPopup.show(
+          context,
+          message: 'Tidak dapat membuka file.',
+          type: PopupType.error,
+        );
       }
     }
   }
@@ -638,20 +632,22 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
           child: Icon(icon, size: 14, color: const Color(0xFF006D5B)),
         ),
         const SizedBox(width: 10),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label,
-                style: const TextStyle(
-                    color: Colors.grey, fontSize: 11)),
-            const SizedBox(height: 2),
-            Text(value,
-                style: const TextStyle(
-                  color: Color(0xFF1E1E1E),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                )),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style: const TextStyle(
+                      color: Colors.grey, fontSize: 11)),
+              const SizedBox(height: 2),
+              Text(value,
+                  style: const TextStyle(
+                    color: Color(0xFF1E1E1E),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  )),
+            ],
+          ),
         ),
       ],
     );

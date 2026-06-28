@@ -13,6 +13,7 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import '../main.dart';
 import '../services/api_service.dart';
 import '../providers/user_provider.dart';
+import '../widgets/custom_popup.dart';
 
 class AbsensiPage extends StatefulWidget {
   final int siswaId;
@@ -253,10 +254,11 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
           await tfl.Interpreter.fromAsset('assets/mobilefacenet.tflite');
     } catch (e) {
       debugPrint("Gagal memuat model TFLite: $e");
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Gagal memuat model AI: $e"),
-        backgroundColor: Colors.red,
-      ));
+      CustomPopup.show(
+        context,
+        message: "Gagal memuat model AI: $e",
+        type: PopupType.error,
+      );
     }
   }
 
@@ -319,15 +321,13 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
         fotoMasukPath: imageFile.path,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(result['message'] ?? 'Terjadi kesalahan.'),
-        backgroundColor: (result['success'] ?? false)
-            ? const Color(0xFF006D5B)
-            : Colors.red,
-        behavior: SnackBarBehavior.floating,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ));
+      CustomPopup.show(
+        context,
+        message: result['message'] ?? 'Terjadi kesalahan.',
+        type: (result['success'] ?? false)
+            ? PopupType.success
+            : PopupType.error,
+      );
       if (result['success'] == true) {
         setState(() => _hasCheckedIn = true);
         final user = context.read<UserProvider>();
@@ -344,13 +344,11 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Error: ${e.toString()}"),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ));
+      CustomPopup.show(
+        context,
+        message: "Error: ${e.toString()}",
+        type: PopupType.error,
+      );
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
@@ -376,15 +374,13 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
         fotoPulangPath: imageFile.path,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(result['message'] ?? 'Terjadi kesalahan.'),
-        backgroundColor: (result['success'] ?? false)
-            ? const Color(0xFF006D5B)
-            : Colors.red,
-        behavior: SnackBarBehavior.floating,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ));
+      CustomPopup.show(
+        context,
+        message: result['message'] ?? 'Terjadi kesalahan.',
+        type: (result['success'] ?? false)
+            ? PopupType.success
+            : PopupType.error,
+      );
       if (result['success'] == true) {
         setState(() => _hasCheckedIn = false);
         final user = context.read<UserProvider>();
@@ -401,13 +397,11 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Error: ${e.toString()}"),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ));
+      CustomPopup.show(
+        context,
+        message: "Error: ${e.toString()}",
+        type: PopupType.error,
+      );
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
@@ -707,14 +701,16 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                           children: [
                             Row(
                               children: [
-                                Text(
-                                  _locationMessage,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                    color: _isWithinRadius
-                                        ? const Color(0xFF006D5B)
-                                        : Colors.redAccent,
+                                Expanded(
+                                  child: Text(
+                                    _locationMessage,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                      color: _isWithinRadius
+                                          ? const Color(0xFF006D5B)
+                                          : Colors.redAccent,
+                                    ),
                                   ),
                                 ),
                                 if (_isWithinRadius) ...[

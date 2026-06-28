@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:platform_absensi_digital/providers/user_provider.dart';
 import 'package:platform_absensi_digital/services/api_service.dart';
+import 'package:platform_absensi_digital/widgets/custom_popup.dart';
 
 class IzinPage extends StatefulWidget {
   final bool openRiwayatTab;
@@ -65,14 +66,10 @@ class _IzinPageState extends State<IzinPage>
     if (startDate == null ||
         endDate == null ||
         alasanController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Harap lengkapi tanggal dan alasan!'),
-          backgroundColor: Colors.orange,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
+      CustomPopup.show(
+        context,
+        message: 'Harap lengkapi tanggal dan alasan!',
+        type: PopupType.warning,
       );
       return;
     }
@@ -89,14 +86,10 @@ class _IzinPageState extends State<IzinPage>
     setState(() => isSubmitting = false);
 
     if (result['status'] == 'success') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Pengajuan izin berhasil dikirim!'),
-          backgroundColor: const Color(0xFF006D5B),
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
+      CustomPopup.show(
+        context,
+        message: 'Pengajuan izin berhasil dikirim!',
+        type: PopupType.success,
       );
       final dashRes = await ApiService.getDashboardData(user.userId);
       if (dashRes['status'] == 'success') {
@@ -117,13 +110,11 @@ class _IzinPageState extends State<IzinPage>
         isRiwayat = true;
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(result['message'] ?? 'Gagal mengirim izin'),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ));
+      CustomPopup.show(
+        context,
+        message: result['message'] ?? 'Gagal mengirim izin',
+        type: PopupType.error,
+      );
     }
   }
 
@@ -144,13 +135,11 @@ class _IzinPageState extends State<IzinPage>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Gagal memperbarui data: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
+        CustomPopup.show(
+          context,
+          message: 'Gagal memperbarui data: ${e.toString()}',
+          type: PopupType.error,
+        );
       }
     }
   }

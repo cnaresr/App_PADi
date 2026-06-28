@@ -4,6 +4,7 @@ import 'package:platform_absensi_digital/providers/user_provider.dart'; // Wajib
 import 'package:platform_absensi_digital/pages/main_guru_page.dart';
 import 'package:platform_absensi_digital/pages/login_page.dart';
 import 'package:platform_absensi_digital/services/api_service.dart';
+import 'package:platform_absensi_digital/widgets/custom_popup.dart';
 
 class LoginGuruPage extends StatefulWidget {
   const LoginGuruPage({super.key});
@@ -127,10 +128,10 @@ class _LoginGuruPageState extends State<LoginGuruPage> {
 
                             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainGuruPage()));
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Anda bukan pengajar!")));
+                            CustomPopup.show(context, message: "Anda bukan pengajar!", type: PopupType.warning);
                           }
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response['message'] ?? "Login gagal")));
+                          CustomPopup.show(context, message: response['message'] ?? "Login gagal", type: PopupType.error);
                         }
                       },
                       child: const Text("Masuk", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
