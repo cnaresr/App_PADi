@@ -641,6 +641,9 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
                       color: Colors.grey, fontSize: 11)),
               const SizedBox(height: 2),
               Text(value,
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: true,
                   style: const TextStyle(
                     color: Color(0xFF1E1E1E),
                     fontSize: 13,
