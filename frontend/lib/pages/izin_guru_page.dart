@@ -56,7 +56,13 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
             ));
     final result =
         await ApiService.updateStatusIzin(izinId, statusUpdate, user.userId);
-    Navigator.pop(context);
+    
+    if (mounted) Navigator.pop(context);
+    
+    // Memberikan jeda agar animasi pop selesai sebelum memanggil push dialog baru
+    await Future.delayed(const Duration(milliseconds: 300));
+    
+    if (!mounted) return;
     if (result['status'] == 'success') {
       CustomPopup.show(
         context,
