@@ -340,6 +340,13 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     if (rawImage == null) return null;
     img.Image originalImage = img.bakeOrientation(rawImage);
 
+    // [VALIDASI BARU] Cegah wajah terlalu jauh (Resolution Collapse)
+    final double faceWidthRatio = boundingBox.width / originalImage.width;
+    if (faceWidthRatio < 0.25) {
+      throw Exception(
+          "Jarak wajah terlalu jauh. Silakan dekatkan wajah Anda ke kamera agar terlihat jelas.");
+    }
+
     int origX = boundingBox.left.toInt();
     int origY = boundingBox.top.toInt();
     int origW = boundingBox.width.toInt();
