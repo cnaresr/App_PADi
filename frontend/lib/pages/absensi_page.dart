@@ -107,6 +107,8 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
             }
           }
         });
+        // Panggil evaluasi agar state _hasCheckedIn diperbarui setelah data di-fetch ulang dari server
+        _evaluasiStatusPresensiAwal(userProvider);
       }
     } catch (e) {
       debugPrint("Gagal memperbarui geofence terbaru di AbsensiPage: $e");
@@ -602,15 +604,36 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
 
   @override
   Widget build(BuildContext context) {
-    final String infoKelas = context.read<UserProvider>().kelasAtauNip;
+    final userProvider = context.read<UserProvider>();
+    final String infoKelas = userProvider.kelasAtauNip;
     final List<String> infoParts = infoKelas.split(' • ');
     final String namaSekolah = infoParts.length > 1
         ? infoParts[1]
         : "Area Presensi Sekolah";
 
+    // Validasi 10 menit sebelum jam pulang
+    bool isWaktuPulang = true;
+    String? jamPulangStr;
+    if (_hasCheckedIn && userProvider.jadwalAktif.isNotEmpty) {
+      final jadwal = userProvider.jadwalAktif.first;
+      if (jadwal['jamPulang'] != null) {
+        try {
+          DateTime jamDb = DateTime.parse(jadwal['jamPulang']).toUtc();
+          int batasMenitPulang = (jamDb.hour * 60) + jamDb.minute;
+          DateTime now = DateTime.now();
+          int menitSekarang = (now.hour * 60) + now.minute;
+          if (menitSekarang < (batasMenitPulang - 10)) {
+            isWaktuPulang = false;
+            jamPulangStr = "${jamDb.hour.toString().padLeft(2, '0')}:${jamDb.minute.toString().padLeft(2, '0')}";
+          }
+        } catch (e) {
+          debugPrint("Gagal parse jamPulang: $e");
+        }
+      }
+    }
+
     // UI Colors and states
-    final bool isButtonDisabled =
-        (!_isWithinRadius && !_hasCheckedIn) || _isIzinHariIni;
+    final bool isButtonDisabled = (!_isWithinRadius && !_hasCheckedIn) || _isIzinHariIni || (_hasCheckedIn && !isWaktuPulang);
     final Color btnColor = isButtonDisabled
         ? Colors.grey.shade400
         : (_hasCheckedIn ? const Color(0xFF1C2B2A) : const Color(0xFF006D5B));
@@ -621,8 +644,14 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     String btnLabel;
     if (_isIzinHariIni) {
       btnLabel = "Sedang Izin/Sakit";
+    } else if (_hasCheckedIn) {
+      if (!isWaktuPulang && jamPulangStr != null) {
+        btnLabel = "Pulang Pukul $jamPulangStr";
+      } else {
+        btnLabel = "Presensi Pulang";
+      }
     } else {
-      btnLabel = _hasCheckedIn ? "Presensi Pulang" : "Presensi Masuk";
+      btnLabel = "Presensi Masuk";
     }
 
     final IconData btnIcon = _isIzinHariIni
