@@ -74,7 +74,8 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     _evaluasiStatusPresensiAwal(userProvider);
     _fetchLatestGeofenceAndData(userProvider);
     debugPrint(
-        "AbsensiPage: Memuat poligon sekolah dengan ${_schoolPolygon.length} vertices.");
+      "AbsensiPage: Memuat poligon sekolah dengan ${_schoolPolygon.length} vertices.",
+    );
     _initializeCamera();
     _loadModel();
     _startLocationCheck();
@@ -125,22 +126,29 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
   void _evaluasiStatusPresensiAwal(UserProvider userProvider) {
     final riwayat = userProvider.riwayatAbsensi;
     final perizinan = userProvider.riwayatPerizinan;
-    
-    final String formatHariIni = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    
+
+    final String formatHariIni = DateFormat(
+      'yyyy-MM-dd',
+    ).format(DateTime.now());
+
     bool sudahMasuk = false;
     bool izinSakitHariIni = false;
 
     if (riwayat.isNotEmpty) {
-      sudahMasuk = riwayat.any((absen) =>
-          absen['tanggal'] == formatHariIni &&
-          absen['jam_masuk'] != null &&
-          absen['jam_pulang'] == null && 
-          absen['status'] != 'Izin' && absen['status'] != 'Sakit');
-          
-      izinSakitHariIni = riwayat.any((absen) =>
-          absen['tanggal'] == formatHariIni &&
-          (absen['status'] == 'Izin' || absen['status'] == 'Sakit'));
+      sudahMasuk = riwayat.any(
+        (absen) =>
+            absen['tanggal'] == formatHariIni &&
+            absen['jam_masuk'] != null &&
+            absen['jam_pulang'] == null &&
+            absen['status'] != 'Izin' &&
+            absen['status'] != 'Sakit',
+      );
+
+      izinSakitHariIni = riwayat.any(
+        (absen) =>
+            absen['tanggal'] == formatHariIni &&
+            (absen['status'] == 'Izin' || absen['status'] == 'Sakit'),
+      );
     }
 
     bool izinDiSetujuiHariIni = perizinan.any((izin) {
@@ -150,9 +158,18 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
         DateTime selesai = DateTime.parse(izin['tanggalSelesai']).toLocal();
         DateTime hariIni = DateTime.now();
         DateTime mulaiDate = DateTime(mulai.year, mulai.month, mulai.day);
-        DateTime selesaiDate = DateTime(selesai.year, selesai.month, selesai.day);
-        DateTime hariIniDate = DateTime(hariIni.year, hariIni.month, hariIni.day);
-        return !hariIniDate.isBefore(mulaiDate) && !hariIniDate.isAfter(selesaiDate);
+        DateTime selesaiDate = DateTime(
+          selesai.year,
+          selesai.month,
+          selesai.day,
+        );
+        DateTime hariIniDate = DateTime(
+          hariIni.year,
+          hariIni.month,
+          hariIni.day,
+        );
+        return !hariIniDate.isBefore(mulaiDate) &&
+            !hariIniDate.isAfter(selesaiDate);
       } catch (e) {
         return false;
       }
@@ -220,28 +237,35 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     } catch (e) {
       debugPrint("Error mendapatkan lokasi awal: $e");
       if (mounted) {
-        setState(() =>
-            _locationMessage = "Gagal mendapat lokasi awal. Pastikan GPS aktif.");
+        setState(
+          () => _locationMessage =
+              "Gagal mendapat lokasi awal. Pastikan GPS aktif.",
+        );
       }
     }
-    _locationSubscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high, distanceFilter: 10),
-    ).listen((Position position) {
-      if (mounted) _updateLocationStatus(position);
-    });
+    _locationSubscription =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10,
+          ),
+        ).listen((Position position) {
+          if (mounted) _updateLocationStatus(position);
+        });
   }
 
   void _showPermissionDeniedDialog() {
     showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text("Izin Lokasi Diperlukan",
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text(
+          "Izin Lokasi Diperlukan",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: const Text(
-            "Aplikasi ini membutuhkan izin lokasi untuk fitur absensi. Silakan aktifkan izin lokasi di pengaturan aplikasi."),
+          "Aplikasi ini membutuhkan izin lokasi untuk fitur absensi. Silakan aktifkan izin lokasi di pengaturan aplikasi.",
+        ),
         actions: <Widget>[
           TextButton(
             child: const Text("Batal", style: TextStyle(color: Colors.grey)),
@@ -251,10 +275,13 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF006D5B),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            child: const Text("Buka Pengaturan",
-                style: TextStyle(color: Colors.white)),
+            child: const Text(
+              "Buka Pengaturan",
+              style: TextStyle(color: Colors.white),
+            ),
             onPressed: () {
               Geolocator.openAppSettings();
               Navigator.of(context).pop();
@@ -269,15 +296,19 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     final userProvider = context.read<UserProvider>();
     final polygon = userProvider.schoolPolygon ?? [];
     final isGeofenceActive = userProvider.isGeofenceActive;
-    
-    final isInside = isGeofenceActive ? _isPointInPolygon(position, polygon) : true;
-    
+
+    final isInside = isGeofenceActive
+        ? _isPointInPolygon(position, polygon)
+        : true;
+
     if (!mounted) return;
     setState(() {
       _currentPosition = position;
       if (isInside) {
         _isWithinRadius = true;
-        _locationMessage = isGeofenceActive ? "Anda berada di dalam area" : "Bebas Lokasi (Geofencing Nonaktif)";
+        _locationMessage = isGeofenceActive
+            ? "Anda berada di dalam area"
+            : "Bebas Lokasi (Geofencing Nonaktif)";
       } else {
         _isWithinRadius = false;
         _locationMessage = "Anda berada di luar area";
@@ -285,8 +316,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     });
   }
 
-  bool _isPointInPolygon(
-      Position point, List<Map<String, double>> polygon) {
+  bool _isPointInPolygon(Position point, List<Map<String, double>> polygon) {
     if (polygon.isEmpty) {
       debugPrint("Pengecekan gagal: Poligon area sekolah kosong.");
       return false;
@@ -299,7 +329,8 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
       double vertexLatI = polygon[i]['latitude']!;
       double vertexLonJ = polygon[j]['longitude']!;
       double vertexLatJ = polygon[j]['latitude']!;
-      bool intersect = ((vertexLatI > pointLat) != (vertexLatJ > pointLat)) &&
+      bool intersect =
+          ((vertexLatI > pointLat) != (vertexLatJ > pointLat)) &&
           (pointLon <
               (vertexLonJ - vertexLonI) *
                       (pointLat - vertexLatI) /
@@ -312,8 +343,9 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
 
   Future<void> _loadModel() async {
     try {
-      _interpreter =
-          await tfl.Interpreter.fromAsset('assets/mobilefacenet.tflite');
+      _interpreter = await tfl.Interpreter.fromAsset(
+        'assets/mobilefacenet.tflite',
+      );
     } catch (e) {
       debugPrint("Gagal memuat model TFLite: $e");
       CustomPopup.show(
@@ -332,7 +364,8 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     faceDetector.close();
     if (faces.isEmpty) {
       throw Exception(
-          "Wajah tidak ditemukan. Pastikan wajah terlihat jelas di kamera.");
+        "Wajah tidak ditemukan. Pastikan wajah terlihat jelas di kamera.",
+      );
     }
     final Face firstFace = faces.first;
     final Rect boundingBox = firstFace.boundingBox;
@@ -340,11 +373,22 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     if (rawImage == null) return null;
     img.Image originalImage = img.bakeOrientation(rawImage);
 
+    // [PERBAIKAN FATAL ORIENTASI ML KIT VS PACKAGE:IMAGE]
+    // Kamera HP menyimpan foto selfie secara rotasi Landscape (width > height) di tingkat sensor.
+    // Google ML Kit otomatis merotasi ke Portrait (height > width) saat mendeteksi boundingBox.
+    // Jika originalImage dari package:image masih berstatus width > height, kita rotasi terlebih dahulu ke portrait 
+    // agar dimensi dan koordinat bounding box dari ML Kit cocok dengan pixel image saat di-crop.
+    if (originalImage.width > originalImage.height) {
+      final int sensorOrientation = _controller?.description.sensorOrientation ?? 90;
+      originalImage = img.copyRotate(originalImage, angle: sensorOrientation);
+    }
+
     // [VALIDASI BARU] Cegah wajah terlalu jauh (Resolution Collapse)
     final double faceWidthRatio = boundingBox.width / originalImage.width;
     if (faceWidthRatio < 0.25) {
       throw Exception(
-          "Jarak wajah terlalu jauh. Silakan dekatkan wajah Anda ke kamera agar terlihat jelas.");
+        "Jarak wajah terlalu jauh. Silakan dekatkan wajah Anda ke kamera agar terlihat jelas.",
+      );
     }
 
     int origX = boundingBox.left.toInt();
@@ -372,29 +416,27 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
       height: finalDimension,
     );
 
-    // [PERBAIKAN ORIENTASI MANDIRI]
-    // Jika image belum berorientasi portrait (misal karena EXIF data absen pada kamera beberapa tipe Android),
-    // maka crop dilakukan langsung pada citra landscape (agar koordinat bounding box cocok), 
-    // barulah setelah itu crop face yang berbentuk bujur sangkar dirotasi sesuai sensorOrientation.
-    if (originalImage.width > originalImage.height) {
-      final int sensorOrientation = _controller?.description.sensorOrientation ?? 90;
-      croppedFace = img.copyRotate(croppedFace, angle: sensorOrientation);
-    }
-
     // Buat versi normal dan versi flipped secara horizontal
     img.Image croppedFaceNormal = croppedFace;
-    img.Image croppedFaceFlipped = img.copyFlip(croppedFace, direction: img.FlipDirection.horizontal);
+    img.Image croppedFaceFlipped = img.copyFlip(
+      croppedFace,
+      direction: img.FlipDirection.horizontal,
+    );
 
     // Helper untuk memproses sebuah gambar wajah dan menjalankan model MobileFaceNet
     List<double> getEmbedding(img.Image faceImage) {
-      img.Image resizedImage = img.copyResize(faceImage, width: 112, height: 112);
+      img.Image resizedImage = img.copyResize(
+        faceImage,
+        width: 112,
+        height: 112,
+      );
       var input = List.generate(112, (y) {
         return List.generate(112, (x) {
           final pixel = resizedImage.getPixel(x, y);
           return [
             (pixel.r - 127.5) / 127.5,
             (pixel.g - 127.5) / 127.5,
-            (pixel.b - 127.5) / 127.5
+            (pixel.b - 127.5) / 127.5,
           ];
         });
       });
@@ -414,7 +456,8 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     if (_controller == null ||
         !_controller!.value.isInitialized ||
         _isProcessing ||
-        _currentPosition == null) return;
+        _currentPosition == null)
+      return;
     setState(() => _isProcessing = true);
     try {
       final XFile imageFile = await _controller!.takePicture();
@@ -430,8 +473,12 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
         img.Image resized = decodedImage;
         // Resize jika resolusi terlalu besar (lebih dari 1080p)
         if (decodedImage.width > 1080 || decodedImage.height > 1080) {
-           final bool isLandscape = decodedImage.width > decodedImage.height;
-           resized = img.copyResize(decodedImage, width: isLandscape ? 1080 : null, height: isLandscape ? null : 1080);
+          final bool isLandscape = decodedImage.width > decodedImage.height;
+          resized = img.copyResize(
+            decodedImage,
+            width: isLandscape ? 1080 : null,
+            height: isLandscape ? null : 1080,
+          );
         }
         final compressedJpg = img.encodeJpg(resized, quality: 60);
         await File(imageFile.path).writeAsBytes(compressedJpg);
@@ -483,7 +530,8 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     if (_controller == null ||
         !_controller!.value.isInitialized ||
         _isProcessing ||
-        _currentPosition == null) return;
+        _currentPosition == null)
+      return;
     setState(() => _isProcessing = true);
     try {
       final XFile imageFile = await _controller!.takePicture();
@@ -499,8 +547,12 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
         img.Image resized = decodedImage;
         // Resize jika resolusi terlalu besar (lebih dari 1080p)
         if (decodedImage.width > 1080 || decodedImage.height > 1080) {
-           final bool isLandscape = decodedImage.width > decodedImage.height;
-           resized = img.copyResize(decodedImage, width: isLandscape ? 1080 : null, height: isLandscape ? null : 1080);
+          final bool isLandscape = decodedImage.width > decodedImage.height;
+          resized = img.copyResize(
+            decodedImage,
+            width: isLandscape ? 1080 : null,
+            height: isLandscape ? null : 1080,
+          );
         }
         final compressedJpg = img.encodeJpg(resized, quality: 60);
         await File(imageFile.path).writeAsBytes(compressedJpg);
@@ -552,24 +604,30 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
   Widget build(BuildContext context) {
     final String infoKelas = context.read<UserProvider>().kelasAtauNip;
     final List<String> infoParts = infoKelas.split(' • ');
-    final String namaSekolah =
-        infoParts.length > 1 ? infoParts[1] : "Area Presensi Sekolah";
+    final String namaSekolah = infoParts.length > 1
+        ? infoParts[1]
+        : "Area Presensi Sekolah";
 
     // UI Colors and states
-    final bool isButtonDisabled = (!_isWithinRadius && !_hasCheckedIn) || _isIzinHariIni;
+    final bool isButtonDisabled =
+        (!_isWithinRadius && !_hasCheckedIn) || _isIzinHariIni;
     final Color btnColor = isButtonDisabled
         ? Colors.grey.shade400
         : (_hasCheckedIn ? const Color(0xFF1C2B2A) : const Color(0xFF006D5B));
-    final Color btnTextColor = isButtonDisabled ? const Color(0xFFA0AEC0) : Colors.white;
-    
+    final Color btnTextColor = isButtonDisabled
+        ? const Color(0xFFA0AEC0)
+        : Colors.white;
+
     String btnLabel;
     if (_isIzinHariIni) {
-        btnLabel = "Sedang Izin/Sakit";
+      btnLabel = "Sedang Izin/Sakit";
     } else {
-        btnLabel = _hasCheckedIn ? "Presensi Pulang" : "Presensi Masuk";
+      btnLabel = _hasCheckedIn ? "Presensi Pulang" : "Presensi Masuk";
     }
-    
-    final IconData btnIcon = _isIzinHariIni ? Icons.check_circle_outline : (_hasCheckedIn ? Icons.logout_rounded : Icons.login_rounded);
+
+    final IconData btnIcon = _isIzinHariIni
+        ? Icons.check_circle_outline
+        : (_hasCheckedIn ? Icons.logout_rounded : Icons.login_rounded);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -609,9 +667,10 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                                 child: const Icon(
-                                    Icons.fingerprint_rounded,
-                                    color: Colors.white,
-                                    size: 22),
+                                  Icons.fingerprint_rounded,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
                               ),
                               const SizedBox(width: 14),
                               const Column(
@@ -629,7 +688,9 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                                   Text(
                                     "Verifikasi kehadiran Anda",
                                     style: TextStyle(
-                                        color: Colors.white70, fontSize: 12),
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -639,7 +700,9 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 7),
+                              horizontal: 12,
+                              vertical: 7,
+                            ),
                             decoration: BoxDecoration(
                               color: _isWithinRadius
                                   ? Colors.white.withOpacity(0.2)
@@ -680,8 +743,10 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        DateFormat('EEEE, dd MMMM yyyy', 'id_ID')
-                            .format(DateTime.now()),
+                        DateFormat(
+                          'EEEE, dd MMMM yyyy',
+                          'id_ID',
+                        ).format(DateTime.now()),
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.7),
                           fontSize: 13,
@@ -711,9 +776,12 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                           color: const Color(0xFFE65100).withOpacity(0.1),
                           blurRadius: 24,
                           offset: const Offset(0, 10),
-                        )
+                        ),
                       ],
-                      border: Border.all(color: const Color(0xFFFFCC80), width: 1.5),
+                      border: Border.all(
+                        color: const Color(0xFFFFCC80),
+                        width: 1.5,
+                      ),
                     ),
                     child: Column(
                       children: [
@@ -723,7 +791,11 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                             color: Color(0xFFFFF3E0),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.beach_access_rounded, size: 64, color: Color(0xFFE65100)),
+                          child: const Icon(
+                            Icons.beach_access_rounded,
+                            size: 64,
+                            color: Color(0xFFE65100),
+                          ),
                         ),
                         const SizedBox(height: 24),
                         const Text(
@@ -748,240 +820,271 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                     ),
                   )
                 else ...[
-                // KAMERA
-                Container(
-                  height: 320,
-                  width: double.infinity,
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1C2B2A),
-                    borderRadius: BorderRadius.circular(28),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF006D5B).withOpacity(0.2),
-                        blurRadius: 24,
-                        offset: const Offset(0, 10),
-                      )
-                    ],
-                  ),
-                  child: FutureBuilder<void>(
-                    future: _initializeControllerFuture,
-                    builder: (context, snapshot) {
-                      if (_cameraError != null) {
-                        return Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.camera_alt_rounded,
-                                    size: 48,
-                                    color: Colors.white.withOpacity(0.3)),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'Gagal memuat kamera:\n$_cameraError',
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                      color: Colors.redAccent,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }
-                      if (snapshot.connectionState == ConnectionState.done) {
-                        return Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            FittedBox(
-                              fit: BoxFit.cover,
-                              child: SizedBox(
-                                width: _controller!.value.previewSize?.height ?? 1,
-                                height: _controller!.value.previewSize?.width ?? 1,
-                                child: CameraPreview(_controller!),
-                              ),
-                            ),
-                            // Face guide overlay
-                            Center(
-                              child: Container(
-                                width: 200,
-                                height: 200,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: _isWithinRadius
-                                        ? const Color(0xFF00E676)
-                                        : Colors.white.withOpacity(0.5),
-                                    width: 3,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            // Corner guides
-                            _buildCornerGuide(Alignment.topLeft, 20, 20),
-                            _buildCornerGuide(Alignment.topRight, 20, 20),
-                            _buildCornerGuide(Alignment.bottomLeft, 20, 20),
-                            _buildCornerGuide(Alignment.bottomRight, 20, 20),
-                          ],
-                        );
-                      } else {
-                        return const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(color: Color(0xFF006D5B)),
-                            SizedBox(height: 15),
-                            Text("Membuka Kamera...",
-                                style: TextStyle(
-                                    color: Colors.white70,
-                                    fontWeight: FontWeight.bold)),
-                          ],
-                        );
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // STATUS LOKASI
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 400),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(
-                      color: _isWithinRadius
-                          ? const Color(0xFF006D5B).withOpacity(0.2)
-                          : Colors.red.withOpacity(0.2),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (_isWithinRadius
-                                ? const Color(0xFF006D5B)
-                                : Colors.red)
-                            .withOpacity(0.06),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
-                      )
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: _isWithinRadius
-                              ? const Color(0xFFE8F5E9)
-                              : const Color(0xFFFFEBEE),
-                          borderRadius: BorderRadius.circular(16),
+                  // KAMERA
+                  Container(
+                    height: 320,
+                    width: double.infinity,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1C2B2A),
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF006D5B).withOpacity(0.2),
+                          blurRadius: 24,
+                          offset: const Offset(0, 10),
                         ),
-                        child: Icon(Icons.location_on_rounded,
-                            color: _isWithinRadius
-                                ? const Color(0xFF006D5B)
-                                : Colors.redAccent,
-                            size: 26),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    _locationMessage,
-                                    style: TextStyle(
+                      ],
+                    ),
+                    child: FutureBuilder<void>(
+                      future: _initializeControllerFuture,
+                      builder: (context, snapshot) {
+                        if (_cameraError != null) {
+                          return Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.camera_alt_rounded,
+                                    size: 48,
+                                    color: Colors.white.withOpacity(0.3),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Gagal memuat kamera:\n$_cameraError',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Colors.redAccent,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+                        if (snapshot.connectionState == ConnectionState.done) {
+                          return Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              FittedBox(
+                                fit: BoxFit.cover,
+                                child: SizedBox(
+                                  width:
+                                      _controller!.value.previewSize?.height ??
+                                      1,
+                                  height:
+                                      _controller!.value.previewSize?.width ??
+                                      1,
+                                  child: CameraPreview(_controller!),
+                                ),
+                              ),
+                              // Face guide overlay
+                              Center(
+                                child: Container(
+                                  width: 200,
+                                  height: 200,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
                                       color: _isWithinRadius
-                                          ? const Color(0xFF006D5B)
-                                          : Colors.redAccent,
+                                          ? const Color(0xFF00E676)
+                                          : Colors.white.withOpacity(0.5),
+                                      width: 3,
                                     ),
                                   ),
                                 ),
-                                if (_isWithinRadius) ...[
-                                  const SizedBox(width: 5),
-                                  const Icon(Icons.verified_rounded,
-                                      color: Color(0xFF006D5B), size: 15),
-                                ]
-                              ],
-                            ),
-                            const SizedBox(height: 3),
-                            Text(namaSekolah,
-                                style: const TextStyle(
-                                    color: Colors.grey, fontSize: 12)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // TOMBOL ABSEN
-                SizedBox(
-                  width: double.infinity,
-                  height: 68,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: btnColor,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20)),
-                      elevation: _isWithinRadius ? 6 : 0,
-                      shadowColor: const Color(0xFF006D5B).withOpacity(0.3),
-                    ),
-                    onPressed: (_isWithinRadius && !_isProcessing && !_isIzinHariIni)
-                        ? (_hasCheckedIn
-                            ? _onAbsenPulangButtonPressed
-                            : _onAbsenMasukButtonPressed)
-                        : null,
-                    child: _isProcessing
-                        ? const SizedBox(
-                            width: 26,
-                            height: 26,
-                            child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2.5),
-                          )
-                        : Row(
+                              ),
+                              // Corner guides
+                              _buildCornerGuide(Alignment.topLeft, 20, 20),
+                              _buildCornerGuide(Alignment.topRight, 20, 20),
+                              _buildCornerGuide(Alignment.bottomLeft, 20, 20),
+                              _buildCornerGuide(Alignment.bottomRight, 20, 20),
+                            ],
+                          );
+                        } else {
+                          return const Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(btnIcon, color: btnTextColor, size: 22),
-                              const SizedBox(width: 10),
+                              CircularProgressIndicator(
+                                color: Color(0xFF006D5B),
+                              ),
+                              SizedBox(height: 15),
                               Text(
-                                btnLabel,
+                                "Membuka Kamera...",
                                 style: TextStyle(
-                                  color: btnTextColor,
+                                  color: Colors.white70,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 17,
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // STATUS LOKASI
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 400),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(
+                        color: _isWithinRadius
+                            ? const Color(0xFF006D5B).withOpacity(0.2)
+                            : Colors.red.withOpacity(0.2),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              (_isWithinRadius
+                                      ? const Color(0xFF006D5B)
+                                      : Colors.red)
+                                  .withOpacity(0.06),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: _isWithinRadius
+                                ? const Color(0xFFE8F5E9)
+                                : const Color(0xFFFFEBEE),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Icon(
+                            Icons.location_on_rounded,
+                            color: _isWithinRadius
+                                ? const Color(0xFF006D5B)
+                                : Colors.redAccent,
+                            size: 26,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      _locationMessage,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                        color: _isWithinRadius
+                                            ? const Color(0xFF006D5B)
+                                            : Colors.redAccent,
+                                      ),
+                                    ),
+                                  ),
+                                  if (_isWithinRadius) ...[
+                                    const SizedBox(width: 5),
+                                    const Icon(
+                                      Icons.verified_rounded,
+                                      color: Color(0xFF006D5B),
+                                      size: 15,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                namaSekolah,
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
                                 ),
                               ),
                             ],
                           ),
-                  ),
-                ),
-
-                if (!_isWithinRadius)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.info_outline_rounded,
-                            size: 13, color: Colors.grey.shade400),
-                        const SizedBox(width: 6),
-                        Text(
-                          "Tombol aktif saat Anda berada di area sekolah",
-                          style: TextStyle(
-                              fontSize: 12, color: Colors.grey.shade500),
                         ),
                       ],
                     ),
                   ),
-              ]
+                  const SizedBox(height: 24),
+
+                  // TOMBOL ABSEN
+                  SizedBox(
+                    width: double.infinity,
+                    height: 68,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: btnColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        elevation: _isWithinRadius ? 6 : 0,
+                        shadowColor: const Color(0xFF006D5B).withOpacity(0.3),
+                      ),
+                      onPressed:
+                          (_isWithinRadius && !_isProcessing && !_isIzinHariIni)
+                          ? (_hasCheckedIn
+                                ? _onAbsenPulangButtonPressed
+                                : _onAbsenMasukButtonPressed)
+                          : null,
+                      child: _isProcessing
+                          ? const SizedBox(
+                              width: 26,
+                              height: 26,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(btnIcon, color: btnTextColor, size: 22),
+                                const SizedBox(width: 10),
+                                Text(
+                                  btnLabel,
+                                  style: TextStyle(
+                                    color: btnTextColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 17,
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+
+                  if (!_isWithinRadius)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.info_outline_rounded,
+                            size: 13,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            "Tombol aktif saat Anda berada di area sekolah",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ]),
             ),
           ),
@@ -990,12 +1093,11 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     );
   }
 
-  Widget _buildCornerGuide(
-      Alignment alignment, double width, double height) {
-    final isTop = alignment == Alignment.topLeft ||
-        alignment == Alignment.topRight;
-    final isLeft = alignment == Alignment.topLeft ||
-        alignment == Alignment.bottomLeft;
+  Widget _buildCornerGuide(Alignment alignment, double width, double height) {
+    final isTop =
+        alignment == Alignment.topLeft || alignment == Alignment.topRight;
+    final isLeft =
+        alignment == Alignment.topLeft || alignment == Alignment.bottomLeft;
     return Align(
       alignment: alignment,
       child: Padding(
