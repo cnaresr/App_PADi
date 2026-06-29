@@ -67,12 +67,49 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     WidgetsBinding.instance.addObserver(this);
     final userProvider = context.read<UserProvider>();
     _schoolPolygon = userProvider.schoolPolygon ?? [];
+    if (!userProvider.isGeofenceActive) {
+      _isWithinRadius = true;
+      _locationMessage = "Bebas Lokasi (Geofencing Nonaktif)";
+    }
     _evaluasiStatusPresensiAwal(userProvider);
+    _fetchLatestGeofenceAndData(userProvider);
     debugPrint(
         "AbsensiPage: Memuat poligon sekolah dengan ${_schoolPolygon.length} vertices.");
     _initializeCamera();
     _loadModel();
     _startLocationCheck();
+  }
+
+  Future<void> _fetchLatestGeofenceAndData(UserProvider userProvider) async {
+    try {
+      final dashRes = await ApiService.getDashboardData(widget.siswaId);
+      if (dashRes['status'] == 'success' && mounted) {
+        userProvider.setDashboardData(
+          dashRes['data']['hadirBulanIni'],
+          dashRes['data']['persentaseKehadiran'],
+          dashRes['data']['riwayatAbsensi'],
+          dashRes['data']['riwayatPerizinan'],
+          jadwal: dashRes['data']['jadwalAktif'] ?? [],
+          geofence: dashRes['data']['geofence'],
+        );
+        setState(() {
+          _schoolPolygon = userProvider.schoolPolygon ?? [];
+          if (!userProvider.isGeofenceActive) {
+            _isWithinRadius = true;
+            _locationMessage = "Bebas Lokasi (Geofencing Nonaktif)";
+          } else {
+            if (_currentPosition != null) {
+              _updateLocationStatus(_currentPosition!);
+            } else {
+              _isWithinRadius = false;
+              _locationMessage = "Mencari lokasi Anda...";
+            }
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint("Gagal memperbarui geofence terbaru di AbsensiPage: $e");
+    }
   }
 
   @override
@@ -229,13 +266,18 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
   }
 
   void _updateLocationStatus(Position position) {
-    final isInside = _isPointInPolygon(position, _schoolPolygon);
+    final userProvider = context.read<UserProvider>();
+    final polygon = userProvider.schoolPolygon ?? [];
+    final isGeofenceActive = userProvider.isGeofenceActive;
+    
+    final isInside = isGeofenceActive ? _isPointInPolygon(position, polygon) : true;
+    
     if (!mounted) return;
     setState(() {
       _currentPosition = position;
       if (isInside) {
         _isWithinRadius = true;
-        _locationMessage = "Anda berada di dalam area";
+        _locationMessage = isGeofenceActive ? "Anda berada di dalam area" : "Bebas Lokasi (Geofencing Nonaktif)";
       } else {
         _isWithinRadius = false;
         _locationMessage = "Anda berada di luar area";
@@ -410,6 +452,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
             dashRes['data']['riwayatAbsensi'],
             dashRes['data']['riwayatPerizinan'],
             jadwal: dashRes['data']['jadwalAktif'] ?? [],
+            geofence: dashRes['data']['geofence'],
           );
         }
       }
@@ -478,6 +521,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
             dashRes['data']['riwayatAbsensi'],
             dashRes['data']['riwayatPerizinan'],
             jadwal: dashRes['data']['jadwalAktif'] ?? [],
+            geofence: dashRes['data']['geofence'],
           );
         }
       }

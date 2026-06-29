@@ -99,6 +99,7 @@ class _IzinPageState extends State<IzinPage>
           dashRes['data']['riwayatAbsensi'],
           dashRes['data']['riwayatPerizinan'],
           jadwal: dashRes['data']['jadwalAktif'] ?? [],
+          geofence: dashRes['data']['geofence'],
         );
       }
       setState(() {
@@ -129,6 +130,7 @@ class _IzinPageState extends State<IzinPage>
           dashRes['data']['riwayatAbsensi'],
           dashRes['data']['riwayatPerizinan'],
           jadwal: dashRes['data']['jadwalAktif'] ?? [],
+          geofence: dashRes['data']['geofence'],
         );
       } else {
         throw Exception('Gagal memuat data dari server');

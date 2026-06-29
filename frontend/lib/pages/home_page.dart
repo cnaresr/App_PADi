@@ -28,6 +28,7 @@ class _HomePageState extends State<HomePage> {
           response['data']['riwayatAbsensi'],
           response['data']['riwayatPerizinan'],
           jadwal: response['data']['jadwalAktif'] ?? [],
+          geofence: response['data']['geofence'],
         );
       }
     } catch (e) {

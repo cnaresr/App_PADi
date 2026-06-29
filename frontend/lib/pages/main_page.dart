@@ -42,6 +42,18 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkNotifications(userProvider.userId);
+      ApiService.getDashboardData(userProvider.userId).then((dashRes) {
+        if (dashRes['status'] == 'success' && mounted) {
+          userProvider.setDashboardData(
+            dashRes['data']['hadirBulanIni'],
+            dashRes['data']['persentaseKehadiran'],
+            dashRes['data']['riwayatAbsensi'],
+            dashRes['data']['riwayatPerizinan'],
+            jadwal: dashRes['data']['jadwalAktif'] ?? [],
+            geofence: dashRes['data']['geofence'],
+          );
+        }
+      });
     });
 
     _notifSubscription = FirebaseMessagingService.onMessageStream.listen((message) {
@@ -54,6 +66,7 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
               dashRes['data']['riwayatAbsensi'],
               dashRes['data']['riwayatPerizinan'],
               jadwal: dashRes['data']['jadwalAktif'] ?? [],
+              geofence: dashRes['data']['geofence'],
             );
           }
         });

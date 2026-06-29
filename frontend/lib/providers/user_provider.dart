@@ -15,6 +15,8 @@ class UserProvider with ChangeNotifier {
 
   // [DIUBAH] Variabel geofencing sekarang menyimpan poligon, bukan radius.
   List<Map<String, double>>? _schoolPolygon;
+  bool _isGeofenceActive = true;
+
   // Getters
   int get userId => _userId;
   String get namaLengkap => _namaLengkap;
@@ -26,8 +28,10 @@ class UserProvider with ChangeNotifier {
   List<dynamic> get riwayatPerizinan => _riwayatPerizinan;
   List<dynamic> get jadwalAktif => _jadwalAktif;
 
-  // [BARU] Getter untuk data poligon.
+  // [BARU] Getter untuk data poligon dan status aktif geofence.
   List<Map<String, double>>? get schoolPolygon => _schoolPolygon;
+  bool get isGeofenceActive => _isGeofenceActive;
+
   // Menyimpan data Akun saat login
   void setUserData(int id, String nama, String detail, String roleUser) {
     _userId = id;
@@ -43,14 +47,37 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  void setGeofenceActive(bool active) {
+    _isGeofenceActive = active;
+    notifyListeners();
+  }
+
   // Menyimpan data Statistik & Riwayat dari API Dashboard
-  void setDashboardData(int hadir, int persentase, List<dynamic> absensi, List<dynamic> perizinan, {List<dynamic> jadwal = const []}) {
+  void setDashboardData(int hadir, int persentase, List<dynamic> absensi, List<dynamic> perizinan, {List<dynamic> jadwal = const [], Map<String, dynamic>? geofence}) {
     _hadirBulanIni = hadir;
     _persentaseKehadiran = persentase;
     _riwayatAbsensi = absensi;
     _riwayatPerizinan = perizinan;
     if (jadwal.isNotEmpty) {
       _jadwalAktif = jadwal;
+    }
+    if (geofence != null) {
+      _isGeofenceActive = geofence['isActive'] ?? true;
+      if (geofence['polygon'] != null) {
+        try {
+          List<Map<String, double>> polygon = (geofence['polygon'] as List)
+            .map((point) => {
+                  'latitude': (point[1] as num).toDouble(),
+                  'longitude': (point[0] as num).toDouble(),
+                })
+            .toList();
+          _schoolPolygon = polygon;
+        } catch (e) {
+          debugPrint("Error parsing polygon geofence in setDashboardData: $e");
+        }
+      } else {
+        _schoolPolygon = null;
+      }
     }
     notifyListeners(); // Memicu UI untuk reload otomatis dengan data asli
   }
@@ -68,6 +95,7 @@ class UserProvider with ChangeNotifier {
     
     // [DIUBAH] Bersihkan data poligon saat logout.
     _schoolPolygon = null;
+    _isGeofenceActive = true;
     notifyListeners();
   }
 
