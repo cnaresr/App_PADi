@@ -375,6 +375,10 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     if (rawImage == null) return null;
     img.Image originalImage = img.bakeOrientation(rawImage);
 
+    debugPrint("[DEBUG CROP] rawImage size: ${rawImage.width}x${rawImage.height}");
+    debugPrint("[DEBUG CROP] originalImage size (after bake): ${originalImage.width}x${originalImage.height}");
+    debugPrint("[DEBUG CROP] boundingBox from ML Kit: left=${boundingBox.left}, top=${boundingBox.top}, width=${boundingBox.width}, height=${boundingBox.height}");
+
     // [PERBAIKAN FATAL ORIENTASI ML KIT VS PACKAGE:IMAGE]
     // Kamera HP menyimpan foto selfie secara rotasi Landscape (width > height) di tingkat sensor.
     // Google ML Kit otomatis merotasi ke Portrait (height > width) saat mendeteksi boundingBox.
@@ -382,7 +386,9 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     // agar dimensi dan koordinat bounding box dari ML Kit cocok dengan pixel image saat di-crop.
     if (originalImage.width > originalImage.height) {
       final int sensorOrientation = _controller?.description.sensorOrientation ?? 90;
+      debugPrint("[DEBUG CROP] Landscape detected. Rotating originalImage by $sensorOrientation degrees.");
       originalImage = img.copyRotate(originalImage, angle: sensorOrientation);
+      debugPrint("[DEBUG CROP] originalImage size (after rotation): ${originalImage.width}x${originalImage.height}");
     }
 
     // [VALIDASI BARU] Cegah wajah terlalu jauh (Resolution Collapse)
@@ -409,6 +415,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     int h = maxDimension.clamp(0, originalImage.height - y);
     // Jika di batas gambar tepi w dan h bisa sedikit berbeda, ambil nilai minimum agar tetap bujur sangkar sempurna
     int finalDimension = w < h ? w : h;
+    debugPrint("[DEBUG CROP] crop coordinates calculated: x=$x, y=$y, width=$finalDimension, height=$finalDimension");
 
     img.Image croppedFace = img.copyCrop(
       originalImage,
@@ -417,6 +424,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
       width: finalDimension,
       height: finalDimension,
     );
+    debugPrint("[DEBUG CROP] croppedFace size: ${croppedFace.width}x${croppedFace.height}");
 
     // Buat versi normal dan versi flipped secara horizontal
     img.Image croppedFaceNormal = croppedFace;
@@ -467,6 +475,8 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
       if (faceEmbedding == null) {
         throw Exception("Wajah tidak terdeteksi pada gambar.");
       }
+      debugPrint("[DEBUG EMBEDDING] Normal first 5: ${faceEmbedding[0].sublist(0, 5)}");
+      debugPrint("[DEBUG EMBEDDING] Flipped first 5: ${faceEmbedding[1].sublist(0, 5)}");
 
       // [PERBAIKAN] Kompresi gambar secara background agar tidak terjadi timeout di Ngrok (berkurang dari 15MB ke ~200KB)
       final rawBytes = await File(imageFile.path).readAsBytes();
@@ -541,6 +551,8 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
       if (faceEmbedding == null) {
         throw Exception("Wajah tidak terdeteksi pada gambar.");
       }
+      debugPrint("[DEBUG EMBEDDING] Normal first 5: ${faceEmbedding[0].sublist(0, 5)}");
+      debugPrint("[DEBUG EMBEDDING] Flipped first 5: ${faceEmbedding[1].sublist(0, 5)}");
 
       // [PERBAIKAN] Kompresi gambar secara background agar tidak terjadi timeout di Ngrok (berkurang dari 15MB ke ~200KB)
       final rawBytes = await File(imageFile.path).readAsBytes();
