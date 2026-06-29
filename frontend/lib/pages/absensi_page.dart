@@ -324,7 +324,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     }
   }
 
-  Future<List<double>?> _runModelOnImage(File imageFile) async {
+  Future<List<List<double>>?> _runModelOnImage(File imageFile) async {
     final options = FaceDetectorOptions(performanceMode: FaceDetectorMode.fast);
     final faceDetector = FaceDetector(options: options);
     final inputImage = InputImage.fromFilePath(imageFile.path);
@@ -381,29 +381,33 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
       croppedFace = img.copyRotate(croppedFace, angle: sensorOrientation);
     }
 
-    // [PERBAIKAN CERMIN (FLIP HORIZONTAL) UNTUK KAMERA DEPAN]
-    // Kamera depan biasanya menyimpan gambar secara tercermin (mirrored).
-    // Kita lakukan flip horizontal agar wajah menghadap ke posisi normal (non-mirrored) seperti data di database.
-    if (_controller?.description.lensDirection == CameraLensDirection.front) {
-      croppedFace = img.copyFlip(croppedFace, direction: img.FlipDirection.horizontal);
+    // Buat versi normal dan versi flipped secara horizontal
+    img.Image croppedFaceNormal = croppedFace;
+    img.Image croppedFaceFlipped = img.copyFlip(croppedFace, direction: img.FlipDirection.horizontal);
+
+    // Helper untuk memproses sebuah gambar wajah dan menjalankan model MobileFaceNet
+    List<double> getEmbedding(img.Image faceImage) {
+      img.Image resizedImage = img.copyResize(faceImage, width: 112, height: 112);
+      var input = List.generate(112, (y) {
+        return List.generate(112, (x) {
+          final pixel = resizedImage.getPixel(x, y);
+          return [
+            (pixel.r - 127.5) / 127.5,
+            (pixel.g - 127.5) / 127.5,
+            (pixel.b - 127.5) / 127.5
+          ];
+        });
+      });
+      var reshapedInput = [input];
+      var output = List.filled(1 * 192, 0.0).reshape([1, 192]);
+      _interpreter.run(reshapedInput, output);
+      return List<double>.from(output[0]);
     }
 
-    img.Image resizedImage =
-        img.copyResize(croppedFace, width: 112, height: 112);
-    var input = List.generate(112, (y) {
-      return List.generate(112, (x) {
-        final pixel = resizedImage.getPixel(x, y);
-        return [
-          (pixel.r - 127.5) / 127.5,
-          (pixel.g - 127.5) / 127.5,
-          (pixel.b - 127.5) / 127.5
-        ];
-      });
-    });
-    var reshapedInput = [input];
-    var output = List.filled(1 * 192, 0.0).reshape([1, 192]);
-    _interpreter.run(reshapedInput, output);
-    return List<double>.from(output[0]);
+    final embeddingNormal = getEmbedding(croppedFaceNormal);
+    final embeddingFlipped = getEmbedding(croppedFaceFlipped);
+
+    return [embeddingNormal, embeddingFlipped];
   }
 
   Future<void> _onAbsenMasukButtonPressed() async {

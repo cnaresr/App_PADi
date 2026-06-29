@@ -118,7 +118,7 @@ class ApiService {
   // --- FUNGSI ABSENSI ---
   static Future<Map<String, dynamic>> kirimAbsensiMasuk({
     required int userId, // [DIUBAH] Menggunakan userId
-    required List<double> faceEmbedding,
+    required List<List<double>> faceEmbedding,
     required double latitude,
     required double longitude,
     required String
@@ -182,7 +182,7 @@ class ApiService {
   // [BARU] Fungsi untuk mengirim absensi pulang
   static Future<Map<String, dynamic>> kirimAbsensiPulang({
     required int userId,
-    required List<double> faceEmbedding,
+    required List<List<double>> faceEmbedding,
     required double latitude,
     required double longitude,
     required String fotoPulangPath, // [DIUBAH] Menggunakan path file
