@@ -6,6 +6,7 @@ class StorageService {
   static const String _userNameKey = 'user_name';
   static const String _userDetailKey = 'user_detail';
   static const String _userRoleKey = 'user_role';
+  static const String _userEmailKey = 'user_email';
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
@@ -15,6 +16,7 @@ class StorageService {
   static String? _cachedUserName;
   static String? _cachedUserDetail;
   static String? _cachedUserRole;
+  static String? _cachedUserEmail;
 
   Future<void> saveToken(String token) async {
     _cachedToken = token;
@@ -38,18 +40,23 @@ class StorageService {
     required String name,
     required String detail,
     required String role,
+    String? email,
   }) async {
     _cachedToken = token;
     _cachedUserId = userId;
     _cachedUserName = name;
     _cachedUserDetail = detail;
     _cachedUserRole = role;
+    if (email != null) _cachedUserEmail = email;
 
     await _storage.write(key: _tokenKey, value: token);
     await _storage.write(key: _userIdKey, value: userId.toString());
     await _storage.write(key: _userNameKey, value: name);
     await _storage.write(key: _userDetailKey, value: detail);
     await _storage.write(key: _userRoleKey, value: role);
+    if (email != null) {
+      await _storage.write(key: _userEmailKey, value: email);
+    }
   }
 
   Future<int?> getUserId() async {
@@ -77,17 +84,25 @@ class StorageService {
     return _cachedUserRole;
   }
 
+  Future<String?> getUserEmail() async {
+    if (_cachedUserEmail != null) return _cachedUserEmail;
+    _cachedUserEmail = await _storage.read(key: _userEmailKey);
+    return _cachedUserEmail;
+  }
+
   Future<void> clearSession() async {
     _cachedToken = null;
     _cachedUserId = null;
     _cachedUserName = null;
     _cachedUserDetail = null;
     _cachedUserRole = null;
+    _cachedUserEmail = null;
 
     await _storage.delete(key: _tokenKey);
     await _storage.delete(key: _userIdKey);
     await _storage.delete(key: _userNameKey);
     await _storage.delete(key: _userDetailKey);
     await _storage.delete(key: _userRoleKey);
+    await _storage.delete(key: _userEmailKey);
   }
 }

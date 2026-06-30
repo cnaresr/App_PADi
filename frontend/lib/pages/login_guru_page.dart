@@ -110,9 +110,10 @@ class _LoginGuruPageState extends State<LoginGuruPage> {
                             String namaLengkap = userData['username'] ?? userData['nama'] ?? "Pengajar";
                             String nip = userData['nip'] ?? "NIP Belum Diatur";
                             int idUser = userData['id'] ?? 0;
+                            String emailUser = userData['email'] ?? "Email tidak tersedia";
 
                             Provider.of<UserProvider>(context, listen: false)
-                                .setUserData(idUser, namaLengkap, nip, userData['role']);
+                                .setUserData(idUser, namaLengkap, nip, userData['role'], emailStr: emailUser);
 
                             // 2. AMBIL DATA DASHBOARD KHUSUS GURU
                             var dashResponse = await ApiService.getDashboardGuru(idUser);

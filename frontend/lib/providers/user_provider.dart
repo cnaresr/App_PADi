@@ -5,6 +5,7 @@ class UserProvider with ChangeNotifier {
   String _namaLengkap = "Memuat...";
   String _kelasAtauNip = "Memuat...";
   String _role = "";
+  String _email = "";
   
   // Variabel baru untuk statistik dan riwayat
   int _hadirBulanIni = 0;
@@ -22,6 +23,7 @@ class UserProvider with ChangeNotifier {
   String get namaLengkap => _namaLengkap;
   String get kelasAtauNip => _kelasAtauNip;
   String get role => _role;
+  String get email => _email;
   int get hadirBulanIni => _hadirBulanIni;
   int get persentaseKehadiran => _persentaseKehadiran;
   List<dynamic> get riwayatAbsensi => _riwayatAbsensi;
@@ -33,11 +35,12 @@ class UserProvider with ChangeNotifier {
   bool get isGeofenceActive => _isGeofenceActive;
 
   // Menyimpan data Akun saat login
-  void setUserData(int id, String nama, String detail, String roleUser) {
+  void setUserData(int id, String nama, String detail, String roleUser, {String emailStr = ""}) {
     _userId = id;
     _namaLengkap = nama;
     _kelasAtauNip = detail;
     _role = roleUser;
+    _email = emailStr;
     notifyListeners();
   }
 
@@ -87,6 +90,7 @@ class UserProvider with ChangeNotifier {
     _namaLengkap = "";
     _kelasAtauNip = "";
     _role = "";
+    _email = "";
     _hadirBulanIni = 0;
     _persentaseKehadiran = 0;
     _riwayatAbsensi = [];

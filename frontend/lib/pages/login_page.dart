@@ -116,10 +116,11 @@ class _LoginPageState extends State<LoginPage> {
                           String roleUser = userData['role'] ?? "Siswa";
                           String infoKelas = userData['kelas'] ?? "Siswa SMK"; 
                           int idUser = userData['id'] ?? 0;
+                          String emailUser = userData['email'] ?? "Email tidak tersedia";
 
                           // 1. SIMPAN DATA PROFIL KE PROVIDER
                           final userProvider = Provider.of<UserProvider>(context, listen: false);
-                          userProvider.setUserData(idUser, namaLengkap, infoKelas, roleUser);
+                          userProvider.setUserData(idUser, namaLengkap, infoKelas, roleUser, emailStr: emailUser);
 
                           // Update FCM Token ke Server
                           if (response['token'] != null) {

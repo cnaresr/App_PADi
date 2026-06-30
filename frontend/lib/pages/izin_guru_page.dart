@@ -464,6 +464,32 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
         jenisIcon = Icons.note_alt_rounded;
     }
 
+    Color statusBgColor;
+    Color statusTextColor;
+    Color statusBorderColor;
+    IconData statusIcon;
+    String statusText;
+
+    if (status == 'Disetujui') {
+      statusBgColor = const Color(0xFFE8F5E9);
+      statusTextColor = const Color(0xFF2E7D32);
+      statusBorderColor = const Color(0xFFA5D6A7);
+      statusIcon = Icons.check_circle_rounded;
+      statusText = "Disetujui";
+    } else if (status == 'Ditolak') {
+      statusBgColor = const Color(0xFFFFEBEE);
+      statusTextColor = const Color(0xFFC62828);
+      statusBorderColor = const Color(0xFFEF9A9A);
+      statusIcon = Icons.cancel_rounded;
+      statusText = "Ditolak";
+    } else {
+      statusBgColor = const Color(0xFFFFF3E0);
+      statusTextColor = const Color(0xFFE65100);
+      statusBorderColor = const Color(0xFFFFCC80);
+      statusIcon = Icons.schedule_rounded;
+      statusText = "Menunggu";
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -551,21 +577,20 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF3E0),
+                    color: statusBgColor,
                     borderRadius: BorderRadius.circular(20),
-                    border:
-                        Border.all(color: const Color(0xFFFFCC80)),
+                    border: Border.all(color: statusBorderColor),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.schedule_rounded,
-                          size: 11, color: Color(0xFFE65100)),
-                      SizedBox(width: 4),
+                      Icon(statusIcon,
+                          size: 11, color: statusTextColor),
+                      const SizedBox(width: 4),
                       Text(
-                        "Menunggu",
+                        statusText,
                         style: TextStyle(
-                          color: Color(0xFFE65100),
+                          color: statusTextColor,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),

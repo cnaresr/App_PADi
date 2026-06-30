@@ -13,6 +13,7 @@ class ProfilPage extends StatelessWidget {
     final userProvider = context.watch<UserProvider>();
     final String nama = userProvider.namaLengkap;
     final String kelas = userProvider.kelasAtauNip;
+    final String email = userProvider.email;
 
     final String initials = nama
         .split(' ')
@@ -223,19 +224,11 @@ class ProfilPage extends StatelessWidget {
                     child: Column(
                       children: [
                         _buildMenuRow(
-                          icon: Icons.phone_outlined,
-                          iconColor: const Color(0xFF006D5B),
-                          iconBg: const Color(0xFFE8F5E9),
-                          title: "Nomor Telepon",
-                          subtitle: "+62 812 ****",
-                        ),
-                        _buildDivider(),
-                        _buildMenuRow(
-                          icon: Icons.schedule_rounded,
+                          icon: Icons.email_outlined,
                           iconColor: const Color(0xFF1565C0),
                           iconBg: const Color(0xFFE3F2FD),
-                          title: "Jadwal Aktif",
-                          subtitle: "Senin - Jumat",
+                          title: "Email Resmi",
+                          subtitle: email.isNotEmpty ? email : "Email belum diatur",
                         ),
                         _buildDivider(),
                         _buildMenuRow(

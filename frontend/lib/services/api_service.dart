@@ -102,6 +102,7 @@ class ApiService {
           name: data['username'] ?? data['nama'] ?? '',
           detail: data['kelas'] ?? data['nip'] ?? '',
           role: data['role'] ?? '',
+          email: data['email'] ?? '',
         );
       }
 

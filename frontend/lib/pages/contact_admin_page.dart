@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ContactAdminPage extends StatelessWidget {
   const ContactAdminPage({super.key});
@@ -58,14 +59,26 @@ class ContactAdminPage extends StatelessWidget {
                     icon: Icons.chat_bubble_rounded, 
                     color: const Color(0xFF38A169), 
                     bgColor: const Color(0xFFE5F4EC), 
-                    title: "WhatsApp Admin"
+                    title: "WhatsApp Admin",
+                    onTap: () async {
+                      final Uri url = Uri.parse('https://wa.me/6285951497948');
+                      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+                        debugPrint('Could not launch $url');
+                      }
+                    }
                   ),
                   const SizedBox(height: 15),
                   _buildContactBtn(
                     icon: Icons.email_rounded, 
                     color: const Color(0xFFEBC15B), 
                     bgColor: const Color(0xFFFFF3E0), 
-                    title: "Email Support"
+                    title: "Email Support",
+                    onTap: () async {
+                      final Uri url = Uri.parse('mailto:farizhikmal94@gmail.com');
+                      if (!await launchUrl(url)) {
+                        debugPrint('Could not launch $url');
+                      }
+                    }
                   ),
                   const Padding(
                     padding: EdgeInsets.only(top: 25),
@@ -87,9 +100,9 @@ class ContactAdminPage extends StatelessWidget {
     );
   }
 
-  Widget _buildContactBtn({required IconData icon, required Color color, required Color bgColor, required String title}) {
+  Widget _buildContactBtn({required IconData icon, required Color color, required Color bgColor, required String title, required VoidCallback onTap}) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.all(15),

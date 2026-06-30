@@ -13,6 +13,7 @@ class ProfilGuruPage extends StatelessWidget {
     final userProvider = context.watch<UserProvider>();
     final String nama = userProvider.namaLengkap;
     final String nip = userProvider.kelasAtauNip;
+    final String email = userProvider.email;
 
     String initials = nama
         .split(' ')
@@ -236,16 +237,8 @@ class ProfilGuruPage extends StatelessWidget {
                           iconColor: const Color(0xFF1565C0),
                           iconBg: const Color(0xFFE3F2FD),
                           title: "Email Resmi",
-                          subtitle: "Terkoneksi",
+                          subtitle: email.isNotEmpty ? email : "Email belum diatur",
                           isFirst: true,
-                        ),
-                        _buildDivider(),
-                        _buildMenuRow(
-                          icon: Icons.phone_outlined,
-                          iconColor: const Color(0xFF006D5B),
-                          iconBg: const Color(0xFFE8F5E9),
-                          title: "Nomor Telepon",
-                          subtitle: "Diatur oleh Admin",
                         ),
                         _buildDivider(),
                         _buildMenuRow(

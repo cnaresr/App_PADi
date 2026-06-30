@@ -90,6 +90,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     final role = await storage.getUserRole();
     final name = await storage.getUserName();
     final detail = await storage.getUserDetail();
+    final email = await storage.getUserEmail();
 
     if (token != null && token.isNotEmpty) {
       final bool isTokenExpired = JwtDecoder.isExpired(token);
@@ -100,7 +101,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
       if (userId != null && userId > 0) {
         final userProvider = context.read<UserProvider>();
-        userProvider.setUserData(userId, name ?? 'Pengguna', detail ?? '', role ?? '');
+        userProvider.setUserData(userId, name ?? 'Pengguna', detail ?? '', role ?? '', emailStr: email ?? '');
 
         // Update FCM Token ke Server saat restore sesi
         FirebaseMessagingService.updateFCMTokenToServer(userId, token);
