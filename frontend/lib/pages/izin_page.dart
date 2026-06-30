@@ -721,7 +721,7 @@ class _IzinPageState extends State<IzinPage>
 
     // Hitung stats
     int hadirCount =
-        absensi.where((a) => a['status'] == 'Hadir').length;
+        absensi.where((a) => a['status'] == 'Hadir' || a['status'] == 'Telat').length;
     int izinCount =
         perizinan.where((p) => p['status'] == 'Disetujui').length;
     int alpaCount = absensi
