@@ -118,7 +118,6 @@ class ApiService {
   // --- FUNGSI ABSENSI ---
   static Future<Map<String, dynamic>> kirimAbsensiMasuk({
     required int userId, // [DIUBAH] Menggunakan userId
-    required List<List<double>> faceEmbedding,
     required double latitude,
     required double longitude,
     required String
@@ -134,9 +133,6 @@ class ApiService {
 
       // Tambahkan field data
       request.fields['userId'] = userId.toString();
-      request.fields['faceEmbedding'] = jsonEncode(
-        faceEmbedding,
-      ); // Encode list menjadi string JSON
       request.fields['latitude'] = latitude.toString();
       request.fields['longitude'] = longitude.toString();
 
@@ -174,7 +170,6 @@ class ApiService {
       }
     } catch (e, stacktrace) {
       debugPrint('Error di ApiService (kirimAbsensiMasuk): $e\n$stacktrace');
-      debugPrint('Error di ApiService (kirimAbsensiMasuk): $e');
       return {'success': false, 'message': 'Tidak dapat terhubung ke server.'};
     }
   }
@@ -182,13 +177,11 @@ class ApiService {
   // [BARU] Fungsi untuk mengirim absensi pulang
   static Future<Map<String, dynamic>> kirimAbsensiPulang({
     required int userId,
-    required List<List<double>> faceEmbedding,
     required double latitude,
     required double longitude,
-    required String fotoPulangPath, // [DIUBAH] Menggunakan path file
+    required String fotoPulangPath,
   }) async {
     try {
-      // [DIUBAH] Menggunakan MultipartRequest
       var request = http.MultipartRequest(
         'POST',
         Uri.parse('$baseUrl/absensi/pulang'),
@@ -196,7 +189,6 @@ class ApiService {
       request.headers.addAll(await _authHeadersMultipart());
 
       request.fields['userId'] = userId.toString();
-      request.fields['faceEmbedding'] = jsonEncode(faceEmbedding);
       request.fields['latitude'] = latitude.toString();
       request.fields['longitude'] = longitude.toString();
 
@@ -326,6 +318,23 @@ class ApiService {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/perizinan/pending'),
+        headers: await _authHeaders(),
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body)['data'];
+      }
+      await _handleUnauthorizedResponse(response);
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // 2.b. Fungsi Guru Mengambil Daftar Izin Riwayat
+  static Future<List<dynamic>> getIzinRiwayat() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/perizinan/riwayat'),
         headers: await _authHeaders(),
       );
       if (response.statusCode == 200) {

@@ -15,7 +15,7 @@ class ForgotPasswordPage extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 30),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

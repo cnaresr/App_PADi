@@ -52,17 +52,9 @@ class _HomePageState extends State<HomePage> {
     final firstName = userProvider.namaLengkap.split(' ').first;
     final tanggal = DateFormat('EEEE, d MMMM', 'id_ID').format(DateTime.now());
 
-    // Hitung langsung dari list lokal (sama seperti izin_page.dart)
-    final List<dynamic> riwayat = userProvider.riwayatAbsensi;
-    final int hadirCount =
-        riwayat.where((a) => a['status'] == 'Hadir').length;
-    final int telatCount = riwayat
-        .where((a) => a['status'] == 'Telat' || a['status'] == 'Terlambat')
-        .length;
-    final int totalCount = riwayat.length;
-    final int persenHadir = totalCount > 0
-        ? (((hadirCount + telatCount) / totalCount) * 100).round()
-        : 0;
+    // Hitung dari dashboard data (bulan ini)
+    final int hadirCount = userProvider.hadirBulanIni;
+    final int persenHadir = userProvider.persentaseKehadiran;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),

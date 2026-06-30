@@ -17,16 +17,18 @@ class IzinGuruPage extends StatefulWidget {
 
 class _IzinGuruPageState extends State<IzinGuruPage> {
   List<dynamic> pendingList = [];
+  List<dynamic> riwayatList = [];
   bool isLoading = true;
   StreamSubscription<RemoteMessage>? _notifSubscription;
+  int _selectedIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _loadPendingIzin();
+    _loadData();
     _notifSubscription = FirebaseMessagingService.onMessageStream.listen((message) {
       if (mounted) {
-        _loadPendingIzin();
+        _loadData();
       }
     });
   }
@@ -37,11 +39,13 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
     super.dispose();
   }
 
-  Future<void> _loadPendingIzin() async {
+  Future<void> _loadData() async {
     setState(() => isLoading = true);
-    final data = await ApiService.getIzinPending();
+    final dataPending = await ApiService.getIzinPending();
+    final dataRiwayat = await ApiService.getIzinRiwayat();
     setState(() {
-      pendingList = data;
+      pendingList = dataPending;
+      riwayatList = dataRiwayat;
       isLoading = false;
     });
   }
@@ -69,7 +73,7 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
         message: 'Izin berhasil $statusUpdate',
         type: statusUpdate == 'Disetujui' ? PopupType.success : PopupType.info,
       );
-      _loadPendingIzin();
+      _loadData();
     } else {
       CustomPopup.show(
         context,
@@ -165,10 +169,12 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
 
   @override
   Widget build(BuildContext context) {
+    List<dynamic> currentList = _selectedIndex == 0 ? pendingList : riwayatList;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       body: RefreshIndicator(
-        onRefresh: _loadPendingIzin,
+        onRefresh: _loadData,
         color: const Color(0xFF006D5B),
         child: isLoading
             ? const Center(
@@ -234,9 +240,65 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 16),
+                              
+                              // Segmented Toggle
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () => setState(() => _selectedIndex = 0),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          decoration: BoxDecoration(
+                                            color: _selectedIndex == 0 ? Colors.white : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            "Menunggu",
+                                            style: TextStyle(
+                                              color: _selectedIndex == 0 ? const Color(0xFF006D5B) : Colors.white70,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () => setState(() => _selectedIndex = 1),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          decoration: BoxDecoration(
+                                            color: _selectedIndex == 1 ? Colors.white : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            "Riwayat",
+                                            style: TextStyle(
+                                              color: _selectedIndex == 1 ? const Color(0xFF006D5B) : Colors.white70,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
 
-                              // Pending count card
+                              // Info card
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 20, vertical: 16),
@@ -268,16 +330,20 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          "${pendingList.length} Pengajuan Menunggu",
+                                          _selectedIndex == 0
+                                              ? "${currentList.length} Pengajuan Menunggu"
+                                              : "${currentList.length} Riwayat Tersedia",
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 16,
                                           ),
                                         ),
-                                        const Text(
-                                          "Perlu tindakan segera",
-                                          style: TextStyle(
+                                        Text(
+                                          _selectedIndex == 0
+                                              ? "Perlu tindakan segera"
+                                              : "Daftar izin yang telah diproses",
+                                          style: const TextStyle(
                                               color: Colors.white70,
                                               fontSize: 12),
                                         ),
@@ -294,7 +360,7 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
                   ),
 
                   // ===== CONTENT =====
-                  if (pendingList.isEmpty)
+                  if (currentList.isEmpty)
                     SliverFillRemaining(
                       hasScrollBody: false,
                       child: Center(
@@ -323,11 +389,13 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
-                              "Tidak ada pengajuan izin yang perlu\nditindaklanjuti saat ini.",
+                            Text(
+                              _selectedIndex == 0
+                                  ? "Tidak ada pengajuan izin yang perlu\nditindaklanjuti saat ini."
+                                  : "Belum ada riwayat persetujuan izin.",
                               textAlign: TextAlign.center,
                               style:
-                                  TextStyle(color: Colors.grey, fontSize: 14, height: 1.5),
+                                  const TextStyle(color: Colors.grey, fontSize: 14, height: 1.5),
                             ),
                           ],
                         ),
@@ -339,7 +407,7 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
-                            var izin = pendingList[index];
+                            var izin = currentList[index];
                             String namaSiswa = izin['siswa']['namaLengkap'];
                             String jenisIzin = izin['jenisIzin'] ?? '-';
                             String alasan = izin['alasan'] ?? '-';
@@ -357,9 +425,10 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
                                 alasan,
                                 "$tglMulai s/d $tglSelesai",
                                 file,
-                                index);
+                                index,
+                                status: izin['status']);
                           },
-                          childCount: pendingList.length,
+                          childCount: currentList.length,
                         ),
                       ),
                     ),
@@ -370,7 +439,7 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
   }
 
   Widget _buildApprovalCard(int izinId, String name, String jenis,
-      String reason, String date, String attachment, int index) {
+      String reason, String date, String attachment, int index, {String? status}) {
     final bool hasAttachment = attachment != "Tidak ada lampiran";
     final String initials = name
         .split(' ')
@@ -580,58 +649,75 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // Action buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.close_rounded,
-                            size: 16, color: Color(0xFFC62828)),
-                        label: const Text(
-                          "Tolak",
-                          style: TextStyle(
-                            color: Color(0xFFC62828),
-                            fontWeight: FontWeight.bold,
+                if (_selectedIndex == 0)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.close_rounded,
+                              size: 16, color: Color(0xFFC62828)),
+                          label: const Text(
+                            "Tolak",
+                            style: TextStyle(
+                              color: Color(0xFFC62828),
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(
+                                color: Color(0xFFC62828), width: 1.5),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          onPressed: () =>
+                              _processIzin(izinId, 'Ditolak'),
                         ),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                              color: Color(0xFFC62828), width: 1.5),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.check_rounded,
+                              size: 16, color: Colors.white),
+                          label: const Text(
+                            "Setujui",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF006D5B),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          onPressed: () =>
+                              _processIzin(izinId, 'Disetujui'),
                         ),
-                        onPressed: () =>
-                            _processIzin(izinId, 'Ditolak'),
+                      ),
+                    ],
+                  )
+                else
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: status == 'Disetujui' ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      status == 'Disetujui' ? "Telah Disetujui" : "Ditolak",
+                      style: TextStyle(
+                        color: status == 'Disetujui' ? const Color(0xFF2E7D32) : const Color(0xFFC62828),
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.check_rounded,
-                            size: 16, color: Colors.white),
-                        label: const Text(
-                          "Setujui",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF006D5B),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        onPressed: () =>
-                            _processIzin(izinId, 'Disetujui'),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
               ],
             ),
           ),

@@ -5,10 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
-import 'package:tflite_flutter/tflite_flutter.dart' as tfl;
 import 'package:image/image.dart' as img;
 import 'package:provider/provider.dart';
-import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
 import '../main.dart';
 import '../services/api_service.dart';
@@ -53,12 +51,12 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
   Position? _currentPosition;
   StreamSubscription<Position>? _locationSubscription;
 
-  late tfl.Interpreter _interpreter;
   bool _isProcessing = false;
   String? _cameraError;
 
   late List<Map<String, double>> _schoolPolygon;
   bool _hasCheckedIn = false;
+  bool _hasCheckedOut = false;
   bool _isIzinHariIni = false;
 
   @override
@@ -77,7 +75,6 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
       "AbsensiPage: Memuat poligon sekolah dengan ${_schoolPolygon.length} vertices.",
     );
     _initializeCamera();
-    _loadModel();
     _startLocationCheck();
   }
 
@@ -134,22 +131,39 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     ).format(DateTime.now());
 
     bool sudahMasuk = false;
+    bool sudahPulang = false;
     bool izinSakitHariIni = false;
 
     if (riwayat.isNotEmpty) {
       sudahMasuk = riwayat.any(
-        (absen) =>
-            absen['tanggal'] == formatHariIni &&
-            absen['jam_masuk'] != null &&
-            absen['jam_pulang'] == null &&
-            absen['status'] != 'Izin' &&
-            absen['status'] != 'Sakit',
+        (absen) {
+          if (absen['tanggal'] == null) return false;
+          String tglDB = absen['tanggal'].toString().split('T')[0];
+          return tglDB == formatHariIni &&
+              absen['jamMasuk'] != null &&
+              absen['status'] != 'Izin' &&
+              absen['status'] != 'Sakit';
+        },
+      );
+
+      sudahPulang = riwayat.any(
+        (absen) {
+          if (absen['tanggal'] == null) return false;
+          String tglDB = absen['tanggal'].toString().split('T')[0];
+          return tglDB == formatHariIni &&
+              absen['jamPulang'] != null &&
+              absen['status'] != 'Izin' &&
+              absen['status'] != 'Sakit';
+        },
       );
 
       izinSakitHariIni = riwayat.any(
-        (absen) =>
-            absen['tanggal'] == formatHariIni &&
-            (absen['status'] == 'Izin' || absen['status'] == 'Sakit'),
+        (absen) {
+          if (absen['tanggal'] == null) return false;
+          String tglDB = absen['tanggal'].toString().split('T')[0];
+          return tglDB == formatHariIni &&
+              (absen['status'] == 'Izin' || absen['status'] == 'Sakit');
+        },
       );
     }
 
@@ -179,6 +193,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
 
     setState(() {
       _hasCheckedIn = sudahMasuk;
+      _hasCheckedOut = sudahPulang;
       _isIzinHariIni = izinSakitHariIni || izinDiSetujuiHariIni;
     });
   }
@@ -208,7 +223,6 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
   @override
   void dispose() {
     _controller?.dispose();
-    _interpreter.close();
     WidgetsBinding.instance.removeObserver(this);
     _locationSubscription?.cancel();
     super.dispose();
@@ -343,124 +357,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     return isInside;
   }
 
-  Future<void> _loadModel() async {
-    try {
-      _interpreter = await tfl.Interpreter.fromAsset(
-        'assets/mobilefacenet.tflite',
-      );
-    } catch (e) {
-      debugPrint("Gagal memuat model TFLite: $e");
-      CustomPopup.show(
-        context,
-        message: "Gagal memuat model AI: $e",
-        type: PopupType.error,
-      );
-    }
-  }
 
-  Future<List<List<double>>?> _runModelOnImage(File imageFile) async {
-    final options = FaceDetectorOptions(performanceMode: FaceDetectorMode.fast);
-    final faceDetector = FaceDetector(options: options);
-    final inputImage = InputImage.fromFilePath(imageFile.path);
-    final List<Face> faces = await faceDetector.processImage(inputImage);
-    faceDetector.close();
-    if (faces.isEmpty) {
-      throw Exception(
-        "Wajah tidak ditemukan. Pastikan wajah terlihat jelas di kamera.",
-      );
-    }
-    final Face firstFace = faces.first;
-    final Rect boundingBox = firstFace.boundingBox;
-    img.Image? rawImage = img.decodeImage(await imageFile.readAsBytes());
-    if (rawImage == null) return null;
-    img.Image originalImage = img.bakeOrientation(rawImage);
-
-    debugPrint("[DEBUG CROP] rawImage size: ${rawImage.width}x${rawImage.height}");
-    debugPrint("[DEBUG CROP] originalImage size (after bake): ${originalImage.width}x${originalImage.height}");
-    debugPrint("[DEBUG CROP] boundingBox from ML Kit: left=${boundingBox.left}, top=${boundingBox.top}, width=${boundingBox.width}, height=${boundingBox.height}");
-
-    // [PERBAIKAN FATAL ORIENTASI ML KIT VS PACKAGE:IMAGE]
-    // Kamera HP menyimpan foto selfie secara rotasi Landscape (width > height) di tingkat sensor.
-    // Google ML Kit otomatis merotasi ke Portrait (height > width) saat mendeteksi boundingBox.
-    // Jika originalImage dari package:image masih berstatus width > height, kita rotasi terlebih dahulu ke portrait 
-    // agar dimensi dan koordinat bounding box dari ML Kit cocok dengan pixel image saat di-crop.
-    if (originalImage.width > originalImage.height) {
-      final int sensorOrientation = _controller?.description.sensorOrientation ?? 90;
-      debugPrint("[DEBUG CROP] Landscape detected. Rotating originalImage by $sensorOrientation degrees.");
-      originalImage = img.copyRotate(originalImage, angle: sensorOrientation);
-      debugPrint("[DEBUG CROP] originalImage size (after rotation): ${originalImage.width}x${originalImage.height}");
-    }
-
-    // [VALIDASI BARU] Cegah wajah terlalu jauh (Resolution Collapse)
-    final double faceWidthRatio = boundingBox.width / originalImage.width;
-    if (faceWidthRatio < 0.25) {
-      throw Exception(
-        "Jarak wajah terlalu jauh. Silakan dekatkan wajah Anda ke kamera agar terlihat jelas.",
-      );
-    }
-
-    int origX = boundingBox.left.toInt();
-    int origY = boundingBox.top.toInt();
-    int origW = boundingBox.width.toInt();
-    int origH = boundingBox.height.toInt();
-
-    // Terapkan Square Crop agar wajah tidak gepeng/terdistorsi saat di-resize ke 112x112
-    int maxDimension = origW > origH ? origW : origH;
-    int centerX = origX + (origW ~/ 2);
-    int centerY = origY + (origH ~/ 2);
-
-    int x = (centerX - (maxDimension ~/ 2)).clamp(0, originalImage.width);
-    int y = (centerY - (maxDimension ~/ 2)).clamp(0, originalImage.height);
-    int w = maxDimension.clamp(0, originalImage.width - x);
-    int h = maxDimension.clamp(0, originalImage.height - y);
-    // Jika di batas gambar tepi w dan h bisa sedikit berbeda, ambil nilai minimum agar tetap bujur sangkar sempurna
-    int finalDimension = w < h ? w : h;
-    debugPrint("[DEBUG CROP] crop coordinates calculated: x=$x, y=$y, width=$finalDimension, height=$finalDimension");
-
-    img.Image croppedFace = img.copyCrop(
-      originalImage,
-      x: x,
-      y: y,
-      width: finalDimension,
-      height: finalDimension,
-    );
-    debugPrint("[DEBUG CROP] croppedFace size: ${croppedFace.width}x${croppedFace.height}");
-
-    // Buat versi normal dan versi flipped secara horizontal
-    img.Image croppedFaceNormal = croppedFace;
-    img.Image croppedFaceFlipped = img.copyFlip(
-      croppedFace,
-      direction: img.FlipDirection.horizontal,
-    );
-
-    // Helper untuk memproses sebuah gambar wajah dan menjalankan model MobileFaceNet
-    List<double> getEmbedding(img.Image faceImage) {
-      img.Image resizedImage = img.copyResize(
-        faceImage,
-        width: 112,
-        height: 112,
-      );
-      var input = List.generate(112, (y) {
-        return List.generate(112, (x) {
-          final pixel = resizedImage.getPixel(x, y);
-          return [
-            (pixel.r - 127.5) / 127.5,
-            (pixel.g - 127.5) / 127.5,
-            (pixel.b - 127.5) / 127.5,
-          ];
-        });
-      });
-      var reshapedInput = [input];
-      var output = List.filled(1 * 192, 0.0).reshape([1, 192]);
-      _interpreter.run(reshapedInput, output);
-      return List<double>.from(output[0]);
-    }
-
-    final embeddingNormal = getEmbedding(croppedFaceNormal);
-    final embeddingFlipped = getEmbedding(croppedFaceFlipped);
-
-    return [embeddingNormal, embeddingFlipped];
-  }
 
   Future<void> _onAbsenMasukButtonPressed() async {
     if (_controller == null ||
@@ -471,12 +368,6 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     setState(() => _isProcessing = true);
     try {
       final XFile imageFile = await _controller!.takePicture();
-      final faceEmbedding = await _runModelOnImage(File(imageFile.path));
-      if (faceEmbedding == null) {
-        throw Exception("Wajah tidak terdeteksi pada gambar.");
-      }
-      debugPrint("[DEBUG EMBEDDING] Normal first 5: ${faceEmbedding[0].sublist(0, 5)}");
-      debugPrint("[DEBUG EMBEDDING] Flipped first 5: ${faceEmbedding[1].sublist(0, 5)}");
 
       // [PERBAIKAN] Kompresi gambar secara background agar tidak terjadi timeout di Ngrok (berkurang dari 15MB ke ~200KB)
       final rawBytes = await File(imageFile.path).readAsBytes();
@@ -498,7 +389,6 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
 
       final result = await ApiService.kirimAbsensiMasuk(
         userId: widget.siswaId,
-        faceEmbedding: faceEmbedding,
         latitude: _currentPosition!.latitude,
         longitude: _currentPosition!.longitude,
         fotoMasukPath: imageFile.path,
@@ -547,12 +437,6 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     setState(() => _isProcessing = true);
     try {
       final XFile imageFile = await _controller!.takePicture();
-      final faceEmbedding = await _runModelOnImage(File(imageFile.path));
-      if (faceEmbedding == null) {
-        throw Exception("Wajah tidak terdeteksi pada gambar.");
-      }
-      debugPrint("[DEBUG EMBEDDING] Normal first 5: ${faceEmbedding[0].sublist(0, 5)}");
-      debugPrint("[DEBUG EMBEDDING] Flipped first 5: ${faceEmbedding[1].sublist(0, 5)}");
 
       // [PERBAIKAN] Kompresi gambar secara background agar tidak terjadi timeout di Ngrok (berkurang dari 15MB ke ~200KB)
       final rawBytes = await File(imageFile.path).readAsBytes();
@@ -574,7 +458,6 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
 
       final result = await ApiService.kirimAbsensiPulang(
         userId: widget.siswaId,
-        faceEmbedding: faceEmbedding,
         latitude: _currentPosition!.latitude,
         longitude: _currentPosition!.longitude,
         fotoPulangPath: imageFile.path,
@@ -588,7 +471,10 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
             : PopupType.error,
       );
       if (result['success'] == true) {
-        setState(() => _hasCheckedIn = false);
+        setState(() {
+          _hasCheckedIn = true;
+          _hasCheckedOut = true;
+        });
         final user = context.read<UserProvider>();
         final dashRes = await ApiService.getDashboardData(user.userId);
         if (dashRes['status'] == 'success') {
@@ -624,19 +510,28 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
         : "Area Presensi Sekolah";
 
     // Validasi 10 menit sebelum jam pulang
-    bool isWaktuPulang = true;
+    bool isWaktuPulang = false;
     String? jamPulangStr;
-    if (_hasCheckedIn && userProvider.jadwalAktif.isNotEmpty) {
+    if (_hasCheckedIn && !_hasCheckedOut && userProvider.jadwalAktif.isNotEmpty) {
       final jadwal = userProvider.jadwalAktif.first;
       if (jadwal['jamPulang'] != null) {
         try {
-          DateTime jamDb = DateTime.parse(jadwal['jamPulang']).toUtc();
-          int batasMenitPulang = (jamDb.hour * 60) + jamDb.minute;
-          DateTime now = DateTime.now();
-          int menitSekarang = (now.hour * 60) + now.minute;
-          if (menitSekarang < (batasMenitPulang - 10)) {
-            isWaktuPulang = false;
-            jamPulangStr = "${jamDb.hour.toString().padLeft(2, '0')}:${jamDb.minute.toString().padLeft(2, '0')}";
+          // Asumsikan jamPulang berformat HH:mm (misal "15:00")
+          String jamStr = jadwal['jamPulang'];
+          // Ambil H dan M
+          List<String> parts = jamStr.split(':');
+          if (parts.length >= 2) {
+            int jamPulangH = int.parse(parts[0]);
+            int jamPulangM = int.parse(parts[1]);
+            int batasMenitPulang = (jamPulangH * 60) + jamPulangM;
+            DateTime now = DateTime.now();
+            int menitSekarang = (now.hour * 60) + now.minute;
+            
+            jamPulangStr = "${jamPulangH.toString().padLeft(2, '0')}:${jamPulangM.toString().padLeft(2, '0')}";
+
+            if (menitSekarang >= (batasMenitPulang - 10)) {
+              isWaktuPulang = true;
+            }
           }
         } catch (e) {
           debugPrint("Gagal parse jamPulang: $e");
@@ -645,7 +540,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     }
 
     // UI Colors and states
-    final bool isButtonDisabled = (!_isWithinRadius && !_hasCheckedIn) || _isIzinHariIni || (_hasCheckedIn && !isWaktuPulang);
+    final bool isButtonDisabled = (!_isWithinRadius && !_hasCheckedIn) || _isIzinHariIni || _hasCheckedOut || (_hasCheckedIn && !isWaktuPulang);
     final Color btnColor = isButtonDisabled
         ? Colors.grey.shade400
         : (_hasCheckedIn ? const Color(0xFF1C2B2A) : const Color(0xFF006D5B));
@@ -656,9 +551,11 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     String btnLabel;
     if (_isIzinHariIni) {
       btnLabel = "Sedang Izin/Sakit";
+    } else if (_hasCheckedOut) {
+      btnLabel = "Sudah Absen Pulang";
     } else if (_hasCheckedIn) {
       if (!isWaktuPulang && jamPulangStr != null) {
-        btnLabel = "Pulang Pukul $jamPulangStr";
+        btnLabel = "Tunggu Jam $jamPulangStr";
       } else {
         btnLabel = "Presensi Pulang";
       }
