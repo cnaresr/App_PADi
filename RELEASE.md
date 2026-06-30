@@ -1,12 +1,12 @@
-# Panduan & Ketentuan Rilis APK v1.0.0 (App_PADi)
+# Panduan Rilis APK v1.0.0 (App_PADi)
 
-Dokumen ini berisi ketentuan, petunjuk instalasi, dan kredensial akun uji coba untuk berkas APK rilis **App_PADi (Platform Absensi Digital)** versi **v1.0.0**.
+Dokumen ini berisi informasi mengenai panduan pemilihan berkas APK dan daftar fitur yang tersedia dalam aplikasi mobile **App_PADi (Platform Absensi Digital)** versi **v1.0.0**.
 
 ---
 
 ## 📱 1. Pilihan Berkas APK (Assets)
 
-Di halaman release GitHub, terdapat beberapa variasi APK yang dapat diunduh:
+Di halaman release GitHub, terdapat beberapa variasi APK yang dapat diunduh sesuai perangkat Anda:
 
 | Nama Berkas | Target Perangkat / Arsitektur CPU | Ukuran File | Keterangan |
 |-------------|-----------------------------------|-------------|------------|
@@ -17,56 +17,20 @@ Di halaman release GitHub, terdapat beberapa variasi APK yang dapat diunduh:
 
 ---
 
-## 🔒 2. Kredensial Akun Uji Coba (Testing Accounts)
+## ✨ 2. Fitur yang Tersedia dalam APK
 
-Database pengujian telah diisi menggunakan seeder dengan kredensial berikut untuk melakukan login pada aplikasi mobile dan web admin:
+Aplikasi mobile pada rilis kali ini telah dilengkapi dengan beberapa fitur utama sebagai berikut:
 
-### A. Akun Admin (Akses Web Dashboard Admin)
-* **Username**: `admin`
-* **Password**: `admin123`
+### A. Fitur Siswa (Student Features)
+* **Login & Autentikasi**: Autentikasi akun siswa menggunakan username dan sandi terdaftar.
+* **Presensi Mandiri**: Melakukan pencatatan kehadiran (Masuk & Pulang) secara real-time.
+* **Geofencing & Jarak**: Verifikasi lokasi presensi otomatis berdasarkan radius/koordinat area sekolah yang diizinkan.
+* **Face Verification**: Pencegahan kecurangan absensi menggunakan verifikasi pengenalan wajah (Face Recognition) saat check-in.
+* **Pengajuan Perizinan**: Mengajukan surat izin atau sakit secara langsung melalui form aplikasi dengan lampiran alasan.
+* **Riwayat Kehadiran**: Melihat rekapitulasi riwayat absensi bulanan secara transparan.
+* **Profil Siswa**: Melihat informasi data pribadi siswa dan status kelas aktif.
 
-### B. Akun Guru (Akses Aplikasi Mobile / Web Guru)
-Semua akun guru menggunakan password: **`guru123`**
-
-* **Guru Kelas X**: `budi` (Drs. Budi Utomo)
-* **Guru Kelas XI**: `siti` (Siti Aminah, S.Pd.)
-* **Guru Kelas XII**: `ahmad` (Ahmad Fauzi, M.Pd.)
-
-### C. Akun Siswa (Akses Aplikasi Mobile Siswa)
-Semua akun siswa menggunakan password: **`siswa123`**
-
-* **Kelas X (Tingkat X)**:
-  * `aditya` (Aditya Pratama)
-  * `beni` (Beni Setiawan)
-  * `citra` (Citra Lestari)
-* **Kelas XI (Tingkat XI)**:
-  * `dina` (Dina Wijaya)
-  * `eko` (Eko Prasetyo)
-  * `farhan` (Farhan Hidayat)
-* **Kelas XII (Tingkat XII)**:
-  * `gita` (Gita Permata)
-  * `hendra` (Hendra Wijaya)
-  * `indah` (Indah Kusuma)
-
----
-
-## 🔌 3. Prasyarat & Konektivitas API
-
-Aplikasi mobile Flutter memerlukan koneksi ke server backend yang berjalan untuk memvalidasi presensi, perizinan, dan login.
-
-1. **Jalankan Backend**:
-   Pastikan server backend di komputer Anda berjalan menggunakan perintah:
-   ```bash
-   cd backend
-   npm run dev
-   ```
-2. **Koneksi Jaringan**:
-   * **Menggunakan Emulator**: Aplikasi pada emulator secara default dikonfigurasi untuk memanggil API di `http://10.0.2.2:3000/api` (alamat gerbang localhost komputer Anda).
-   * **Menggunakan HP Fisik**: Pastikan HP dan Laptop Anda berada dalam **satu jaringan Wi-Fi yang sama**, dan sesuaikan IP API di konfigurasi aplikasi mobile dengan IP lokal laptop Anda (misal: `http://192.168.x.x:3000/api`).
-
----
-
-## 📌 4. Ketentuan Uji Coba Fitur
-* **Geofencing**: Pengujian kehadiran diverifikasi berdasarkan koordinat lokasi GPS HP Anda terhadap area koordinat geofence sekolah SMKN 1 Malang (yang di-set default pada seeder).
-* **Face Recognition**: Fitur absensi memerlukan verifikasi foto wajah. Pastikan Anda telah melakukan registrasi/upload sampel foto wajah sebelum melakukan absensi masuk/pulang.
-* **Perizinan**: Siswa dapat mengajukan izin/sakit melalui aplikasi mobile, yang kemudian akan langsung muncul di halaman web admin/guru untuk disetujui atau ditolak.
+### B. Fitur Guru (Teacher Features)
+* **Login & Autentikasi**: Autentikasi akun guru menggunakan username dan sandi.
+* **Approval Perizinan**: Memeriksa, menyetujui, atau menolak pengajuan izin/sakit yang diajukan oleh siswa di bawah perwalian kelasnya secara real-time.
+* **Riwayat & Profil**: Melihat informasi data pribadi guru dan riwayat aktivitas absensi kelas.
