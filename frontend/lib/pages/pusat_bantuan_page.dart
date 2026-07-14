@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
 class PusatBantuanPage extends StatelessWidget {
-  const PusatBantuanPage({super.key});
+  final bool isGuru;
+  const PusatBantuanPage({super.key, this.isGuru = false});
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> faqList = [
+    final List<Map<String, dynamic>> siswaFaqList = [
       {
         'q': 'Bagaimana cara melakukan absensi?',
         'a': 'Buka halaman Absensi, pastikan lokasi GPS aktif dan Anda berada di dalam area sekolah. Arahkan wajah ke kamera, lalu tekan tombol "Absen Masuk". Sistem akan memverifikasi wajah Anda secara otomatis.',
@@ -49,6 +50,39 @@ class PusatBantuanPage extends StatelessWidget {
         'bg': const Color(0xFFFFEBEE),
       },
     ];
+
+    final List<Map<String, dynamic>> guruFaqList = [
+      {
+        'q': 'Bagaimana cara menyetujui izin siswa?',
+        'a': 'Buka tab "Perizinan", pilih daftar izin yang berstatus "Pending". Tekan tombol "Setujui" atau "Tolak". Jika disetujui, absensi siswa akan otomatis terisi dengan status Izin/Sakit.',
+        'icon': Icons.check_circle_outline_rounded,
+        'color': const Color(0xFF006D5B),
+        'bg': const Color(0xFFE8F5E9),
+      },
+      {
+        'q': 'Bagaimana melihat rekap kehadiran?',
+        'a': 'Buka tab "Beranda" (Dashboard) untuk melihat statistik kehadiran harian secara keseluruhan, atau tab "Profil" untuk opsi lainnya.',
+        'icon': Icons.bar_chart_rounded,
+        'color': const Color(0xFF1565C0),
+        'bg': const Color(0xFFE3F2FD),
+      },
+      {
+        'q': 'Kenapa notifikasi persetujuan tidak muncul?',
+        'a': 'Pastikan izin notifikasi di perangkat Anda sudah diaktifkan untuk aplikasi ini. Sistem akan mengirim notifikasi saat ada pengajuan izin baru dari siswa.',
+        'icon': Icons.notifications_active_rounded,
+        'color': const Color(0xFF6A1B9A),
+        'bg': const Color(0xFFF3E5F5),
+      },
+      {
+        'q': 'Bagaimana jika saya lupa kata sandi?',
+        'a': 'Silakan hubungi administrator sekolah (Admin) untuk mereset kata sandi akun Guru Anda.',
+        'icon': Icons.lock_reset_rounded,
+        'color': const Color(0xFFC62828),
+        'bg': const Color(0xFFFFEBEE),
+      },
+    ];
+
+    final List<Map<String, dynamic>> faqList = isGuru ? guruFaqList : siswaFaqList;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -131,18 +165,20 @@ class PusatBantuanPage extends StatelessWidget {
                           border: Border.all(
                               color: Colors.white.withOpacity(0.15)),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
-                            Icon(Icons.info_outline_rounded,
+                            const Icon(Icons.info_outline_rounded,
                                 color: Colors.white70, size: 20),
-                            SizedBox(width: 12),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                "Jika pertanyaan Anda tidak terjawab di sini, silakan hubungi administrator sekolah.",
-                                style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 12,
-                                    height: 1.5),
+                                isGuru 
+                                  ? "Jika pertanyaan Anda tidak terjawab di sini, silakan hubungi administrator sekolah."
+                                  : "Jika pertanyaan Anda tidak terjawab di sini, silakan hubungi administrator sekolah atau guru wali kelas Anda.",
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                  height: 1.5),
                               ),
                             ),
                           ],
@@ -205,7 +241,9 @@ class PusatBantuanPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      "Hubungi administrator sekolah Anda untuk mendapatkan bantuan lebih lanjut.",
+                      isGuru 
+                        ? "Hubungi administrator sekolah Anda untuk mendapatkan bantuan lebih lanjut."
+                        : "Hubungi wali kelas atau administrator sekolah Anda untuk mendapatkan bantuan lebih lanjut.",
                       style: TextStyle(
                           color: Colors.white.withOpacity(0.65),
                           fontSize: 13,
@@ -219,15 +257,15 @@ class PusatBantuanPage extends StatelessWidget {
                         color: const Color(0xFF006D5B),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.email_outlined,
+                          const Icon(Icons.email_outlined,
                               color: Colors.white, size: 16),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Text(
-                            "Hubungi Admin",
-                            style: TextStyle(
+                            isGuru ? "Hubungi Admin" : "Hubungi Guru / Admin",
+                            style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 13,

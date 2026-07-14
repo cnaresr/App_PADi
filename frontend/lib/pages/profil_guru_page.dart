@@ -251,7 +251,7 @@ class ProfilGuruPage extends StatelessWidget {
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (_) => const PusatBantuanPage()),
+                                builder: (_) => const PusatBantuanPage(isGuru: true)),
                           ),
                         ),
                       ],
