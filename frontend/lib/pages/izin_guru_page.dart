@@ -21,10 +21,12 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
   bool isLoading = true;
   StreamSubscription<RemoteMessage>? _notifSubscription;
   int _selectedIndex = 0;
+  late PageController _pageController;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _selectedIndex);
     _loadData();
     _notifSubscription = FirebaseMessagingService.onMessageStream.listen((message) {
       if (mounted) {
@@ -36,18 +38,30 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
   @override
   void dispose() {
     _notifSubscription?.cancel();
+    _pageController.dispose();
     super.dispose();
   }
 
   Future<void> _loadData() async {
-    setState(() => isLoading = true);
+    final user = context.read<UserProvider>();
+    final hasData = user.izinPendingGuru.isNotEmpty || user.izinRiwayatGuru.isNotEmpty;
+    if (!hasData) {
+      setState(() => isLoading = true);
+    } else {
+      pendingList = user.izinPendingGuru;
+      riwayatList = user.izinRiwayatGuru;
+      isLoading = false;
+    }
     final dataPending = await ApiService.getIzinPending();
     final dataRiwayat = await ApiService.getIzinRiwayat();
-    setState(() {
-      pendingList = dataPending;
-      riwayatList = dataRiwayat;
-      isLoading = false;
-    });
+    user.setIzinGuruData(dataPending, dataRiwayat);
+    if (mounted) {
+      setState(() {
+        pendingList = dataPending;
+        riwayatList = dataRiwayat;
+        isLoading = false;
+      });
+    }
   }
 
   Future<void> _processIzin(int izinId, String statusUpdate) async {
@@ -170,8 +184,6 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
 
   @override
   Widget build(BuildContext context) {
-    List<dynamic> currentList = _selectedIndex == 0 ? pendingList : riwayatList;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       body: RefreshIndicator(
@@ -180,262 +192,310 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
         child: isLoading
             ? const Center(
                 child: CircularProgressIndicator(color: Color(0xFF006D5B)))
-            : CustomScrollView(
-                slivers: [
+            : Column(
+                children: [
                   // ===== HEADER =====
-                  SliverToBoxAdapter(
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF006D5B), Color(0xFF004D40)],
-                        ),
-                        borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(36),
-                          bottomRight: Radius.circular(36),
-                        ),
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF006D5B), Color(0xFF004D40)],
                       ),
-                      child: SafeArea(
-                        bottom: false,
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    child: const Icon(
-                                        Icons.pending_actions_rounded,
-                                        color: Colors.white,
-                                        size: 22),
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(36),
+                        bottomRight: Radius.circular(36),
+                      ),
+                    ),
+                    child: SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(14),
                                   ),
-                                  const SizedBox(width: 14),
-                                  const Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Persetujuan Izin",
-                                        style: TextStyle(
+                                  child: const Icon(
+                                      Icons.pending_actions_rounded,
+                                      color: Colors.white,
+                                      size: 22),
+                                ),
+                                const SizedBox(width: 14),
+                                const Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Persetujuan Izin",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 22,
+                                        letterSpacing: -0.5,
+                                      ),
+                                    ),
+                                    Text(
+                                      "Pengajuan izin dari siswa",
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            
+                            // Segmented Toggle
+                            Container(
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Stack(
+                                children: [
+                                  AnimatedAlign(
+                                    alignment: _selectedIndex == 0
+                                        ? Alignment.centerLeft
+                                        : Alignment.centerRight,
+                                    duration: const Duration(milliseconds: 250),
+                                    curve: Curves.easeInOutCubic,
+                                    child: FractionallySizedBox(
+                                      widthFactor: 0.5,
+                                      child: Container(
+                                        margin: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
                                           color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 22,
-                                          letterSpacing: -0.5,
+                                          borderRadius: BorderRadius.circular(12),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(0.1),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      Text(
-                                        "Pengajuan izin dari siswa",
-                                        style: TextStyle(
-                                          color: Colors.white70,
-                                          fontSize: 12,
+                                    ),
+                                  ),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            setState(() => _selectedIndex = 0);
+                                            _pageController.animateToPage(0,
+                                                duration: const Duration(milliseconds: 450),
+                                                curve: Curves.easeInOutCubic);
+                                          },
+                                          behavior: HitTestBehavior.opaque,
+                                          child: Center(
+                                            child: AnimatedDefaultTextStyle(
+                                              duration: const Duration(milliseconds: 250),
+                                              style: TextStyle(
+                                                color: _selectedIndex == 0
+                                                    ? const Color(0xFF006D5B)
+                                                    : Colors.white70,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                              child: const Text("Menunggu"),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            setState(() => _selectedIndex = 1);
+                                            _pageController.animateToPage(1,
+                                                duration: const Duration(milliseconds: 450),
+                                                curve: Curves.easeInOutCubic);
+                                          },
+                                          behavior: HitTestBehavior.opaque,
+                                          child: Center(
+                                            child: AnimatedDefaultTextStyle(
+                                              duration: const Duration(milliseconds: 250),
+                                              style: TextStyle(
+                                                color: _selectedIndex == 1
+                                                    ? const Color(0xFF006D5B)
+                                                    : Colors.white70,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                              child: const Text("Riwayat"),
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 16),
-                              
-                              // Segmented Toggle
-                              Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: () => setState(() => _selectedIndex = 0),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
-                                          decoration: BoxDecoration(
-                                            color: _selectedIndex == 0 ? Colors.white : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: Text(
-                                            "Menunggu",
-                                            style: TextStyle(
-                                              color: _selectedIndex == 0 ? const Color(0xFF006D5B) : Colors.white70,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: () => setState(() => _selectedIndex = 1),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
-                                          decoration: BoxDecoration(
-                                            color: _selectedIndex == 1 ? Colors.white : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: Text(
-                                            "Riwayat",
-                                            style: TextStyle(
-                                              color: _selectedIndex == 1 ? const Color(0xFF006D5B) : Colors.white70,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 16),
+                            ),
+                            const SizedBox(height: 16),
 
-                              // Info card
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.13),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.15)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 48,
-                                      height: 48,
-                                      decoration: BoxDecoration(
-                                        color:
-                                            Colors.white.withValues(alpha: 0.2),
-                                        borderRadius:
-                                            BorderRadius.circular(14),
-                                      ),
-                                      child: const Icon(
-                                          Icons.hourglass_empty_rounded,
-                                          color: Colors.white,
-                                          size: 24),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _selectedIndex == 0
-                                              ? "${currentList.length} Pengajuan Menunggu"
-                                              : "${currentList.length} Riwayat Tersedia",
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        Text(
-                                          _selectedIndex == 0
-                                              ? "Perlu tindakan segera"
-                                              : "Daftar izin yang telah diproses",
-                                          style: const TextStyle(
-                                              color: Colors.white70,
-                                              fontSize: 12),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                            // Info card
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.13),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.15)),
                               ),
-                            ],
-                          ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.2),
+                                      borderRadius:
+                                          BorderRadius.circular(14),
+                                    ),
+                                    child: const Icon(
+                                        Icons.hourglass_empty_rounded,
+                                        color: Colors.white,
+                                        size: 24),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _selectedIndex == 0
+                                            ? "${pendingList.length} Pengajuan Menunggu"
+                                            : "${riwayatList.length} Riwayat Tersedia",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      Text(
+                                        _selectedIndex == 0
+                                            ? "Perlu tindakan segera"
+                                            : "Daftar izin yang telah diproses",
+                                        style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
 
-                  // ===== CONTENT =====
-                  if (currentList.isEmpty)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(28),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF006D5B).withValues(alpha: 0.08),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.check_circle_outline_rounded,
-                                color: Color(0xFF006D5B),
-                                size: 52,
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            const Text(
-                              "Semua Beres!",
-                              style: TextStyle(
-                                color: Color(0xFF1E1E1E),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _selectedIndex == 0
-                                  ? "Tidak ada pengajuan izin yang perlu\nditindaklanjuti saat ini."
-                                  : "Belum ada riwayat persetujuan izin.",
-                              textAlign: TextAlign.center,
-                              style:
-                                  const TextStyle(color: Colors.grey, fontSize: 14, height: 1.5),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  else
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 110),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            var izin = currentList[index];
-                            String namaSiswa = izin['siswa']['namaLengkap'];
-                            String jenisIzin = izin['jenisIzin'] ?? '-';
-                            String alasan = izin['alasan'] ?? '-';
-                            String tglMulai =
-                                _formatIsoDateToID(izin['tanggalMulai']);
-                            String tglSelesai =
-                                _formatIsoDateToID(izin['tanggalSelesai']);
-                            String file =
-                                izin['fileBukti'] ?? "Tidak ada lampiran";
-
-                            return _buildApprovalCard(
-                                izin['id'],
-                                namaSiswa,
-                                jenisIzin,
-                                alasan,
-                                "$tglMulai s/d $tglSelesai",
-                                file,
-                                index,
-                                status: izin['status']);
-                          },
-                          childCount: currentList.length,
-                        ),
-                      ),
+                  // ===== CONTENT WITH PAGEVIEW =====
+                  Expanded(
+                    child: PageView(
+                      controller: _pageController,
+                      onPageChanged: (index) {
+                        setState(() {
+                          _selectedIndex = index;
+                        });
+                      },
+                      children: [
+                        // Page 0: Menunggu (Pending)
+                        _buildGuruList(pendingList, true),
+                        // Page 1: Riwayat
+                        _buildGuruList(riwayatList, false),
+                      ],
                     ),
+                  ),
                 ],
               ),
       ),
+    );
+  }
+
+  Widget _buildGuruList(List<dynamic> list, bool isPending) {
+    if (list.isEmpty) {
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.45,
+          alignment: Alignment.center,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(28),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF006D5B).withOpacity(0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle_outline_rounded,
+                  color: Color(0xFF006D5B),
+                  size: 52,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                "Semua Beres!",
+                style: TextStyle(
+                  color: Color(0xFF1E1E1E),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                isPending
+                    ? "Tidak ada pengajuan izin yang perlu\nditindaklanjuti saat ini."
+                    : "Belum ada riwayat persetujuan izin.",
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    color: Colors.grey, fontSize: 14, height: 1.5),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 110),
+      itemCount: list.length,
+      itemBuilder: (context, index) {
+        var izin = list[index];
+        String namaSiswa = izin['siswa']['namaLengkap'];
+        String jenisIzin = izin['jenisIzin'] ?? '-';
+        String alasan = izin['alasan'] ?? '-';
+        String tglMulai = _formatIsoDateToID(izin['tanggalMulai']);
+        String tglSelesai = _formatIsoDateToID(izin['tanggalSelesai']);
+        String file = izin['fileBukti'] ?? "Tidak ada lampiran";
+
+        return _buildApprovalCard(
+            izin['id'],
+            namaSiswa,
+            jenisIzin,
+            alasan,
+            "$tglMulai s/d $tglSelesai",
+            file,
+            index,
+            status: izin['status']);
+      },
     );
   }
 
@@ -492,6 +552,7 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
     }
 
     return Container(
+      key: ValueKey('card_${izinId}_$status'),
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -675,7 +736,7 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
                 ),
                 const SizedBox(height: 20),
 
-                if (_selectedIndex == 0)
+                if (status == 'Pending')
                   Row(
                     children: [
                       Expanded(

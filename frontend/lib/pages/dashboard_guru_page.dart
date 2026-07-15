@@ -5,6 +5,7 @@ import 'package:platform_absensi_digital/services/api_service.dart';
 import 'package:platform_absensi_digital/pages/notifikasi_page.dart';
 import 'package:platform_absensi_digital/pages/profil_guru_page.dart';
 import 'package:intl/intl.dart';
+import 'package:platform_absensi_digital/widgets/page_transitions.dart';
 
 class DashboardGuruPage extends StatefulWidget {
   const DashboardGuruPage({super.key});
@@ -22,6 +23,11 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
   @override
   void initState() {
     super.initState();
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    _jumlahIzinPending = userProvider.jumlahIzinPending;
+    _persentaseKehadiran = userProvider.persentaseKehadiranKelas;
+    _rekapAbsensi = userProvider.rekapAbsensiKelas;
+    _isLoading = _rekapAbsensi.isEmpty;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadDashboardData();
     });
@@ -133,12 +139,12 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
                               children: [
                                 _buildHeaderIconButton(
                                   Icons.notifications_none_rounded,
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotifikasiPage())),
+                                  onTap: () => Navigator.push(context, PageTransition.slideRight(const NotifikasiPage())),
                                 ),
                                 const SizedBox(width: 10),
                                 _buildHeaderIconButton(
                                   Icons.person_outline_rounded,
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilGuruPage())),
+                                  onTap: () => Navigator.push(context, PageTransition.slideRight(const ProfilGuruPage())),
                                 ),
                               ],
                             ),

@@ -4,6 +4,7 @@ import 'package:platform_absensi_digital/providers/user_provider.dart';
 import 'package:platform_absensi_digital/pages/login_page.dart';
 import 'package:platform_absensi_digital/pages/pusat_bantuan_page.dart';
 import 'package:platform_absensi_digital/services/api_service.dart';
+import 'package:platform_absensi_digital/widgets/page_transitions.dart';
 
 class ProfilPage extends StatelessWidget {
   const ProfilPage({super.key});
@@ -239,8 +240,7 @@ class ProfilPage extends StatelessWidget {
                           showArrow: true,
                           onTap: () => Navigator.push(
                             context,
-                            MaterialPageRoute(
-                                builder: (_) => const PusatBantuanPage()),
+                            PageTransition.slideRight(const PusatBantuanPage()),
                           ),
                         ),
                       ],
@@ -388,8 +388,7 @@ class ProfilPage extends StatelessWidget {
                           if (!context.mounted) return;
                           Navigator.pushAndRemoveUntil(
                             context,
-                            MaterialPageRoute(
-                                builder: (context) => const LoginPage()),
+                            PageTransition.scaleFade(const LoginPage()),
                             (Route<dynamic> route) => false,
                           );
                         }

@@ -16,6 +16,7 @@ class IzinPage extends StatefulWidget {
 class _IzinPageState extends State<IzinPage>
     with SingleTickerProviderStateMixin {
   late bool isRiwayat;
+  late PageController _pageController;
 
   // --- Variabel Form ---
   DateTime? startDate;
@@ -37,15 +38,56 @@ class _IzinPageState extends State<IzinPage>
     'Terlambat'
   ];
 
+  List<Map<String, dynamic>> _combinedRiwayatCached = [];
+  int _lastAbsensiLength = -1;
+  int _lastPerizinanLength = -1;
+
+  void _updateCombinedRiwayat(UserProvider userProvider) {
+    final absensi = userProvider.riwayatAbsensi;
+    final perizinan = userProvider.riwayatPerizinan;
+    if (absensi.length == _lastAbsensiLength && perizinan.length == _lastPerizinanLength) {
+      return;
+    }
+    _lastAbsensiLength = absensi.length;
+    _lastPerizinanLength = perizinan.length;
+
+    List<Map<String, dynamic>> temp = [];
+    for (var a in absensi) {
+      temp.add({
+        'tanggal': a['tanggal'],
+        'jamMasuk': a['jamMasuk'],
+        'status': a['status'],
+      });
+    }
+    for (var p in perizinan) {
+      temp.add({
+        'tanggal': p['createdAt'],
+        'jamMasuk': null,
+        'status': p['status'] == 'Pending'
+            ? 'Menunggu'
+            : (p['status'] == 'Disetujui'
+                ? 'Izin (${p['jenisIzin']})'
+                : 'Ditolak'),
+      });
+    }
+    try {
+      temp.sort((a, b) =>
+          DateTime.parse(b['tanggal']).compareTo(DateTime.parse(a['tanggal'])));
+    } catch (_) {}
+    _combinedRiwayatCached = temp;
+  }
+
   @override
   void initState() {
     super.initState();
     isRiwayat = widget.openRiwayatTab;
+    _pageController = PageController(initialPage: isRiwayat ? 0 : 1);
   }
 
   @override
   void dispose() {
     alasanController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -111,6 +153,9 @@ class _IzinPageState extends State<IzinPage>
         selectedFileName = null;
         isRiwayat = true;
       });
+      _pageController.animateToPage(0,
+          duration: const Duration(milliseconds: 450),
+          curve: Curves.easeInOutCubic);
     } else {
       if (!mounted) return;
       CustomPopup.show(
@@ -292,66 +337,86 @@ class _IzinPageState extends State<IzinPage>
 
                     // Tab Switcher
                     Container(
-                      padding: const EdgeInsets.all(4),
+                      height: 50,
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Row(
+                      child: Stack(
                         children: [
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () => setState(() => isRiwayat = true),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 11),
+                          AnimatedAlign(
+                            alignment: isRiwayat ? Alignment.centerLeft : Alignment.centerRight,
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeInOutCubic,
+                            child: FractionallySizedBox(
+                              widthFactor: 0.5,
+                              child: Container(
+                                margin: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
-                                  color: isRiwayat
-                                      ? Colors.white
-                                      : Colors.transparent,
+                                  color: Colors.white,
                                   borderRadius: BorderRadius.circular(12),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  "Riwayat",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: isRiwayat
-                                        ? const Color(0xFF006D5B)
-                                        : Colors.white70,
-                                    fontSize: 14,
-                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
                           ),
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () => setState(() => isRiwayat = false),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 11),
-                                decoration: BoxDecoration(
-                                  color: !isRiwayat
-                                      ? Colors.white
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  "Perizinan",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: !isRiwayat
-                                        ? const Color(0xFF006D5B)
-                                        : Colors.white70,
-                                    fontSize: 14,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() => isRiwayat = true);
+                                    _pageController.animateToPage(0,
+                                        duration: const Duration(milliseconds: 450),
+                                        curve: Curves.easeInOutCubic);
+                                  },
+                                  behavior: HitTestBehavior.opaque,
+                                  child: Center(
+                                    child: AnimatedDefaultTextStyle(
+                                      duration: const Duration(milliseconds: 250),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: isRiwayat
+                                            ? const Color(0xFF006D5B)
+                                            : Colors.white70,
+                                        fontSize: 14,
+                                      ),
+                                      child: const Text("Riwayat"),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() => isRiwayat = false);
+                                    _pageController.animateToPage(1,
+                                        duration: const Duration(milliseconds: 450),
+                                        curve: Curves.easeInOutCubic);
+                                  },
+                                  behavior: HitTestBehavior.opaque,
+                                  child: Center(
+                                    child: AnimatedDefaultTextStyle(
+                                      duration: const Duration(milliseconds: 250),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: !isRiwayat
+                                            ? const Color(0xFF006D5B)
+                                            : Colors.white70,
+                                        fontSize: 14,
+                                      ),
+                                      child: const Text("Perizinan"),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -364,16 +429,35 @@ class _IzinPageState extends State<IzinPage>
 
           // ===== CONTENT =====
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: _refreshData,
-              color: const Color(0xFF006D5B),
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 110),
-                child: isRiwayat
-                    ? _buildRiwayatContent(context)
-                    : _buildIzinContent(context),
-              ),
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  isRiwayat = index == 0;
+                });
+              },
+              children: [
+                // Page 0: Riwayat
+                RefreshIndicator(
+                  onRefresh: _refreshData,
+                  color: const Color(0xFF006D5B),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 110),
+                    child: _buildRiwayatContent(context),
+                  ),
+                ),
+                // Page 1: Perizinan
+                RefreshIndicator(
+                  onRefresh: _refreshData,
+                  color: const Color(0xFF006D5B),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 110),
+                    child: _buildIzinContent(context),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -688,32 +772,10 @@ class _IzinPageState extends State<IzinPage>
     final userProvider = context.watch<UserProvider>();
     final List<dynamic> absensi = userProvider.riwayatAbsensi;
     final List<dynamic> perizinan = userProvider.riwayatPerizinan;
-
-    List<Map<String, dynamic>> combinedRiwayat = [];
-    for (var a in absensi) {
-      combinedRiwayat.add({
-        'tanggal': a['tanggal'],
-        'jamMasuk': a['jamMasuk'],
-        'status': a['status'],
-      });
-    }
-    for (var p in perizinan) {
-      combinedRiwayat.add({
-        'tanggal': p['createdAt'],
-        'jamMasuk': null,
-        'status': p['status'] == 'Pending'
-            ? 'Menunggu'
-            : (p['status'] == 'Disetujui'
-                ? 'Izin (${p['jenisIzin']})'
-                : 'Ditolak'),
-      });
-    }
-
-    combinedRiwayat.sort((a, b) =>
-        DateTime.parse(b['tanggal']).compareTo(DateTime.parse(a['tanggal'])));
+    _updateCombinedRiwayat(userProvider);
 
     final List<Map<String, dynamic>> riwayatTerfilter =
-        combinedRiwayat.where((item) {
+        _combinedRiwayatCached.where((item) {
       if (activeFilters.contains('Semua')) return true;
       String statusDb =
           item['status'] == 'Telat' ? 'Terlambat' : item['status'];

@@ -9,6 +9,7 @@ import 'package:platform_absensi_digital/pages/login_guru_page.dart';
 import 'package:platform_absensi_digital/services/api_service.dart';
 import 'package:platform_absensi_digital/services/firebase_messaging_service.dart';
 import 'package:platform_absensi_digital/widgets/custom_popup.dart';
+import 'package:platform_absensi_digital/widgets/page_transitions.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -74,7 +75,7 @@ class _LoginPageState extends State<LoginPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text("Kata Sandi", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E))),
-                      TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ForgotPasswordPage())), child: const Text("Lupa Sandi?", style: TextStyle(color: Color(0xFFEBC15B), fontWeight: FontWeight.bold))),
+                      TextButton(onPressed: () => Navigator.push(context, PageTransition.slideUp(const ForgotPasswordPage())), child: const Text("Lupa Sandi?", style: TextStyle(color: Color(0xFFEBC15B), fontWeight: FontWeight.bold))),
                     ],
                   ),
                   TextField(
@@ -164,7 +165,7 @@ class _LoginPageState extends State<LoginPage> {
                           // 3. BERPINDAH HALAMAN
                           if (userData['role'] == 'siswa' || userData['role'] == 'Siswa') {
                             if (!context.mounted) return;
-                            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainPage()));
+                            Navigator.pushReplacement(context, PageTransition.scaleFade(const MainPage()));
                           } else {
                             if (!context.mounted) return;
                             CustomPopup.show(context, message: "Gunakan portal login pengajar!", type: PopupType.warning);
@@ -186,11 +187,11 @@ class _LoginPageState extends State<LoginPage> {
                     child: Column(
                       children: [
                         GestureDetector(
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ContactAdminPage())),
+                          onTap: () => Navigator.push(context, PageTransition.slideUp(const ContactAdminPage())),
                           child: Container(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), decoration: BoxDecoration(color: const Color(0xFFF1F4FF), borderRadius: BorderRadius.circular(15)), child: const Text("Belum punya akun? Hubungi Admin", style: TextStyle(color: Color(0xFF006D5B), fontWeight: FontWeight.bold, fontSize: 13))),
                         ),
                         const SizedBox(height: 15),
-                        TextButton(onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginGuruPage())), child: const Text("Login Sebagai Pengajar", style: TextStyle(color: Color(0xFF151B2B), fontWeight: FontWeight.bold, decoration: TextDecoration.underline))),
+                        TextButton(onPressed: () => Navigator.push(context, PageTransition.slideRight(const LoginGuruPage())), child: const Text("Login Sebagai Pengajar", style: TextStyle(color: Color(0xFF151B2B), fontWeight: FontWeight.bold, decoration: TextDecoration.underline))),
                       ],
                     ),
                   ),

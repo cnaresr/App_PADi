@@ -18,9 +18,7 @@ class ApiService {
 
   static Future<Map<String, String>> _authHeaders({bool isJson = false}) async {
     final token = await _storageService.getToken();
-    final headers = <String, String>{
-      'ngrok-skip-browser-warning': 'true',
-    };
+    final headers = <String, String>{'ngrok-skip-browser-warning': 'true'};
     if (isJson) {
       headers['Content-Type'] = 'application/json';
     }
@@ -144,7 +142,7 @@ class ApiService {
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
-      
+
       debugPrint("API Absensi Masuk Status: ${response.statusCode}");
       debugPrint("API Absensi Masuk Body: ${response.body}");
 
@@ -160,12 +158,14 @@ class ApiService {
           final errorBody = jsonDecode(response.body);
           return {
             'success': false,
-            'message': errorBody['message'] ?? 'Gagal: Terjadi kesalahan di server.',
+            'message':
+                errorBody['message'] ?? 'Gagal: Terjadi kesalahan di server.',
           };
         } catch (_) {
           return {
             'success': false,
-            'message': 'Gagal merespons server (Status: ${response.statusCode}).',
+            'message':
+                'Gagal merespons server (Status: ${response.statusCode}).',
           };
         }
       }
@@ -199,7 +199,7 @@ class ApiService {
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
-      
+
       debugPrint("API Absensi Pulang Status: ${response.statusCode}");
       debugPrint("API Absensi Pulang Body: ${response.body}");
 
@@ -215,12 +215,14 @@ class ApiService {
           final errorBody = jsonDecode(response.body);
           return {
             'success': false,
-            'message': errorBody['message'] ?? 'Gagal: Terjadi kesalahan di server.',
+            'message':
+                errorBody['message'] ?? 'Gagal: Terjadi kesalahan di server.',
           };
         } catch (_) {
           return {
             'success': false,
-            'message': 'Gagal merespons server (Status: ${response.statusCode}).',
+            'message':
+                'Gagal merespons server (Status: ${response.statusCode}).',
           };
         }
       }

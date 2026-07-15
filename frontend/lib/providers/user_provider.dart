@@ -100,6 +100,12 @@ class UserProvider with ChangeNotifier {
     // [DIUBAH] Bersihkan data poligon saat logout.
     _schoolPolygon = null;
     _isGeofenceActive = true;
+    _jumlahIzinPending = 0;
+    _persentaseKehadiranKelas = 0;
+    _rekapAbsensiKelas = [];
+    _jadwalMengajar = [];
+    _izinPendingGuru = [];
+    _izinRiwayatGuru = [];
     notifyListeners();
   }
 
@@ -108,12 +114,16 @@ class UserProvider with ChangeNotifier {
   int _persentaseKehadiranKelas = 0;
   List<dynamic> _rekapAbsensiKelas = [];
   List<dynamic> _jadwalMengajar = [];
+  List<dynamic> _izinPendingGuru = [];
+  List<dynamic> _izinRiwayatGuru = [];
 
   // Getters Guru
   int get jumlahIzinPending => _jumlahIzinPending;
   int get persentaseKehadiranKelas => _persentaseKehadiranKelas;
   List<dynamic> get rekapAbsensiKelas => _rekapAbsensiKelas;
   List<dynamic> get jadwalMengajar => _jadwalMengajar;
+  List<dynamic> get izinPendingGuru => _izinPendingGuru;
+  List<dynamic> get izinRiwayatGuru => _izinRiwayatGuru;
 
   // Setter untuk menyimpan data Guru
   void setGuruDashboardData(int izinPending, int persentase, List<dynamic> rekap, List<dynamic> jadwal) {
@@ -122,6 +132,12 @@ class UserProvider with ChangeNotifier {
     _rekapAbsensiKelas = rekap;
     _jadwalMengajar = jadwal;
     _jadwalAktif = jadwal;
+    notifyListeners();
+  }
+
+  void setIzinGuruData(List<dynamic> pending, List<dynamic> riwayat) {
+    _izinPendingGuru = pending;
+    _izinRiwayatGuru = riwayat;
     notifyListeners();
   }
 }

@@ -34,8 +34,11 @@ class _RekapAbsensiPageState extends State<RekapAbsensiPage>
   }
 
   Future<void> _refreshData() async {
-    setState(() => isLoading = true);
     final user = context.read<UserProvider>();
+    final hasData = user.rekapAbsensiKelas.isNotEmpty;
+    if (!hasData) {
+      setState(() => isLoading = true);
+    }
     final result = await ApiService.getDashboardGuru(user.userId);
     if (result['status'] == 'success') {
       user.setGuruDashboardData(
@@ -45,7 +48,9 @@ class _RekapAbsensiPageState extends State<RekapAbsensiPage>
         result['data']['jadwalMengajar'] ?? [],
       );
     }
-    setState(() => isLoading = false);
+    if (mounted) {
+      setState(() => isLoading = false);
+    }
   }
 
   String _formatIsoTime(String? isoDate) {

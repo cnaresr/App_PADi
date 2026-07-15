@@ -84,7 +84,9 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
   void _onNavTap(int index) {
     if (_selectedIndex == index) return;
     HapticFeedback.selectionClick();
-    setState(() => _selectedIndex = index);
+    setState(() {
+      _selectedIndex = index;
+    });
   }
 
   @override
@@ -92,7 +94,39 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       extendBody: true,
-      body: _pages[_selectedIndex],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF006D5B),
+              Color(0xFFF5F7FA),
+            ],
+            stops: [0.28, 0.28],
+          ),
+        ),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          switchInCurve: Curves.easeInOut,
+          switchOutCurve: Curves.easeInOut,
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            return FadeTransition(
+              opacity: animation,
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.98, end: 1.0).animate(
+                  CurvedAnimation(parent: animation, curve: Curves.easeInOut),
+                ),
+                child: child,
+              ),
+            );
+          },
+          child: KeyedSubtree(
+            key: ValueKey<int>(_selectedIndex),
+            child: _pages[_selectedIndex],
+          ),
+        ),
+      ),
       bottomNavigationBar: _buildFloatingNavBar(),
     );
   }
@@ -133,30 +167,51 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
                 onTap: () => _onNavTap(index),
                 behavior: HitTestBehavior.opaque,
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
+                  duration: const Duration(milliseconds: 250),
                   curve: Curves.easeInOut,
-                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                  padding: const EdgeInsets.symmetric(vertical: 4),
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFF006D5B) : Colors.transparent,
-                    borderRadius: BorderRadius.circular(28),
+                    gradient: isSelected
+                        ? const LinearGradient(
+                            colors: [Color(0xFF00897B), Color(0xFF006D5B)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          )
+                        : null,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFF006D5B).withOpacity(0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ]
+                        : null,
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      AnimatedSwitcher(
+                      AnimatedScale(
+                        scale: isSelected ? 1.12 : 1.0,
                         duration: const Duration(milliseconds: 250),
-                        child: Icon(
-                          isSelected ? items[index].activeIcon : items[index].icon,
-                          key: ValueKey(isSelected),
-                          color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.45),
-                          size: 22,
+                        curve: Curves.easeOutBack,
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: Icon(
+                            isSelected ? items[index].activeIcon : items[index].icon,
+                            key: ValueKey(isSelected),
+                            color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.45),
+                            size: 20,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 2),
                       AnimatedDefaultTextStyle(
-                        duration: const Duration(milliseconds: 250),
+                        duration: const Duration(milliseconds: 200),
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 9.5,
                           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
                           color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.45),
                         ),

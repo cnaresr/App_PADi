@@ -8,6 +8,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:platform_absensi_digital/services/notification_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:platform_absensi_digital/services/firebase_messaging_service.dart';
+import 'package:flutter/services.dart';
 
 // Variabel global untuk menyimpan daftar kamera yang tersedia
 late List<CameraDescription> cameras;
@@ -15,6 +16,14 @@ late List<CameraDescription> cameras;
 void main() async {
   // Pastikan semua plugin terinisialisasi sebelum menjalankan aplikasi
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Set status bar transparan agar background halaman menyatu sampai atas
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark,
+    statusBarBrightness: Brightness.light,
+  ));
+
   // Inisialisasi Firebase Core terlebih dahulu
   await Firebase.initializeApp();
 
@@ -48,6 +57,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: const Color(0xFF006D5B),
+        scaffoldBackgroundColor: const Color(0xFFFAFAFA),
+        canvasColor: const Color(0xFFFAFAFA),
         // Plus Jakarta Sans: font Indonesia buatan, lebih bold & premium dari Poppins
         textTheme: GoogleFonts.plusJakartaSansTextTheme().copyWith(
           // Judul besar - lebih bold & tegas

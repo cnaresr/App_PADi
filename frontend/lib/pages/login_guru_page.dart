@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // Wajib ada untuk Provider
 import 'package:platform_absensi_digital/providers/user_provider.dart'; // Wajib ada untuk memanggil set data
 import 'package:platform_absensi_digital/pages/main_guru_page.dart';
-import 'package:platform_absensi_digital/pages/login_page.dart';
 import 'package:platform_absensi_digital/services/api_service.dart';
 import 'package:platform_absensi_digital/services/firebase_messaging_service.dart';
 import 'package:platform_absensi_digital/widgets/custom_popup.dart';
+import 'package:platform_absensi_digital/widgets/page_transitions.dart';
 
 class LoginGuruPage extends StatefulWidget {
   const LoginGuruPage({super.key});
@@ -135,7 +135,7 @@ class _LoginGuruPageState extends State<LoginGuruPage> {
                             }
 
                               if (!context.mounted) return;
-                              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainGuruPage()));
+                              Navigator.pushReplacement(context, PageTransition.scaleFade(const MainGuruPage()));
                             } else {
                               if (!context.mounted) return;
                               CustomPopup.show(context, message: "Anda bukan pengajar!", type: PopupType.warning);
@@ -152,7 +152,7 @@ class _LoginGuruPageState extends State<LoginGuruPage> {
                   
                   Center(
                     child: TextButton(
-                      onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginPage())),
+                       onPressed: () => Navigator.pop(context),
                       child: const Text("Kembali ke Login Siswa", style: TextStyle(color: Color(0xFF8F306A), fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
                     ),
                   ),

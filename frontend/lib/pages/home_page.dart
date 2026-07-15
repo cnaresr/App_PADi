@@ -8,6 +8,7 @@ import 'package:platform_absensi_digital/pages/izin_page.dart';
 import 'package:platform_absensi_digital/pages/notifikasi_page.dart';
 import 'package:platform_absensi_digital/widgets/custom_popup.dart';
 import 'package:intl/intl.dart';
+import 'package:platform_absensi_digital/widgets/page_transitions.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -118,12 +119,12 @@ class _HomePageState extends State<HomePage> {
                               children: [
                                 _buildHeaderBtn(
                                   Icons.notifications_none_rounded,
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotifikasiPage())),
+                                  onTap: () => Navigator.push(context, PageTransition.slideRight(const NotifikasiPage())),
                                 ),
                                 const SizedBox(width: 10),
                                 _buildHeaderBtn(
                                   Icons.person_outline_rounded,
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilPage())),
+                                  onTap: () => Navigator.push(context, PageTransition.slideRight(const ProfilPage())),
                                 ),
                               ],
                             ),
@@ -224,7 +225,7 @@ class _HomePageState extends State<HomePage> {
                     GestureDetector(
                       onTap: () {
                         final int siswaId = context.read<UserProvider>().userId;
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => AbsensiPage(siswaId: siswaId)));
+                        Navigator.push(context, PageTransition.slideRight(AbsensiPage(siswaId: siswaId)));
                       },
                       child: Container(
                         width: double.infinity,
@@ -517,7 +518,7 @@ class _HomePageState extends State<HomePage> {
     required Widget destination,
   }) {
     return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => destination)),
+      onTap: () => Navigator.push(context, PageTransition.slideRight(destination)),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
