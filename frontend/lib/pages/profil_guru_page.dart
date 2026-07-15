@@ -326,7 +326,7 @@ class ProfilGuruPage extends StatelessWidget {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Text(
-                            "v1.0.0",
+                            "v1.0.1",
                             style: TextStyle(
                               color: Color(0xFF006D5B),
                               fontSize: 11,

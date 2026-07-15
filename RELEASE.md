@@ -1,12 +1,14 @@
-# Panduan Rilis APK v1.0.0 (App_PADi)
+# Panduan Rilis APK & Riwayat Versi (App_PADi)
 
-Dokumen ini berisi informasi mengenai panduan pemilihan berkas APK dan daftar fitur yang tersedia dalam aplikasi mobile **App_PADi (Platform Absensi Digital)** versi **v1.0.0**.
+Dokumen ini berisi informasi mengenai panduan pemilihan berkas APK, pembaruan versi terbaru, serta daftar fitur yang tersedia dalam aplikasi mobile **App_PADi (Platform Absensi Digital)**.
 
 ---
 
-## 📱 1. Pilihan Berkas APK (Assets)
+## 🚀 Rilis Terbaru: v1.0.1 (16 Juli 2026)
 
-Di halaman release GitHub, terdapat beberapa variasi APK yang dapat diunduh sesuai perangkat Anda:
+### 📱 1. Pilihan Berkas APK (Assets)
+
+Di halaman release GitHub, terdapat beberapa variasi APK versi **v1.0.1** yang dapat diunduh sesuai perangkat Anda:
 
 | Nama Berkas | Target Perangkat / Arsitektur CPU | Ukuran File | Keterangan |
 |-------------|-----------------------------------|-------------|------------|
@@ -17,11 +19,39 @@ Di halaman release GitHub, terdapat beberapa variasi APK yang dapat diunduh sesu
 
 ---
 
-## ✨ 2. Fitur yang Tersedia dalam APK
+### ✨ 2. Pembaruan dan Fitur Baru di v1.0.1
 
-Aplikasi mobile pada rilis kali ini telah dilengkapi dengan beberapa fitur utama sebagai berikut:
+Rilis versi **v1.0.1** ini berfokus pada kestabilan sistem, integrasi push notification, peningkatan biometrik wajah, serta optimalisasi panel admin. Berikut adalah ringkasan perubahan utamanya:
 
-### A. Fitur Siswa (Student Features)
+* **Firebase Push Notifications (Notifikasi Presensi & Izin)**:
+  - Mengintegrasikan modul Firebase Cloud Messaging (FCM) ke aplikasi mobile dan backend database.
+  - Guru kini menerima notifikasi secara real-time saat siswa mengajukan perizinan baru.
+  - Siswa menerima notifikasi status pengajuan izin yang disetujui atau ditolak secara instan.
+* **Peningkatan Keamanan Biometrik Wajah (Face Recognition)**:
+  - Implementasi pemotongan gambar berformat kotak (*square crop*) secara lokal sebelum dikirim untuk deteksi wajah.
+  - Peningkatan threshold akurasi serta perbandingan deteksi wajah (dual embedding) untuk mencegah manipulasi foto dari kejauhan.
+  - Validasi ketat ukuran minimum wajah pada layar kamera check-in.
+* **Geofencing & Sinkronisasi Lokasi Dinamis**:
+  - Validasi lokasi koordinat absensi siswa yang terintegrasi secara dinamis dengan pengaturan koordinat sekolah di panel admin.
+  - Perbaikan bug timezone absensi (penyesuaian jam masuk dan jam pulang).
+  - Optimasi kinerja pembukaan kamera absensi agar lebih responsif.
+* **Portal Administrasi Multi-Sekolah (`devadmin`)**:
+  - Implementasi portal developer admin untuk delegasi manajemen admin per sekolah.
+  - Penambahan fitur import data siswa secara massal menggunakan format Excel.
+  - Perbaikan modul jadwal pelajaran reguler dan histori penempatan kelas per tahun akademik.
+* **Penyederhanaan UI & Animasi Transisi**:
+  - Penambahan animasi transisi layar (page transition) yang lebih halus di aplikasi Flutter.
+  - Pembersihan sisa pustaka kecerdasan buatan (AI) lama dari sisi frontend mobile untuk memperkecil ukuran aplikasi.
+
+---
+
+## 📜 Riwayat Rilis Sebelumnya
+
+### Rilis: v1.0.0 (Rilis Awal)
+
+Versi pertama aplikasi mobile **App_PADi** yang membawa fitur dasar presensi dan perizinan.
+
+#### A. Fitur Siswa (Student Features)
 * **Login & Autentikasi**: Autentikasi akun siswa menggunakan username dan sandi terdaftar.
 * **Presensi Mandiri**: Melakukan pencatatan kehadiran (Masuk & Pulang) secara real-time.
 * **Geofencing & Jarak**: Verifikasi lokasi presensi otomatis berdasarkan radius/koordinat area sekolah yang diizinkan.
@@ -30,7 +60,7 @@ Aplikasi mobile pada rilis kali ini telah dilengkapi dengan beberapa fitur utama
 * **Riwayat Kehadiran**: Melihat rekapitulasi riwayat absensi bulanan secara transparan.
 * **Profil Siswa**: Melihat informasi data pribadi siswa dan status kelas aktif.
 
-### B. Fitur Guru (Teacher Features)
+#### B. Fitur Guru (Teacher Features)
 * **Login & Autentikasi**: Autentikasi akun guru menggunakan username dan sandi.
 * **Approval Perizinan**: Memeriksa, menyetujui, atau menolak pengajuan izin/sakit yang diajukan oleh siswa di bawah perwalian kelasnya secara real-time.
 * **Riwayat & Profil**: Melihat informasi data pribadi guru dan riwayat aktivitas absensi kelas.
