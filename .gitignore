@@ -16,3 +16,6 @@ frontend/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.
 .idea/
 *.iml
 /generated/prisma
+
+# Direktori Text tidak diperlukan
+text
