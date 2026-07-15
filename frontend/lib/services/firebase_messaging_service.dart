@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -11,7 +12,7 @@ import 'package:platform_absensi_digital/services/api_service.dart';
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Pastikan inisialisasi Firebase sudah dipanggil di main() jika perlu,
   // tapi background handler biasanya cukup menerima pesan.
-  print("Handling a background message: ${message.messageId}");
+  debugPrint("Handling a background message: ${message.messageId}");
 }
 
 class FirebaseMessagingService {
@@ -34,7 +35,7 @@ class FirebaseMessagingService {
       sound: true,
     );
 
-    print('User granted permission: ${settings.authorizationStatus}');
+    debugPrint('User granted permission: ${settings.authorizationStatus}');
 
     // Inisialisasi flutter_local_notifications untuk menampilkan popup saat app di foreground
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -46,7 +47,7 @@ class FirebaseMessagingService {
     await _localNotificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
-        print('Notification clicked: ${response.payload}');
+        debugPrint('Notification clicked: ${response.payload}');
       },
     );
 
@@ -68,23 +69,23 @@ class FirebaseMessagingService {
 
     // Mendengarkan pesan masuk saat aplikasi berjalan di Foreground
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('Got a message whilst in the foreground!');
-      print('Message data: ${message.data}');
+      debugPrint('Got a message whilst in the foreground!');
+      debugPrint('Message data: ${message.data}');
 
       if (message.notification != null) {
-        print('Message also contained a notification: ${message.notification}');
+        debugPrint('Message also contained a notification: ${message.notification}');
         _showLocalNotification(message, channel);
       }
       _messageStreamController.add(message);
     });
 
     String? token = await _firebaseMessaging.getToken();
-    print("FCM Token: $token");
+    debugPrint("FCM Token: $token");
     // Token akan dikirim ke server saat user login, atau bisa dikirim di sini jika login dipertahankan
     
     // Dengarkan perubahan token
     _firebaseMessaging.onTokenRefresh.listen((newToken) async {
-      print("FCM Token refreshed: $newToken");
+      debugPrint("FCM Token refreshed: $newToken");
       try {
         final storage = StorageService();
         final jwtToken = await storage.getToken();
@@ -93,7 +94,7 @@ class FirebaseMessagingService {
           await updateFCMTokenToServer(userId, jwtToken);
         }
       } catch (e) {
-        print("Error auto-updating refreshed FCM Token: $e");
+        debugPrint("Error auto-updating refreshed FCM Token: $e");
       }
     });
   }
@@ -145,12 +146,12 @@ class FirebaseMessagingService {
       );
 
       if (response.statusCode == 200) {
-        print("FCM Token successfully updated to server.");
+        debugPrint("FCM Token successfully updated to server.");
       } else {
-        print("Failed to update FCM Token: ${response.body}");
+        debugPrint("Failed to update FCM Token: ${response.body}");
       }
     } catch (e) {
-      print("Error updating FCM token to server: $e");
+      debugPrint("Error updating FCM token to server: $e");
     }
   }
 }

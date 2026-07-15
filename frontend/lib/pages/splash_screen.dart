@@ -100,6 +100,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       }
 
       if (userId != null && userId > 0) {
+        if (!mounted) return const LoginPage();
         final userProvider = context.read<UserProvider>();
         userProvider.setUserData(userId, name ?? 'Pengguna', detail ?? '', role ?? '', emailStr: email ?? '');
 

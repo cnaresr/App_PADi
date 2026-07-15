@@ -95,12 +95,13 @@ class _LoginGuruPageState extends State<LoginGuruPage> {
                     width: double.infinity,
                     height: 60,
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF151B2B), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), elevation: 10, shadowColor: const Color(0xFF151B2B).withOpacity(0.2)),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF151B2B), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), elevation: 10, shadowColor: const Color(0xFF151B2B).withValues(alpha: 0.2)),
                       onPressed: () async {
                         // MENGGUNAKAN .trim() AGAR KEBAL TERHADAP SPASI GAIB
                         var response = await ApiService.login(_emailController.text.trim(), _passwordController.text);
                         
                         if (response['status'] == 'success') {
+                          if (!context.mounted) return;
                           var userData = response['data'] as Map<String, dynamic>;
                           
                           // Memastikan yang login adalah guru
@@ -118,6 +119,7 @@ class _LoginGuruPageState extends State<LoginGuruPage> {
                             // 2. AMBIL DATA DASHBOARD KHUSUS GURU
                             var dashResponse = await ApiService.getDashboardGuru(idUser);
                             if (dashResponse['status'] == 'success') {
+                              if (!context.mounted) return;
                               var dashData = dashResponse['data'] as Map<String, dynamic>?;
                               // [FIX] Nama method diperbaiki & ditambahkan null-safety
                               Provider.of<UserProvider>(context, listen: false).setGuruDashboardData(
@@ -132,13 +134,16 @@ class _LoginGuruPageState extends State<LoginGuruPage> {
                               FirebaseMessagingService.updateFCMTokenToServer(idUser, response['token']);
                             }
 
-                            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainGuruPage()));
+                              if (!context.mounted) return;
+                              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainGuruPage()));
+                            } else {
+                              if (!context.mounted) return;
+                              CustomPopup.show(context, message: "Anda bukan pengajar!", type: PopupType.warning);
+                            }
                           } else {
-                            CustomPopup.show(context, message: "Anda bukan pengajar!", type: PopupType.warning);
+                            if (!context.mounted) return;
+                            CustomPopup.show(context, message: response['message'] ?? "Login gagal", type: PopupType.error);
                           }
-                        } else {
-                          CustomPopup.show(context, message: response['message'] ?? "Login gagal", type: PopupType.error);
-                        }
                       },
                       child: const Text("Masuk", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                     ),

@@ -119,6 +119,7 @@ class _LoginPageState extends State<LoginPage> {
                           String emailUser = userData['email'] ?? "Email tidak tersedia";
 
                           // 1. SIMPAN DATA PROFIL KE PROVIDER
+                          if (!context.mounted) return;
                           final userProvider = Provider.of<UserProvider>(context, listen: false);
                           userProvider.setUserData(idUser, namaLengkap, infoKelas, roleUser, emailStr: emailUser);
 
@@ -162,12 +163,15 @@ class _LoginPageState extends State<LoginPage> {
 
                           // 3. BERPINDAH HALAMAN
                           if (userData['role'] == 'siswa' || userData['role'] == 'Siswa') {
+                            if (!context.mounted) return;
                             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainPage()));
                           } else {
+                            if (!context.mounted) return;
                             CustomPopup.show(context, message: "Gunakan portal login pengajar!", type: PopupType.warning);
                             setState(() => _isLoading = false);
                           }
                         } else {
+                          if (!context.mounted) return;
                           CustomPopup.show(context, message: response['message'] ?? "Login gagal", type: PopupType.error);
                           setState(() => _isLoading = false);
                         }

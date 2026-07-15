@@ -104,15 +104,25 @@ class _RekapAbsensiPageState extends State<RekapAbsensiPage>
       String statusDb = item['status'] ?? 'Alpa';
       String namaSiswa = (item['nama'] ?? '').toString().toLowerCase();
       if (searchQuery.isNotEmpty &&
-          !namaSiswa.contains(searchQuery.toLowerCase())) return false;
+          !namaSiswa.contains(searchQuery.toLowerCase())) {
+        return false;
+      }
       String filterLabel = _filters[_selectedFilterIndex];
-      if (filterLabel == "Semua") return true;
+      if (filterLabel == "Semua") {
+        return true;
+      }
       if (filterLabel == "Hadir" &&
-          (statusDb == "Hadir" || statusDb == "Telat")) return true;
+          (statusDb == "Hadir" || statusDb == "Telat")) {
+        return true;
+      }
       if (filterLabel == "Izin" &&
-          (statusDb == "Izin" || statusDb == "Sakit")) return true;
+          (statusDb == "Izin" || statusDb == "Sakit")) {
+        return true;
+      }
       if (filterLabel == "Alpa" &&
-          (statusDb == "Alpha" || statusDb == "Alpa")) return true;
+          (statusDb == "Alpha" || statusDb == "Alpa")) {
+        return true;
+      }
       return false;
     }).toList();
 
@@ -165,7 +175,7 @@ class _RekapAbsensiPageState extends State<RekapAbsensiPage>
                                   Container(
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.15),
+                                      color: Colors.white.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(14),
                                     ),
                                     child: const Icon(
@@ -204,10 +214,10 @@ class _RekapAbsensiPageState extends State<RekapAbsensiPage>
                               Container(
                                 padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.13),
+                                  color: Colors.white.withValues(alpha: 0.13),
                                   borderRadius: BorderRadius.circular(22),
                                   border: Border.all(
-                                      color: Colors.white.withOpacity(0.15)),
+                                      color: Colors.white.withValues(alpha: 0.15)),
                                 ),
                                 child: Column(
                                   children: [
@@ -224,7 +234,7 @@ class _RekapAbsensiPageState extends State<RekapAbsensiPage>
                                                     ? hadirCount / total
                                                     : 0,
                                                 backgroundColor: Colors.white
-                                                    .withOpacity(0.2),
+                                                    .withValues(alpha: 0.2),
                                                 valueColor:
                                                     const AlwaysStoppedAnimation(
                                                         Colors.white),
@@ -268,7 +278,7 @@ class _RekapAbsensiPageState extends State<RekapAbsensiPage>
                                 child: Text(
                                   _getTodayDate(),
                                   style: TextStyle(
-                                      color: Colors.white.withOpacity(0.6),
+                                      color: Colors.white.withValues(alpha: 0.6),
                                       fontSize: 12),
                                 ),
                               ),
@@ -293,7 +303,7 @@ class _RekapAbsensiPageState extends State<RekapAbsensiPage>
                               borderRadius: BorderRadius.circular(18),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
+                                  color: Colors.black.withValues(alpha: 0.05),
                                   blurRadius: 16,
                                   offset: const Offset(0, 4),
                                 )
@@ -353,7 +363,7 @@ class _RekapAbsensiPageState extends State<RekapAbsensiPage>
                                           ? [
                                               BoxShadow(
                                                 color: const Color(0xFF006D5B)
-                                                    .withOpacity(0.3),
+                                                    .withValues(alpha: 0.3),
                                                 blurRadius: 10,
                                                 offset: const Offset(0, 4),
                                               )
@@ -394,7 +404,7 @@ class _RekapAbsensiPageState extends State<RekapAbsensiPage>
                                     horizontal: 12, vertical: 5),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF006D5B)
-                                      .withOpacity(0.1),
+                                      .withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
@@ -513,7 +523,7 @@ class _RekapAbsensiPageState extends State<RekapAbsensiPage>
         const SizedBox(height: 4),
         Text(label,
             style: TextStyle(
-                color: Colors.white.withOpacity(0.65), fontSize: 11)),
+                color: Colors.white.withValues(alpha: 0.65), fontSize: 11)),
       ],
     );
   }
@@ -537,7 +547,7 @@ class _RekapAbsensiPageState extends State<RekapAbsensiPage>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:camera/camera.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
@@ -363,29 +364,15 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     if (_controller == null ||
         !_controller!.value.isInitialized ||
         _isProcessing ||
-        _currentPosition == null)
+        _currentPosition == null) {
       return;
+    }
     setState(() => _isProcessing = true);
     try {
       final XFile imageFile = await _controller!.takePicture();
 
-      // [PERBAIKAN] Kompresi gambar secara background agar tidak terjadi timeout di Ngrok (berkurang dari 15MB ke ~200KB)
-      final rawBytes = await File(imageFile.path).readAsBytes();
-      final decodedImage = img.decodeImage(rawBytes);
-      if (decodedImage != null) {
-        img.Image resized = decodedImage;
-        // Resize jika resolusi terlalu besar (lebih dari 1080p)
-        if (decodedImage.width > 1080 || decodedImage.height > 1080) {
-          final bool isLandscape = decodedImage.width > decodedImage.height;
-          resized = img.copyResize(
-            decodedImage,
-            width: isLandscape ? 1080 : null,
-            height: isLandscape ? null : 1080,
-          );
-        }
-        final compressedJpg = img.encodeJpg(resized, quality: 60);
-        await File(imageFile.path).writeAsBytes(compressedJpg);
-      }
+      // [PERBAIKAN] Kompresi gambar secara background agar tidak terjadi timeout/crash/ANR
+      await compute(compressImageIsolate, imageFile.path);
 
       final result = await ApiService.kirimAbsensiMasuk(
         userId: widget.siswaId,
@@ -432,29 +419,15 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
     if (_controller == null ||
         !_controller!.value.isInitialized ||
         _isProcessing ||
-        _currentPosition == null)
+        _currentPosition == null) {
       return;
+    }
     setState(() => _isProcessing = true);
     try {
       final XFile imageFile = await _controller!.takePicture();
 
-      // [PERBAIKAN] Kompresi gambar secara background agar tidak terjadi timeout di Ngrok (berkurang dari 15MB ke ~200KB)
-      final rawBytes = await File(imageFile.path).readAsBytes();
-      final decodedImage = img.decodeImage(rawBytes);
-      if (decodedImage != null) {
-        img.Image resized = decodedImage;
-        // Resize jika resolusi terlalu besar (lebih dari 1080p)
-        if (decodedImage.width > 1080 || decodedImage.height > 1080) {
-          final bool isLandscape = decodedImage.width > decodedImage.height;
-          resized = img.copyResize(
-            decodedImage,
-            width: isLandscape ? 1080 : null,
-            height: isLandscape ? null : 1080,
-          );
-        }
-        final compressedJpg = img.encodeJpg(resized, quality: 60);
-        await File(imageFile.path).writeAsBytes(compressedJpg);
-      }
+      // [PERBAIKAN] Kompresi gambar secara background agar tidak terjadi timeout/crash/ANR
+      await compute(compressImageIsolate, imageFile.path);
 
       final result = await ApiService.kirimAbsensiPulang(
         userId: widget.siswaId,
@@ -601,7 +574,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.15),
+                                  color: Colors.white.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                                 child: const Icon(
@@ -643,13 +616,13 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                             ),
                             decoration: BoxDecoration(
                               color: _isWithinRadius
-                                  ? Colors.white.withOpacity(0.2)
-                                  : Colors.red.withOpacity(0.25),
+                                  ? Colors.white.withValues(alpha: 0.2)
+                                  : Colors.red.withValues(alpha: 0.25),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
                                 color: _isWithinRadius
-                                    ? Colors.white.withOpacity(0.4)
-                                    : Colors.red.withOpacity(0.4),
+                                    ? Colors.white.withValues(alpha: 0.4)
+                                    : Colors.red.withValues(alpha: 0.4),
                               ),
                             ),
                             child: Row(
@@ -686,7 +659,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                           'id_ID',
                         ).format(DateTime.now()),
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                           fontSize: 13,
                         ),
                       ),
@@ -711,7 +684,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                       borderRadius: BorderRadius.circular(28),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFE65100).withOpacity(0.1),
+                          color: const Color(0xFFE65100).withValues(alpha: 0.1),
                           blurRadius: 24,
                           offset: const Offset(0, 10),
                         ),
@@ -768,7 +741,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                       borderRadius: BorderRadius.circular(28),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF006D5B).withOpacity(0.2),
+                          color: const Color(0xFF006D5B).withValues(alpha: 0.2),
                           blurRadius: 24,
                           offset: const Offset(0, 10),
                         ),
@@ -787,7 +760,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                                   Icon(
                                     Icons.camera_alt_rounded,
                                     size: 48,
-                                    color: Colors.white.withOpacity(0.3),
+                                    color: Colors.white.withValues(alpha: 0.3),
                                   ),
                                   const SizedBox(height: 12),
                                   Text(
@@ -829,7 +802,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                                     border: Border.all(
                                       color: _isWithinRadius
                                           ? const Color(0xFF00E676)
-                                          : Colors.white.withOpacity(0.5),
+                                          : Colors.white.withValues(alpha: 0.5),
                                       width: 3,
                                     ),
                                   ),
@@ -874,8 +847,8 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                       borderRadius: BorderRadius.circular(22),
                       border: Border.all(
                         color: _isWithinRadius
-                            ? const Color(0xFF006D5B).withOpacity(0.2)
-                            : Colors.red.withOpacity(0.2),
+                            ? const Color(0xFF006D5B).withValues(alpha: 0.2)
+                            : Colors.red.withValues(alpha: 0.2),
                         width: 1.5,
                       ),
                       boxShadow: [
@@ -884,7 +857,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                               (_isWithinRadius
                                       ? const Color(0xFF006D5B)
                                       : Colors.red)
-                                  .withOpacity(0.06),
+                                  .withValues(alpha: 0.06),
                           blurRadius: 16,
                           offset: const Offset(0, 4),
                         ),
@@ -965,7 +938,7 @@ class _AbsensiPageContentState extends State<_AbsensiPageContent>
                           borderRadius: BorderRadius.circular(20),
                         ),
                         elevation: _isWithinRadius ? 6 : 0,
-                        shadowColor: const Color(0xFF006D5B).withOpacity(0.3),
+                        shadowColor: const Color(0xFF006D5B).withValues(alpha: 0.3),
                       ),
                       onPressed:
                           (_isWithinRadius && !_isProcessing && !_isIzinHariIni)
@@ -1063,7 +1036,7 @@ class _CornerPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.7)
+      ..color = Colors.white.withValues(alpha: 0.7)
       ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
@@ -1091,4 +1064,23 @@ class _CornerPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Top-level function for background isolate image compression
+Future<void> compressImageIsolate(String imagePath) async {
+  final rawBytes = File(imagePath).readAsBytesSync();
+  final decodedImage = img.decodeImage(rawBytes);
+  if (decodedImage != null) {
+    img.Image resized = decodedImage;
+    if (decodedImage.width > 1080 || decodedImage.height > 1080) {
+      final bool isLandscape = decodedImage.width > decodedImage.height;
+      resized = img.copyResize(
+        decodedImage,
+        width: isLandscape ? 1080 : null,
+        height: isLandscape ? null : 1080,
+      );
+    }
+    final compressedJpg = img.encodeJpg(resized, quality: 60);
+    File(imagePath).writeAsBytesSync(compressedJpg);
+  }
 }

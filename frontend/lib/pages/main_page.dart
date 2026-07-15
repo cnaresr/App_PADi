@@ -98,7 +98,7 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
   }
 
   Widget _buildFloatingNavBar() {
-    final items = [
+    const items = [
       _NavItem(icon: Icons.grid_view_rounded, activeIcon: Icons.grid_view_rounded, label: "Beranda"),
       _NavItem(icon: Icons.calendar_month_outlined, activeIcon: Icons.calendar_month_rounded, label: "Presensi"),
       _NavItem(icon: Icons.receipt_long_outlined, activeIcon: Icons.receipt_long_rounded, label: "Riwayat"),
@@ -114,12 +114,12 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
           borderRadius: BorderRadius.circular(36),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF006D5B).withOpacity(0.3),
+              color: const Color(0xFF006D5B).withValues(alpha: 0.3),
               blurRadius: 24,
               offset: const Offset(0, 8),
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -148,7 +148,7 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
                         child: Icon(
                           isSelected ? items[index].activeIcon : items[index].icon,
                           key: ValueKey(isSelected),
-                          color: isSelected ? Colors.white : Colors.white.withOpacity(0.45),
+                          color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.45),
                           size: 22,
                         ),
                       ),
@@ -158,7 +158,7 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                          color: isSelected ? Colors.white : Colors.white.withOpacity(0.45),
+                          color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.45),
                         ),
                         child: Text(items[index].label),
                       ),

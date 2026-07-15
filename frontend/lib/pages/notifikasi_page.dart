@@ -178,12 +178,12 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isRead ? Colors.white.withOpacity(0.7) : Colors.white,
+        color: isRead ? Colors.white.withValues(alpha: 0.7) : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: isRead ? null : Border.all(color: iconColor.withOpacity(0.2), width: 1.5),
+        border: isRead ? null : Border.all(color: iconColor.withValues(alpha: 0.2), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isRead ? 0.005 : 0.02),
+            color: Colors.black.withValues(alpha: isRead ? 0.005 : 0.02),
             blurRadius: 15,
             offset: const Offset(0, 5),
           )

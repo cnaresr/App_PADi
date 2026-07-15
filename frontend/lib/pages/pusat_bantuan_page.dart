@@ -116,7 +116,7 @@ class PusatBantuanPage extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.15),
+                                color: Colors.white.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(Icons.arrow_back_ios_new_rounded,
@@ -127,7 +127,7 @@ class PusatBantuanPage extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
+                              color: Colors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: const Icon(Icons.help_center_rounded,
@@ -160,10 +160,10 @@ class PusatBantuanPage extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.13),
+                          color: Colors.white.withValues(alpha: 0.13),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                              color: Colors.white.withOpacity(0.15)),
+                              color: Colors.white.withValues(alpha: 0.15)),
                         ),
                         child: Row(
                           children: [
@@ -245,7 +245,7 @@ class PusatBantuanPage extends StatelessWidget {
                         ? "Hubungi administrator sekolah Anda untuk mendapatkan bantuan lebih lanjut."
                         : "Hubungi wali kelas atau administrator sekolah Anda untuk mendapatkan bantuan lebih lanjut.",
                       style: TextStyle(
-                          color: Colors.white.withOpacity(0.65),
+                          color: Colors.white.withValues(alpha: 0.65),
                           fontSize: 13,
                           height: 1.5),
                     ),
@@ -349,7 +349,7 @@ class _FaqCardState extends State<_FaqCard>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 16,
             offset: const Offset(0, 4),
           )

@@ -67,7 +67,7 @@ class ForgotPasswordPage extends StatelessWidget {
                   backgroundColor: const Color(0xFF151B2B),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   elevation: 5,
-                  shadowColor: const Color(0xFF151B2B).withOpacity(0.2),
+                  shadowColor: const Color(0xFF151B2B).withValues(alpha: 0.2),
                 ),
                 onPressed: () {
                   // Tambahkan aksi pengiriman email di sini

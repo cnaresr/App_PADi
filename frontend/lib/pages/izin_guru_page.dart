@@ -158,6 +158,7 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.inAppBrowserView);
       } else {
+        if (!mounted) return;
         CustomPopup.show(
           context,
           message: 'Tidak dapat membuka file.',
@@ -207,7 +208,7 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
                                   Container(
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.15),
+                                      color: Colors.white.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(14),
                                     ),
                                     child: const Icon(
@@ -246,7 +247,7 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
                               Container(
                                 padding: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.15),
+                                  color: Colors.black.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Row(
@@ -303,10 +304,10 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 20, vertical: 16),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.13),
+                                  color: Colors.white.withValues(alpha: 0.13),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                      color: Colors.white.withOpacity(0.15)),
+                                      color: Colors.white.withValues(alpha: 0.15)),
                                 ),
                                 child: Row(
                                   children: [
@@ -315,7 +316,7 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
                                       height: 48,
                                       decoration: BoxDecoration(
                                         color:
-                                            Colors.white.withOpacity(0.2),
+                                            Colors.white.withValues(alpha: 0.2),
                                         borderRadius:
                                             BorderRadius.circular(14),
                                       ),
@@ -370,7 +371,7 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
                             Container(
                               padding: const EdgeInsets.all(28),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF006D5B).withOpacity(0.08),
+                                color: const Color(0xFF006D5B).withValues(alpha: 0.08),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
@@ -497,7 +498,7 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 6),
           )
@@ -509,7 +510,7 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
           Container(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
             decoration: BoxDecoration(
-              color: jenisColor.withOpacity(0.05),
+              color: jenisColor.withValues(alpha: 0.05),
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(24)),
               border: Border(
@@ -524,7 +525,7 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
                   height: 50,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [jenisColor, jenisColor.withOpacity(0.7)],
+                      colors: [jenisColor, jenisColor.withValues(alpha: 0.7)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -631,7 +632,7 @@ class _IzinGuruPageState extends State<IzinGuruPage> {
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: hasAttachment
-                            ? const Color(0xFF006D5B).withOpacity(0.3)
+                            ? const Color(0xFF006D5B).withValues(alpha: 0.3)
                             : Colors.grey.shade200,
                       ),
                     ),
