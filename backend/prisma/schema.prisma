@@ -8,6 +8,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
   extensions = [postgis]
 }
 
@@ -110,10 +111,12 @@ model Siswa {
   sekolahId   Int     @map("id_sekolah")
   namaLengkap String  @map("nama_lengkap")
   nis         String  @unique @map("NIS")
+  angkatanId  Int?    @map("id_angkatan")
   faceModel   String? @map("face_model")
 
   user           User             @relation(fields: [userId], references: [id])
   sekolah        Sekolah          @relation(fields: [sekolahId], references: [id])
+  masterAngkatan MasterAngkatan?  @relation(fields: [angkatanId], references: [id])
   enrolmentSiswa EnrolmentSiswa[]
   absensi        Absensi[]
   perizinan      Perizinan[]
@@ -128,8 +131,8 @@ model Sekolah {
   id                  Int                   @id @default(autoincrement()) @map("id_sekolah")
   namaSekolah         String                @map("nama_sekolah")
   alamat              String
-  radiusMeter         Int                   @map("radius_meter")
-  titikKoordinat      Unsupported("geography(Point, 4326)") @map("titik_koordinat")
+  areaSekolah         Unsupported("geography(Polygon, 4326)")? @map("area_sekolah")
+  isGeofenceActive    Boolean               @default(true) @map("is_active_geofence")
   admins              Admin[]
   gurus               Guru[]
   siswas              Siswa[]
@@ -142,12 +145,23 @@ model Sekolah {
   @@map("sekolah")
 }
 
+model MasterTingkat {
+  id          Int           @id @default(autoincrement()) @map("id_tingkat")
+  namaTingkat String        @map("nama_tingkat")
+  kelas       MasterKelas[]
+
+  @@map("master_tingkat")
+}
+
 model MasterKelas {
   id             Int              @id @default(autoincrement()) @map("id_kelas")
   sekolahId      Int              @map("id_sekolah")
+  tingkatId      Int?             @map("id_tingkat")
   namaKelas      String           @map("nama_kelas")
   sekolah        Sekolah          @relation(fields: [sekolahId], references: [id])
+  tingkat        MasterTingkat?   @relation(fields: [tingkatId], references: [id])
   enrolmentKelas EnrolmentKelas[]
+  jadwalAbsensi  JadwalAbsensi[]
 
   @@map("master_kelas")
 }
@@ -156,8 +170,9 @@ model MasterAngkatan {
   id            Int              @id @default(autoincrement()) @map("id_angkatan")
   sekolahId     Int              @map("id_sekolah")
   nomorAngkatan String           @map("nomor_angkatan")
+  isActive      Boolean          @default(true) @map("is_active")
   sekolah       Sekolah          @relation(fields: [sekolahId], references: [id])
-  enrolmentKelas EnrolmentKelas[]
+  siswas        Siswa[]
 
   @@map("master_angkatan")
 }
@@ -181,12 +196,10 @@ model EnrolmentKelas {
   id                  Int                 @id @default(autoincrement()) @map("id_enrolment_kelas")
   sekolahId           Int                 @map("id_sekolah")
   kelasId             Int                 @map("id_kelas")
-  angkatanId          Int                 @map("id_angkatan")
   tahunAkademikId     Int                 @map("id_tahun_akademik")
   keterangan          String?
   sekolah             Sekolah             @relation(fields: [sekolahId], references: [id])
   masterKelas         MasterKelas         @relation(fields: [kelasId], references: [id])
-  masterAngkatan      MasterAngkatan      @relation(fields: [angkatanId], references: [id])
   masterTahunAkademik MasterTahunAkademik @relation(fields: [tahunAkademikId], references: [id])
   enrolmentSiswa      EnrolmentSiswa[]
   enrolmentGuru       EnrolmentGuru[]
@@ -199,6 +212,7 @@ model EnrolmentSiswa {
   siswaId          Int            @map("id_siswa")
   enrolmentKelasId Int            @map("id_enrolment_kelas")
   isActive         Boolean        @map("is_active")
+  statusKenaikan   String?        @default("Belum Diproses") @map("status_kenaikan")
   siswa            Siswa          @relation(fields: [siswaId], references: [id])
   enrolmentKelas   EnrolmentKelas @relation(fields: [enrolmentKelasId], references: [id])
 
@@ -224,13 +238,15 @@ model JadwalAbsensi {
   sekolahId      Int       @map("id_sekolah")
   namaJadwal     String    @map("nama_jadwal")
   hari           String
-  tanggal        DateTime  @db.Date
+  tanggal        DateTime[] @db.Date
   jamMasukStart  DateTime  @map("jam_masuk_start") @db.Time
   jamMasukFinish DateTime  @map("jam_masuk_finish") @db.Time
   jamPulang      DateTime  @map("jam_pulang") @db.Time
   isLibur        Boolean   @map("is_libur")
+  isActive       Boolean   @default(false) @map("is_active")
   sekolah        Sekolah   @relation(fields: [sekolahId], references: [id])
   absensi        Absensi[]
+  kelas          MasterKelas[]
 
   @@map("jadwal_absensi")
 }
@@ -282,4 +298,20 @@ model Notifikasi {
   user      User           @relation(fields: [userId], references: [id])
 
   @@map("notifikasi")
+}
+
+model Pengaturan {
+  id        Int      @id @default(autoincrement()) @map("id_pengaturan")
+  kunci     String   @unique
+  nilai     String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("pengaturan")
+}
+
+model Session {
+  id        String   @id
+  sid       String   @unique
+  data      String
+  expiresAt   DateTime
 }

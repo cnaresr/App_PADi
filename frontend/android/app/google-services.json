@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "257705363375",
+    "project_id": "notifpadi",
+    "storage_bucket": "notifpadi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:257705363375:android:8efad0599f46031a94915a",
+        "android_client_info": {
+          "package_name": "com.example.platform_absensi_digital"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCeJKWkidZwE7ttdbpY_ERVgVlCyO0uD18"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

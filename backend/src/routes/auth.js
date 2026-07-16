@@ -3,11 +3,13 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const prisma = require('../db');
+const bcrypt = require('bcryptjs');
+const verifyToken = require('../middleware/auth');
 
 // POST /api/auth/register
 // Sesuai dengan skema baru di database.md
 router.post('/register', async (req, res) => {
-  const { username, email, password, roleName } = req.body; // roleName: 'Siswa', 'Guru', atau 'Admin'
+  const { username, email, password, roleName } = req.body || {}; // roleName: 'Siswa', 'Guru', atau 'Admin'
 
   if (!username || !email || !password || !roleName) {
     return res.status(400).json({ message: 'Username, email, password, dan roleName wajib diisi' });
@@ -17,7 +19,10 @@ router.post('/register', async (req, res) => {
     // Cek apakah username atau email sudah terdaftar menggunakan Prisma
     const existingUser = await prisma.user.findFirst({
       where: {
-        OR: [{ username: username }, { email: email }],
+        OR: [
+          { username: { equals: username, mode: 'insensitive' } },
+          { email: { equals: email, mode: 'insensitive' } }
+        ],
       },
     });
 
@@ -71,7 +76,7 @@ router.post('/register', async (req, res) => {
 // Sesuai dengan skema baru di database.md dan terhubung dengan Flutter
 router.post('/login', async (req, res) => {
   // 1. Terima 'email' dari Flutter, atau 'username' (opsional)
-  const { username, email, password } = req.body;
+  const { username, email, password } = req.body || {};
   const loginIdentifier = email || username;
 
   if (!loginIdentifier || !password) {
@@ -83,38 +88,86 @@ router.post('/login', async (req, res) => {
     const user = await prisma.user.findFirst({
       where: {
         OR: [
-          { username: loginIdentifier },
-          { email: loginIdentifier }
+          { username: { equals: loginIdentifier, mode: 'insensitive' } },
+          { email: { equals: loginIdentifier, mode: 'insensitive' } }
         ]
       },
       include: { role: true },
     });
 
     if (!user) {
-      return res.status(404).json({ status: 'error', message: 'Akun tidak ditemukan' });
+      return res.status(404).json({ status: 'error', message: 'Email atau password salah' });
     }
 
-    // 3. Bandingkan password yang diinput dengan hash di database
-   if (password.trim() !== user.password.trim()) {
-      return res.status(401).json({ status: 'error', message: 'Kombinasi email dan password salah' });
+   // 3. Bandingkan password yang diinput dengan hash di database MENGGUNAKAN BCRYPT
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    
+    if (!isPasswordValid) {
+      return res.status(401).json({ status: 'error', message: 'Email atau password salah' });
     }
 
-    // 4. Buat JWT token (Standar keamanan teman Anda tetap berjalan!)
+    // --- [PERBAIKAN] Tahap 4.5: Ambil data spesifik role (Siswa) & Geofence ---
+    let responseData = {
+      id: user.id,
+      role: user.role.namaRole,
+      username: user.username,
+      email: user.email,
+      // Siapkan object kosong untuk data tambahan
+      kelas: "Informasi Kelas",
+      geofence: null,
+    };
+
+    if (user.role.namaRole === 'Siswa') {
+      const siswa = await prisma.siswa.findUnique({
+        where: { userId: user.id },
+        include: {
+          sekolah: true, // Ambil data sekolah untuk mendapatkan geofence
+        }
+      });
+
+      if (siswa) {
+        // Menggunakan nama sekolah sebagai fallback jika info kelas belum ada
+        responseData.kelas = `Siswa • ${siswa.sekolah.namaSekolah}`;
+
+        // Ambil data geofence poligon menggunakan ST_AsGeoJSON
+        if (siswa.sekolahId) {
+          const geofenceResult = await prisma.$queryRaw`
+            SELECT ST_AsGeoJSON(area_sekolah) as polygon_geojson
+            FROM sekolah
+            WHERE id_sekolah = ${siswa.sekolahId} AND area_sekolah IS NOT NULL;
+          `;
+
+          if (geofenceResult.length > 0 && geofenceResult[0].polygon_geojson) {
+            const geoJson = JSON.parse(geofenceResult[0].polygon_geojson);
+            // Format GeoJSON adalah [ [ [lon, lat], [lon, lat] ] ]. Kita ambil array koordinatnya.
+            // Flutter mengharapkan array pasangan koordinat: [[lon, lat], [lon, lat], ...]
+            responseData.geofence = {
+              isActive: siswa.sekolah.isGeofenceActive,
+              polygon: geoJson.coordinates[0] 
+            };
+          } else {
+            responseData.geofence = {
+              isActive: siswa.sekolah.isGeofenceActive,
+              polygon: null
+            };
+          }
+        }
+      }
+    }
+
+    // 5. Buat JWT token
     const token = jwt.sign(
       { id: user.id, username: user.username, role: user.role.namaRole },
       process.env.JWT_SECRET, // Pastikan ada JWT_SECRET di file .env Anda!
-      { expiresIn: '8h' }
+      { expiresIn: '30d' }
     );
 
-    // 5. Kembalikan respons yang dimengerti oleh Flutter (status & data.role)
+    // 6. Kembalikan respons yang sudah diperkaya dengan data geofence
     res.status(200).json({
       status: 'success',
       message: 'Login berhasil',
       token: token,
-      data: {
-        id: user.id,
-        role: user.role.namaRole
-      }
+      data: responseData
     });
   } catch (err) {
     console.error(err);
@@ -123,7 +176,7 @@ router.post('/login', async (req, res) => {
 });
 // GET /api/auth/users
 // Mengambil semua data pengguna beserta rolenya (Cocok untuk halaman Daftar Siswa/Guru)
-router.get('/users', async (req, res) => {
+router.get('/users', verifyToken, async (req, res) => {
   try {
     // Gunakan findMany() untuk mengambil BANYAK data (bukan cuma satu)
     const allUsers = await prisma.user.findMany({
@@ -150,4 +203,31 @@ router.get('/users', async (req, res) => {
     res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server' });
   }
 });
+
+// PUT /api/auth/fcm-token
+// Menyimpan atau memperbarui FCM Token milik pengguna
+router.put('/fcm-token', verifyToken, async (req, res) => {
+  try {
+    const { userId, fcmToken } = req.body;
+
+    if (!userId || !fcmToken) {
+      return res.status(400).json({ status: 'error', message: 'userId dan fcmToken wajib diisi' });
+    }
+
+    // Update FCM token di database
+    const updatedUser = await prisma.user.update({
+      where: { id: parseInt(userId) },
+      data: { fcmToken: fcmToken }
+    });
+
+    res.status(200).json({ 
+      status: 'success', 
+      message: 'FCM Token berhasil diperbarui' 
+    });
+  } catch (err) {
+    console.error('Error update FCM Token:', err);
+    res.status(500).json({ status: 'error', message: 'Gagal memperbarui FCM Token' });
+  }
+});
+
 module.exports = router;

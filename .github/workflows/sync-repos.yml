@@ -1,0 +1,87 @@
+# name: Sync Subfolders to Separate Repos
+
+# on:
+#   push:
+#     branches:
+#       - dev # Jalankan otomatis setiap kali push ke branch
+
+# jobs:
+#   sync-frontend:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout APP_PADi
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0 # Mengambil seluruh riwayat commit agar sinkronisasi lancar
+
+#       - name: Push Frontend to Frontend_PADi
+#         uses: cpina/github-action-push-to-another-repository@main
+#         env:
+#           API_TOKEN_GITHUB: ${{ secrets.GH_PAT }}
+#         with:
+#           source-directory: "platform_absensi_digital" # Folder di Repo A yang mau di-push
+#           destination-github-username: "PADi-bang" # Ganti dengan username GitHub-mu
+#           destination-repository-name: "Frontend_PADi" # Nama Repo B (Frontend)
+#           user-email: "cezar.nares@gmail.com" # Ganti dengan email GitHub-mu
+#           target-branch: "dev"
+
+#   sync-backend:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout APP_PADi
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+
+#       - name: Push Backend to Backend_PADi
+#         uses: cpina/github-action-push-to-another-repository@main
+#         env:
+#           API_TOKEN_GITHUB: ${{ secrets.GH_PAT }}
+#         with:
+#           source-directory: "backend" # Folder di Repo A yang mau di-push
+#           destination-github-username: "PADi-bang" # Ganti dengan username GitHub-mu
+#           destination-repository-name: "Backend_PADi" # Nama Repo C (Backend)
+#           user-email: "cezar.nares@gmail.com" # Ganti dengan email GitHub-mu
+#           target-branch: "dev"
+
+name: Sync Subfolders to Separate Repos
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  sync-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo APP_PADi
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Wajib 0 agar seluruh riwayat terbawa
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Push Frontend with History
+        run: |
+          # 1. Memisahkan riwayat khusus folder frontend ke branch sementara
+          git subtree split --prefix=frontend -b split-frontend
+
+          # 2. Push riwayat asli ke repo Frontend_PADi
+          git push https://${{ secrets.GH_PAT }}@github.com/PADi-bang/Frontend_PADi.git split-frontend:dev --force
+
+  sync-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo APP_PADi
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Push Backend with History
+        run: |
+          # 1. Memisahkan riwayat khusus folder backend ke branch sementara
+          git subtree split --prefix=backend -b split-backend
+
+          # 2. Push riwayat asli ke repo Backend_PADi
+          git push https://${{ secrets.GH_PAT }}@github.com/PADi-bang/Backend_PADi.git split-backend:dev --force
