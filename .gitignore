@@ -17,5 +17,6 @@ frontend/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.
 *.iml
 /generated/prisma
 
-# Direktori Text tidak diperlukan
+# Direktori dan file yang tidak diperlukan
 text
+PADi_dump_terakhir.sql
